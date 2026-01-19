@@ -1,4 +1,4 @@
-# PRO-Sitemaps - Frontend SaaS
+# Synesis Sitemap - Frontend
 
 Interface oficial e painel de controle para o sistema **Gerador de Sitemaps Perfeito** (API Python). Este projeto fornece uma experiência de usuário moderna e responsiva para criação de contas, gerenciamento de assinaturas e configuração de jobs de sitemap.
 
@@ -8,7 +8,7 @@ Este repositório contém o código-fonte do Frontend e da camada de orquestraç
 
 ### Stack Tecnológica
 
--   **Backend SaaS**: Laravel 10+ (PHP 8.2+)
+-   **Backend SaaS**: Laravel 10+ (PHP 8.4+)
 -   **Frontend**: Vue.js 3 (Composition API)
 -   **Roteamento/SPA**: Inertia.js
 -   **Estilização**: Tailwind CSS v3
@@ -29,7 +29,7 @@ Este repositório contém o código-fonte do Frontend e da camada de orquestraç
 
 ### Pré-requisitos
 
--   PHP 8.2+
+-   PHP 8.4+
 -   Composer
 -   Node.js & NPM
 -   Banco de Dados (MySQL)
