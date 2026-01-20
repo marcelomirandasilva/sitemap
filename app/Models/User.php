@@ -21,6 +21,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'plan_id',
+        'role',
     ];
 
     /**
@@ -45,4 +47,22 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+    public function plan()
+    {
+        return $this->belongsTo(Plan::class);
+    }
+
+    public function projects()
+    {
+        return $this->hasMany(Project::class);
+    }
+
+    /**
+     * Helper para saber se é Admin (útil para o futuro)
+     */
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
 }
+
