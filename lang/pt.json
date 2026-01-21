@@ -41,5 +41,11 @@
     "features.image_sitemaps": "Sitemaps de Imagem (Metadados Reais + EXIF)",
     "features.video_sitemaps": "Sitemaps de Vídeo (YouTube/Vimeo/Local)",
     "features.news_sitemaps": "Sitemaps de Notícias (Google News)",
-    "features.api_access": "Acesso à API REST & Webhooks"
+    "features.api_access": "Acesso à API REST & Webhooks",
+    "dashboard.title": "Painel de Controle",
+    "dashboard.no_sites": "Você ainda não tem sites listados, adicione um",
+    "dashboard.manage_sites": "Gerencie múltiplos sites na sua conta",
+    "dashboard.url_placeholder": "Digite a URL do novo site...",
+    "dashboard.add_button": "ADICIONAR SITE",
+    "dashboard.adding_button": "ADICIONANDO..."
 }

@@ -41,5 +41,11 @@
     "features.image_sitemaps": "Image Sitemaps (Real Metadata + EXIF)",
     "features.video_sitemaps": "Video Sitemaps (YouTube/Vimeo/Local)",
     "features.news_sitemaps": "News Sitemaps (Google News)",
-    "features.api_access": "REST API Access & Webhooks"
+    "features.api_access": "REST API Access & Webhooks",
+    "dashboard.title": "Control Panel",
+    "dashboard.no_sites": "You don't have any websites listed yet, please add one",
+    "dashboard.manage_sites": "Manage multiple websites in your account",
+    "dashboard.url_placeholder": "Enter new Website URL...",
+    "dashboard.add_button": "ADD WEBSITE",
+    "dashboard.adding_button": "ADDING..."
 }

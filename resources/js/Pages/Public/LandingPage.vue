@@ -85,11 +85,6 @@ const submitLogin = () => {
                                 Dashboard
                             </Link>
                         </template>
-                        <template v-else>
-                            <Link :href="route('login')" class="hover:text-[#a4332b] transition">
-                                {{ $t('auth.login_tab').toUpperCase() }}
-                            </Link>
-                        </template>
                         <div class="flex items-center gap-2 mr-2">
                             <button @click="mudarIdioma('pt')" class="hover:scale-110 transition-transform cursor-pointer" title="Português">
                                 <img src="/flags/br.svg" alt="Português" class="w-6 h-auto shadow-sm rounded-sm" />
