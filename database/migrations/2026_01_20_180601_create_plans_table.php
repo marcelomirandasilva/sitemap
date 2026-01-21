@@ -14,10 +14,17 @@ return new class extends Migration {
             $table->id();
             $table->string('name');
             $table->string('slug')->unique();
-            $table->integer('price'); // Em centavos
-            $table->integer('max_projects')->default(1);
-            $table->integer('max_pages_per_sitemap')->default(500);
-            $table->boolean('has_image_sitemap')->default(false);
+            $table->integer('max_pages'); // Limite de páginas
+
+            // Preços em Centavos (Nullable para permitir planos Free ou customizados)
+            $table->integer('price_monthly_brl')->nullable();
+            $table->integer('price_yearly_brl')->nullable();
+            $table->integer('price_monthly_usd')->nullable();
+            $table->integer('price_yearly_usd')->nullable();
+
+            $table->integer('max_projects')->default(10);
+            $table->boolean('has_advanced_features')->default(false); // Image Sitemap, Reports, API
+
             $table->timestamps();
         });
     }

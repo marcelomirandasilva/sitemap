@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Inertia\Inertia;
 use Inertia\Response;
+use App\Models\Project;
 
 class RegisteredUserController extends Controller
 {
@@ -34,8 +35,11 @@ class RegisteredUserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|lowercase|email|max:255|unique:' . User::class,
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'url' => 'required|url',
+
         ]);
 
+        // 1. Cria o Usuário (Sempre no plano Free ID 1)
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
@@ -43,6 +47,8 @@ class RegisteredUserController extends Controller
             'plan_id' => 1,
             'role' => 'user',
         ]);
+
+
 
         event(new Registered($user));
 
