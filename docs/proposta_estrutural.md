@@ -63,18 +63,32 @@ O sistema é uma plataforma **SaaS** construída sobre uma arquitetura híbrida 
 
 ---
 
-## 4. Cronograma e Status
+## 4. Cronograma de Execução (2026)
 
--   [x] **Fase 1: Fundação**: Setup Laravel 12 + Vue 3, Auth Social, Layout. **(Concluído)**
--   [ ] **Fase 2: Integração & Ferramentas**: 
-    -   [ ] **Conexão Engine Python** (Principal).
-    -   [ ] **Módulo de API**:
-        -   [ ] Tela de Gestão de Tokens.
-        -   [ ] Documentação de API.
-    -   [ ] **Suporte & Ajuda**:
-        -   [ ] Central de Ajuda (Help Center).
-        -   [ ] Sistema de Tickets/Suporte.
--   [ ] **Fase 3: Core SaaS & Financeiro**: 
+**Prazo Total:** 19/01/2026 a 27/04/2026
+
+### 📅 Macros & Marcos Oficiais
+
+-   **19/01 (Seg)**: Kickoff e Brainstorming. **(Concluído)**
+-   **20/01 (Ter)**: Alinhamento de Requisitos. **(Concluído)**
+-   **23/01 (Sex)**: Entrega da Proposta Estrutural. **(Concluído)**
+-   **26/01 (Seg)**: 🚀 **Início do Desenvolvimento** (Execução).
+-   **29/01 (Qui)**: 🤝 Reunião Técnica: Gateways de Pagamento.
+-   **26/03 (Qui)**: 🎥 **Demonstração Funcional** (Fim da Fase de Dev).
+-   **27/04 (Seg)**: 🏆 **Entrega Final** (Produção).
+
+### ⚡ Fases de Desenvolvimento (26/01 a 26/03)
+
+-   [x] **Fase 1: Fundação & Setup** (Semana 1)
+    -   Setup Laravel 12 + Vue 3, Auth Social, Layout.
+
+-   [ ] **Fase 2: Integração & Ferramentas** (Semana 2-4)
+    -   [ ] **Conexão Engine Python** (Prioridade).
+    -   [ ] **Módulo de API** (Tokens e Docs).
+    -   [ ] **Suporte & Ajuda** (Central de Ajuda).
+
+-   [ ] **Fase 3: Core SaaS & Financeiro** (Semana 5-8)
+    -   *Marco: Definição de Gateways em 29/01*
     -   [x] Internacionalização (I18n).
     -   [ ] **Módulo Financeiro**:
         -   [ ] Tela de Assinaturas (Subscriptions).
@@ -82,7 +96,9 @@ O sistema é uma plataforma **SaaS** construída sobre uma arquitetura híbrida 
         -   [ ] Detalhes de Pagamento (Cartões).
         -   [ ] Integração Gateway (Stripe/MercadoPago).
     -   [ ] **Painel Administrativo**.
--   [ ] **Fase 4: Lançamento**: Testes de carga e abertura para beta.
+
+-   [ ] **Fase 4: Estabilização & QA** (27/03 a 24/04)
+    -   Testes de carga, debug e ajustes finais pré-entrega.
 
 ---
-**Observação**: Este documento reflete a arquitetura atualizada em Janeiro/2026.
+**Observação**: Cronograma alinhado com Pablo Murad.
