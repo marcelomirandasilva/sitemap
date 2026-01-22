@@ -100,5 +100,3 @@ O sistema é uma plataforma **SaaS** construída sobre uma arquitetura híbrida 
 -   [ ] **Fase 4: Estabilização & QA** (27/03 a 24/04)
     -   Testes de carga, debug e ajustes finais pré-entrega.
 
----
-**Observação**: Cronograma alinhado com Pablo Murad.
