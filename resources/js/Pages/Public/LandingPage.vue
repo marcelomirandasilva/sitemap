@@ -3,12 +3,16 @@ import { Head, Link, useForm } from '@inertiajs/vue3';
 import { ref, onMounted } from 'vue';
 import { loadLanguageAsync } from 'laravel-vue-i18n';
 
-defineProps({
+const props = defineProps({
     canLogin: Boolean,
     canRegister: Boolean,
+    defaultTab: {
+        type: String,
+        default: 'signup'
+    }
 });
 
-const activeTab = ref('signup');
+const activeTab = ref(props.defaultTab || 'signup');
 const appName = import.meta.env.VITE_APP_NAME;
 const anoAtual = new Date().getFullYear();
 

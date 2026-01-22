@@ -47,5 +47,19 @@
     "dashboard.manage_sites": "Gerencie múltiplos sites na sua conta",
     "dashboard.url_placeholder": "Digite a URL do novo site...",
     "dashboard.add_button": "ADICIONAR SITE",
-    "dashboard.adding_button": "ADICIONANDO..."
+    "dashboard.adding_button": "ADICIONANDO...",
+    "nav.in_progress": "EM ANDAMENTO",
+    "nav.no_crawls": "Nenhum site sendo rastreado no momento",
+    "nav.notifications": "Notificações",
+    "nav.no_notifications": "Nenhuma nova notificação",
+    "nav.my_sites": "MEUS SITES",
+    "nav.add_website": "Adicionar site",
+    "nav.account": "CONTA",
+    "nav.your_account": "Sua Conta",
+    "nav.preferences": "Preferências",
+    "nav.subscriptions": "Assinaturas",
+    "nav.invoices": "Faturas",
+    "nav.payment_details": "Detalhes de Pagamento",
+    "nav.api": "API",
+    "nav.logout": "Sair"
 }

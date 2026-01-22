@@ -1,88 +1,100 @@
-# Synesis Sitemap - Frontend
+# SiteMapGen - Plataforma SaaS Enterprise
 
-Interface oficial e painel de controle para o sistema **Gerador de Sitemaps Perfeito** (API Python). Este projeto fornece uma experiência de usuário moderna e responsiva para criação de contas, gerenciamento de assinaturas e configuração de jobs de sitemap.
+Interface oficial e painel de controle para o sistema **SiteMapGen**. Este projeto é uma plataforma SaaS completa, construída com tecnologias de ponta para oferecer uma experiência de usuário robusta, multilíngue e escalável.
 
-## 🚀 Visão Geral
+## 🚀 Visão Geral do Sistema
 
-Este repositório contém o código-fonte do Frontend e da camada de orquestração SaaS, construído com **Laravel**, **Vue.js 3** e **Inertia.js**. Ele se comunica com a API Python de backend para realizar o processamento pesado de crawling e geração de XML.
+O **SiteMapGen SaaS** é mais do que um gerador de sitemaps; é uma suíte completa de ferramentas SEO. A arquitetura desacoplada (Frontend Laravel/Vue + Backend Python API) permite performance extrema em crawling distribuído, enquanto o frontend gerencia toda a complexidade de assinaturas, usuários e orquestração de jobs.
 
-### Stack Tecnológica
+### 🏗️ Stack Tecnológico (Atualizado)
 
--   **Backend SaaS**: Laravel 10+ (PHP 8.4+)
--   **Frontend**: Vue.js 3 (Composition API)
--   **Roteamento/SPA**: Inertia.js
--   **Estilização**: Tailwind CSS v3
--   **Banco de Dados**: MySQL / PostgreSQL
--   **Autenticação**: Laravel Breeze / Jetstream
+O núcleo do frontend foi modernizado para utilizar as versões mais recentes das ferramentas do ecossistema Laravel e Javascript:
 
-## ✨ Funcionalidades do Frontend
+-   **Backend Framework**: **Laravel 12** (PHP 8.4+) - *A base mais robusta e segura.*
+-   **Frontend Framework**: **Vue.js 3** (Composition API) - *Reatividade e performance.*
+-   **Roteamento & SPA**: **Inertia.js 2.0** - *Experiência de Single Page Application sem complexidade de API.*
+-   **Estilização**: **Tailwind CSS 4.0** - *Design moderno com o novo engine Rust.*
+-   **Internacionalização**: **Laravel Vue i18n** - *Suporte nativo a múltiplos idiomas (PT-BR / EN-US).*
+-   **Autenticação Social**: **Laravel Socialite** - *Login com Google, GitHub, etc.*
 
--   **Landing Page de Alta Conversão**: Design moderno focado em conversão com card interativo de Login/Signup.
--   **Painel do Usuário (Dashboard)**:
-    -   Visão geral de sitemaps gerados.
-    -   Status de jobs em tempo real.
-    -   Download de arquivos XML.
--   **Integração com API Python**: Conexão transparente com o serviço de crawling distribuído.
--   **Gestão de Assinaturas**: Interface para upgrade de planos (Free vs Pro).
+## ✨ Funcionalidades e Módulos
 
-## 🛠️ Instalação e Configuração
+O sistema conta com uma estrutura de menus e módulos completa para operação SaaS:
+
+### 🌍 Internacionalização (I18n)
+-   **Suporte Multi-idioma**: Alternância instantânea entre Português e Inglês com persistência de preferência do usuário.
+-   **Flags Dinâmicas**: Interface visual para seleção de idioma no topo da aplicação.
+
+### 💳 Módulo Financeiro Completo
+Acesso direto via menu de usuário para autogestão financeira:
+-   **Assinaturas**: Gestão de planos (Free, Pro, Enterprise) e upgrades/downgrades.
+-   **Faturas (Invoices)**: Histórico completo de pagamentos e download de faturas.
+-   **Dados de Pagamento**: Gerenciamento seguro de cartões e métodos de pagamento.
+
+### 🤖 Gestão de Projetos & Crawls
+-   **Monitoramento em Tempo Real**: Dropdown de "Em Progresso" para acompanhar crawls ativos.
+-   **Meus Sites**: Listagem centralizada de todos os domínios do usuário com status rápido.
+-   **Adicionar Website**: Fluxo simplificado para configuração de novos jobs de sitemap.
+-   **Notificações**: Central de alertas para avisar sobre conclusão de sitemaps ou problemas encontrados.
+
+### 🔌 API & Desenvolvedor
+-   **Gestão de API Keys**: Área dedicada para o usuário gerar e revogar tokens de acesso pessoal.
+-   **Webhooks**: Configuração de URLs para receber notificações de eventos do sistema.
+
+### 👤 Área do Usuário
+-   **Preferências**: Configurações globais de conta.
+-   **Suporte & Ajuda**: Acesso rápido à documentação e canais de suporte diretamente da barra de navegação.
+
+## 🛠️ Instalação e Ambiente
 
 ### Pré-requisitos
-
 -   PHP 8.4+
+-   Node.js 20+
 -   Composer
--   Node.js & NPM
--   Banco de Dados (MySQL)
+-   Banco de Dados (MySQL 8+ ou PostgreSQL)
 
-### Passos
+### Passos para Desenvolvimento
 
 1.  **Clone o repositório**
     ```bash
-    git clone https://github.com/seu-usuario/sitemap.git
-    cd sitemap
+    git clone https://github.com/seu-usuario/sitemap-saas.git
     ```
 
-2.  **Instale as dependências do PHP**
+2.  **Instale Dependências**
     ```bash
     composer install
-    ```
-
-3.  **Instale as dependências do Node.js**
-    ```bash
     npm install
     ```
 
-4.  **Configure o ambiente**
+3.  **Configuração de Ambiente**
     ```bash
     cp .env.example .env
     php artisan key:generate
     ```
-    Configure as credenciais do banco de dados no arquivo `.env`.
 
-5.  **Execute as migrações**
+4.  **Banco de Dados & Migrations**
     ```bash
     php artisan migrate
     ```
 
-6.  **Inicie o servidor de desenvolvimento**
-    -   Backend (Laravel):
-        ```bash
-        php artisan serve
-        ```
-    -   Frontend (Vite):
-        ```bash
-        npm run dev
-        ```
+5.  **Inicie os Servidores**
+    ```bash
+    # Terminal 1 (Laravel)
+    php artisan serve
 
-## 🔗 Integração com Backend Python
+    # Terminal 2 (Vite/Frontend)
+    npm run dev
+    ```
 
-Este frontend espera que a API Python esteja rodando para funcionalidades avançadas. Configure a URL da API no seu `.env`:
+## 🔗 Integração Backend Python
+
+Este frontend opera como o orquestrador para a API Python (**Gerador de Sitemaps Perfeito**). Certifique-se de configurar as rotas da API no `.env`:
 
 ```env
-PYTHON_API_URL=http://localhost:8000/api
-PYTHON_API_TOKEN=seu-token-de-servico
+# Conexão com Crawler
+PYTHON_CRAWLER_API=http://localhost:8000/api/v1
+PYTHON_API_SECRET=seu_token_secreto
 ```
 
-## 📄 Licença
-
-Este software é proprietário da **SyNesis Tecnologia**. Todos os direitos reservados.
+---
+© 2026 **SyNesis Tecnologia**. Todos os direitos reservados.

@@ -47,5 +47,19 @@
     "dashboard.manage_sites": "Manage multiple websites in your account",
     "dashboard.url_placeholder": "Enter new Website URL...",
     "dashboard.add_button": "ADD WEBSITE",
-    "dashboard.adding_button": "ADDING..."
+    "dashboard.adding_button": "ADDING...",
+    "nav.in_progress": "IN PROGRESS",
+    "nav.no_crawls": "No site entries are crawled at this moment",
+    "nav.notifications": "Notifications",
+    "nav.no_notifications": "No new notifications",
+    "nav.my_sites": "MY SITES",
+    "nav.add_website": "Add website",
+    "nav.account": "ACCOUNT",
+    "nav.your_account": "Your Account",
+    "nav.preferences": "Preferences",
+    "nav.subscriptions": "Subscriptions",
+    "nav.invoices": "Invoices",
+    "nav.payment_details": "Payment Details",
+    "nav.api": "API",
+    "nav.logout": "Logout"
 }

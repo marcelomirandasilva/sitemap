@@ -31,6 +31,10 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     Route::post('/projects', [ProjectController::class, 'store'])->name('projects.store');
+    Route::post('/projects', [ProjectController::class, 'store'])->name('projects.store');
 });
+
+Route::get('auth/google', [App\Http\Controllers\Auth\SocialAuthController::class, 'redirectToGoogle'])->name('auth.google');
+Route::get('auth/google/callback', [App\Http\Controllers\Auth\SocialAuthController::class, 'handleGoogleCallback']);
 
 require __DIR__ . '/auth.php';
