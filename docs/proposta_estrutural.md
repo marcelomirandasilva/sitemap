@@ -1,6 +1,8 @@
 # Proposta Estrutural: SiteMapGen
 **Data de Revisão:** 22/01/2026
+
 **Responsável:** Equipe de Desenvolvimento, eu
+
 **Status:** Em Desenvolvimento Ativo
 
 ---
@@ -10,7 +12,7 @@
 O sistema é uma plataforma **SaaS** construída sobre uma arquitetura híbrida e desacoplada, focada em alta performance e experiência de usuário fluida.
 
 ### Stack Tecnológico (Modernizado)
--   **Frontend**: Vue.js 3 (Composition API) + **Inertia.js 2.0**.
+-   **Frontend**: Vue.js 3 + **Inertia.js 2.0**.
 -   **Backend**: **Laravel 12** (PHP 8.4+).
 -   **Estilização**: **Tailwind CSS 4.0** (Engine Rust).
 -   **Banco de Dados**: MySQL 8.0 + Redis (Cache/Filas).
@@ -72,10 +74,10 @@ O sistema é uma plataforma **SaaS** construída sobre uma arquitetura híbrida 
 -   **19/01 (Seg)**: Kickoff e Brainstorming. **(Concluído)**
 -   **20/01 (Ter)**: Alinhamento de Requisitos. **(Concluído)**
 -   **23/01 (Sex)**: Entrega da Proposta Estrutural. **(Concluído)**
--   **26/01 (Seg)**: 🚀 **Início do Desenvolvimento** (Execução).
--   **29/01 (Qui)**: 🤝 Reunião Técnica: Gateways de Pagamento.
--   **26/03 (Qui)**: 🎥 **Demonstração Funcional** (Fim da Fase de Dev).
--   **27/04 (Seg)**: 🏆 **Entrega Final** (Produção).
+-   **26/01 (Seg)**: **Início do Desenvolvimento** (Execução).
+-   **29/01 (Qui)**: Reunião Técnica: Gateways de Pagamento.
+-   **26/03 (Qui)**: **Demonstração Funcional** (Fim da Fase de Dev).
+-   **27/04 (Seg)**: **Entrega Final** (Produção).
 
 ### ⚡ Fases de Desenvolvimento (26/01 a 26/03)
 

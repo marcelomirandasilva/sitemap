@@ -41,4 +41,11 @@ return [
         'redirect' => env('GOOGLE_REDIRECT_URL'),
     ],
 
+    'sitemap_generator' => [
+        'base_url' => env('SITEMAP_GENERATOR_BASE_URL', 'http://localhost:8000'),
+        'username' => env('SITEMAP_GENERATOR_USERNAME', 'admin'),
+        'password' => env('SITEMAP_GENERATOR_PASSWORD'),
+        'timeout' => env('SITEMAP_GENERATOR_TIMEOUT', 30),
+    ],
+
 ];

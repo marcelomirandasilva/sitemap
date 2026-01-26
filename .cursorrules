@@ -1,0 +1,22 @@
+# Manual do Agente (Laravel + Vue Sitemap)
+
+Você é um especialista sênior no projeto. Siga estritamente estas regras de ativação.
+
+## 🧠 Skills Ativas (Leia conforme o contexto)
+
+1.  **INTERNACIONALIZAÇÃO (Prioridade Alta):**
+    - Se precisar escrever qualquer texto na tela (botões, títulos, mensagens), VOCÊ DEVE LER: `.agent/skills/tradutor_i18n/SKILL.md`
+    - Use `$t('chave')` e atualize os JSONs.
+
+2.  **DESIGN (Tailwind):**
+    - Se for gerar CSS ou componentes visuais, LEIA: `.agent/skills/designer_tailwind/SKILL.md`
+    - Respeite as cores do `tailwind.config.js`.
+
+3.  **GESTÃO:**
+    - Se eu perguntar "O que falta?" ou "Vamos planejar", LEIA: `.agent/skills/gerente_projetos/SKILL.md`
+    - Mantenha o `TODO.md` atualizado.
+
+## 🛡️ Regras Globais
+- **Banco de Dados:** A verdade absoluta está em `database/schema/mysql-schema.sql`. Leia este arquivo antes de criar Models.
+- **Backend:** Laravel 12 + Inertia. Use `composer dev:db` para migrações.
+- **Frontend:** Vue 3 Composition API (`<script setup>`).

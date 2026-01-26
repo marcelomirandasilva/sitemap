@@ -1,0 +1,65 @@
+<script setup>
+import { computed } from 'vue';
+import CrawlerStatus from '@/Components/Crawler/CrawlerStatus.vue';
+
+const props = defineProps({
+    project: {
+        type: Object,
+        required: true
+    }
+});
+
+const formataData = (data) => {
+    if (!data) return 'Nunca';
+    return new Date(data).toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+};
+
+// Exemplo estático por enquanto, depois conectar com Model Plan
+const badgePlano = computed(() => 'FREE 500'); 
+</script>
+
+<template>
+    <div class="bg-white rounded border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden flex flex-col">
+        <!-- Header do Card -->
+        <div class="p-5 border-b border-gray-100 bg-gray-50/50 flex justify-between items-start">
+            <div class="overflow-hidden">
+                <h3 class="text-xl font-bold text-gray-800 truncate" :title="project.name || project.url">
+                    {{ project.url.replace(/^https?:\/\//, '').replace(/\/$/, '') }}
+                </h3>
+                <a :href="project.url" target="_blank" class="text-xs text-blue-500 hover:underline flex items-center gap-1 mt-1">
+                    {{ project.url }}
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                </a>
+            </div>
+            
+            <div class="flex flex-col items-end gap-2">
+                <span class="px-2 py-1 bg-gray-200 text-gray-600 text-[10px] font-bold uppercase tracking-wider rounded-sm border border-gray-300">
+                    {{ badgePlano }}
+                </span>
+                <button class="text-[10px] text-green-600 font-bold uppercase hover:underline">
+                    Upgrade Now
+                </button>
+            </div>
+        </div>
+
+        <!-- Corpo do Card (Crawler Status) -->
+        <div class="p-5 flex-1 flex flex-col justify-center">
+            <CrawlerStatus :project="project" :latest-job="project.latest_job" />
+        </div>
+
+        <!-- Footer do Card -->
+        <div class="bg-gray-50 p-3 text-[11px] text-gray-500 flex justify-between items-center border-t border-gray-100">
+            <div>
+                <span class="font-semibold">Criado em:</span> {{ formataData(project.created_at) }}
+            </div>
+            <div title="Páginas encontradas no último crawl">
+                📄 {{ project.latest_job?.pages_count || 0 }} Páginas
+            </div>
+        </div>
+    </div>
+</template>
