@@ -25,7 +25,7 @@ class DashboardController extends Controller
             });
 
         return Inertia::render('App/Dashboard/Index', [
-            'projects' => $projects,
+            'projetos' => $projects,
         ]);
     }
 }

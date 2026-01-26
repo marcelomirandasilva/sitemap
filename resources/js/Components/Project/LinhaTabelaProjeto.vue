@@ -1,10 +1,10 @@
 <script setup>
 import { computed } from 'vue';
 import { trans as t } from 'laravel-vue-i18n';
-import CrawlerStatus from '@/Components/Crawler/CrawlerStatus.vue';
+import StatusRastreador from '@/Components/Crawler/StatusRastreador.vue';
 
 const props = defineProps({
-    project: {
+    projeto: {
         type: Object,
         required: true
     }
@@ -37,29 +37,29 @@ const badgePlano = computed(() => 'FREE 500');
 
         <!-- Domain Column -->
         <td class="p-4 align-top">
-            <a :href="project.url" target="_blank" class="text-base font-normal text-[#c0392b] hover:underline block truncate">
-                {{ project.url.replace(/^https?:\/\//, '').replace(/\/$/, '') }}
+            <a :href="projeto.url" target="_blank" class="text-base font-normal text-[#c0392b] hover:underline block truncate">
+                {{ projeto.url.replace(/^https?:\/\//, '').replace(/\/$/, '') }}
             </a>
         </td>
 
         <!-- Title Column -->
         <td class="p-4 align-top text-sm text-gray-500">
-            {{ project.name || '-' }}
+            {{ projeto.name || '-' }}
         </td>
 
         <!-- Updated Column -->
         <td class="p-4 align-top w-1/3">
             <div class="flex flex-col gap-1">
-                <div class="text-xs text-gray-500 mb-1" v-if="project.latest_job">
-                   {{ project.latest_job.status === 'completed' ? formataData(project.latest_job.updated_at) : '' }}
-                   <span v-if="project.latest_job.status === 'completed'">, {{ project.latest_job.pages_count }} {{ $t('project.pages_count') }}</span>
+                <div class="text-xs text-gray-500 mb-1" v-if="projeto.latest_job">
+                   {{ projeto.latest_job.status === 'completed' ? formataData(projeto.latest_job.updated_at) : '' }}
+                   <span v-if="projeto.latest_job.status === 'completed'">, {{ projeto.latest_job.pages_count }} {{ $t('project.pages_count') }}</span>
                    <span v-else>
                        Sitemap has not been created yet, please wait...
                    </span>
                 </div>
                 
                 <!-- Crawler Status Compacto -->
-                <CrawlerStatus :project="project" :latest-job="project.latest_job" />
+                <StatusRastreador :projeto="projeto" :ultima-tarefa="projeto.latest_job" />
             </div>
         </td>
     </tr>
