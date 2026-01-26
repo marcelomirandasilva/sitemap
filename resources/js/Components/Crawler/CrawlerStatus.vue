@@ -2,6 +2,7 @@
 import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import axios from 'axios';
+import { trans as t } from 'laravel-vue-i18n';
 
 const props = defineProps({
     project: {
@@ -30,11 +31,11 @@ const statusColorDot = computed(() => {
 
 const statusLabel = computed(() => {
     switch (job.value?.status) {
-        case 'completed': return 'Completed';
-        case 'failed': return 'Failed';
-        case 'running': return 'In Progress';
-        case 'queued': return 'Queued';
-        default: return 'Not Started';
+        case 'completed': return t('crawler.status.completed');
+        case 'failed': return t('crawler.status.failed');
+        case 'running': return t('crawler.status.running');
+        case 'queued': return t('crawler.status.queued');
+        default: return t('crawler.status.waiting');
     }
 });
 
@@ -106,9 +107,9 @@ onUnmounted(() => {
                 class="px-3 py-1.5 bg-[#007da0] hover:bg-[#006480] text-white text-[11px] font-bold uppercase rounded shadow-sm disabled:opacity-50 transition flex items-center gap-1"
             >
                 <svg v-if="isStarting" class="animate-spin h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                <span v-if="isStarting">Iniciando...</span>
-                <span v-else-if="job && ['queued', 'running'].includes(job.status)">Processando</span>
-                <span v-else>Resume / Start</span>
+                <span v-if="isStarting">{{ $t('crawler.starting') }}</span>
+                <span v-else-if="job && ['queued', 'running'].includes(job.status)">{{ $t('crawler.processing') }}</span>
+                <span v-else>{{ $t('crawler.resume_button') }}</span>
             </button>
         </div>
 

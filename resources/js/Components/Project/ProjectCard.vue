@@ -42,7 +42,7 @@ const badgePlano = computed(() => 'FREE 500');
                     {{ badgePlano }}
                 </span>
                 <button class="text-[10px] text-green-600 font-bold uppercase hover:underline">
-                    Upgrade Now
+                    {{ $t('project.upgrade') }}
                 </button>
             </div>
         </div>
@@ -55,10 +55,10 @@ const badgePlano = computed(() => 'FREE 500');
         <!-- Footer do Card -->
         <div class="bg-gray-50 p-3 text-[11px] text-gray-500 flex justify-between items-center border-t border-gray-100">
             <div>
-                <span class="font-semibold">Criado em:</span> {{ formataData(project.created_at) }}
+                <span class="font-semibold">{{ $t('project.created_at') }}</span> {{ formataData(project.created_at) }}
             </div>
             <div title="Páginas encontradas no último crawl">
-                📄 {{ project.latest_job?.pages_count || 0 }} Páginas
+                📄 {{ project.latest_job?.pages_count || 0 }} {{ $t('project.pages_count') }}
             </div>
         </div>
     </div>
