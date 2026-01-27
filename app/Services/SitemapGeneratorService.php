@@ -158,11 +158,25 @@ class SitemapGeneratorService
                 return $data;
             }
 
+            // Se for 404, o job não existe mais -> Falha definitiva
+            if ($response->status() === 404) {
+                return [
+                    'status' => 'failed',
+                    'progress' => 0,
+                    'message' => 'Job removido ou não encontrado no servidor remoto.'
+                ];
+            }
+
             return null;
 
         } catch (\Exception $e) {
             Log::error("Erro no checkStatus para job {$jobId}. URL: {$this->baseUrl}/api/v1/sitemaps/{$jobId}. Erro: " . $e->getMessage());
-            return null;
+            // Retorna falha para que o Controller possa atualizar o status e parar o polling
+            return [
+                'status' => 'failed',
+                'progress' => 0,
+                'message' => 'Erro ao comunicar com o serviço de sitemap: ' . $e->getMessage()
+            ];
         }
     }
 

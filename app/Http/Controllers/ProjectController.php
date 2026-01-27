@@ -67,6 +67,7 @@ class ProjectController extends Controller
             abort(403);
         }
 
+        // Carrega apenas o último job do banco de dados (rápido)
         $project->load([
             'sitemapJobs' => function ($query) {
                 $query->latest()->limit(1);
@@ -75,43 +76,13 @@ class ProjectController extends Controller
 
         $latestJob = $project->sitemapJobs->first();
 
-        // Auto-recovery: Se status é completed mas não tem dados, tenta buscar novamente
-        if ($latestJob && $latestJob->status === 'completed' && (empty($latestJob->artifacts) || $latestJob->pages_count === 0)) {
-            try {
-                $statusData = $this->sitemapService->checkStatus($latestJob->external_job_id);
-
-                if ($statusData) {
-                    $latestJob->update([
-                        'pages_count' => $statusData['result']['total_urls'] ?? $statusData['pages_count'] ?? $latestJob->pages_count,
-                        // Se a API retornar artifacts no checkStatus, usamos.
-                        'artifacts' => $statusData['artifacts'] ?? $latestJob->artifacts ?? [],
-                    ]);
-
-                    // Se artifacts veio vazio do checkStatus, tenta buscar explicitamente
-                    if (empty($statusData['artifacts'])) {
-                        $artifacts = $this->sitemapService->getArtifacts($latestJob->external_job_id);
-                        if (!empty($artifacts)) {
-                            $latestJob->update(['artifacts' => $artifacts]);
-                        }
-                    }
-                    $latestJob->refresh();
-                }
-            } catch (\Exception $e) {
-                Log::error("Erro no auto-recovery do ProjectController: " . $e->getMessage());
-            }
-        }
-
-        $previewUrls = [];
-
-        // Se o job estiver completo, tentamos buscar o preview real
-        if ($latestJob && $latestJob->status === 'completed' && !empty($latestJob->artifacts)) {
-            $previewUrls = $this->sitemapService->getPreviewUrls($latestJob->artifacts);
-        }
+        // Removido auto-recovery síncrono e getPreviewUrls síncrono para evitar bloquear o render.
+        // O frontend (Show.vue) agora faz uma chamada AJAX para buscar esses dados assim que monta via CrawlerController.
 
         return Inertia::render('App/Projects/Show', [
             'project' => $project,
             'latest_job' => $latestJob,
-            'preview_urls' => $previewUrls
+            'preview_urls' => [] // Frontend busca via AJAX
         ]);
     }
 }

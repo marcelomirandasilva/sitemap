@@ -1,8 +1,9 @@
 <script setup>
 import AppLayout from "@/Layouts/AppLayout.vue";
 import { Head, Link } from "@inertiajs/vue3";
-import { computed, ref } from "vue";
+import { computed, ref, onMounted } from "vue";
 import { trans as t } from "laravel-vue-i18n";
+import axios from 'axios';
 
 const props = defineProps({
   project: {
@@ -19,21 +20,22 @@ const props = defineProps({
   }
 });
 
-const abaAtiva = ref("details"); // 'details' | 'files'
+const abaAtiva = ref("details");
+const carregando = ref(false);
 
-// Simplificando o acesso aos dados do job
-const tarefa = computed(() => props.latest_job || {});
+// Estado reativo inicializado com props (cache/ssr)
+const tarefa = ref(props.latest_job || {});
+const listaUrls = ref(props.preview_urls || []);
 
-// URLs reais passadas pelo Controller
-const urlsPreview = computed(() => {
-    return props.preview_urls || [];
-});
+// Computado para exibir (usa o estado reativo)
+const urlsPreview = computed(() => listaUrls.value);
 
 const arquivosMapeados = computed(() => {
   if (!tarefa.value || !tarefa.value.artifacts) return [];
 
-  const xml = tarefa.value.artifacts.find((a) => a.name.endsWith(".xml"));
-  const txt = tarefa.value.artifacts.find((a) => a.name.endsWith(".txt"));
+  // Mapeamento idêntico ao anterior...
+  const xml = tarefa.value.artifacts.find((a) => a.name && a.name.endsWith(".xml"));
+  const txt = tarefa.value.artifacts.find((a) => a.name && a.name.endsWith(".txt"));
 
   const lista = [];
   if (xml) {
@@ -43,14 +45,12 @@ const arquivosMapeados = computed(() => {
       count: tarefa.value.pages_count,
       url: xml.download_url,
     });
-    // Fake HTML version for visual parity
     lista.push({
       name: xml.name.replace(".xml", ".html"),
       type: "html",
       count: tarefa.value.pages_count,
-      url: xml.download_url, // Link pro XML por enqto
+      url: xml.download_url,
     });
-    // Fake GZ version
      lista.push({
         name: xml.name + '.gz',
         type: 'gz',
@@ -76,7 +76,36 @@ const statusColor = computed(() => {
         case 'running': return 'text-blue-600 bg-blue-50 border-blue-200';
         default: return 'text-gray-600 bg-gray-50 border-gray-200';
     }
-})
+});
+
+// Busca dados atualizados (Async Lazy Load)
+const buscarDetalhesJob = async () => {
+    if (!props.project.id) return;
+    
+    carregando.value = true;
+    try {
+        const response = await axios.get(route('crawler.show', props.project.id));
+        const data = response.data;
+        
+        // Atualiza estado local
+        tarefa.value = { ...tarefa.value, ...data };
+        
+        if (data.preview_urls) {
+            listaUrls.value = data.preview_urls;
+        }
+    } catch (error) {
+        console.error("Erro ao buscar detalhes atualizados:", error);
+    } finally {
+        carregando.value = false;
+    }
+};
+
+onMounted(() => {
+    // Se não tiver urls de preview ou se o status for inconclusivo, busca atualização
+    if (listaUrls.value.length === 0 || ['queued', 'running'].includes(tarefa.value.status)) {
+        buscarDetalhesJob();
+    }
+});
 </script>
 
 <template>

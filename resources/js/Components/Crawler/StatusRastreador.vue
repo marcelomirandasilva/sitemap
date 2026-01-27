@@ -46,36 +46,56 @@ const iniciarRastreador = () => {
     formulario.post(route('crawler.store', props.projeto.id), {
         onSuccess: () => {
              buscarStatus();
-             // Atualiza apenas uma vez
-             buscarStatus();
+             iniciarEnquete(); // Garante que comece a monitorar
         },
         onFinish: () => iniciando.value = false
     });
 };
 
-const buscarStatus = async () => {
-    try {
-        const resposta = await axios.get(route('crawler.status', props.projeto.id));
-        tarefa.value = resposta.data;
-        
-        // if (['completed', 'failed', 'cancelled'].includes(tarefa.value.status)) {
-        //     pararEnquete();
-        // }
-    } catch (erro) {
-        console.error('Erro ao buscar status do rastreador:', erro);
-        pararEnquete();
+let intervaloEnquete = null;
+
+const iniciarEnquete = () => {
+    // Evita múltiplos intervalos
+    if (intervaloEnquete) return;
+
+    // Só inicia se o status for ativo
+    if (tarefa.value && ['queued', 'running'].includes(tarefa.value.status)) {
+        intervaloEnquete = setInterval(buscarStatus, 5000); // 5s intervalo
     }
 };
 
-// Polling removido para evitar flood de requisições na listagem.
-// A atualização de status agora deve ser feita apenas via Modal ou refresh da página.
+const pararEnquete = () => {
+    if (intervaloEnquete) {
+        clearInterval(intervaloEnquete);
+        intervaloEnquete = null;
+    }
+};
+
+const buscarStatus = async () => {
+    try {
+        const resposta = await axios.get(route('crawler.status', props.projeto.id));
+        
+        // Só atualiza se houver mudança ou progresso
+        if (JSON.stringify(tarefa.value) !== JSON.stringify(resposta.data)) {
+            tarefa.value = resposta.data;
+        }
+        
+        // Se terminou, para o polling
+        if (tarefa.value && ['completed', 'failed', 'cancelled'].includes(tarefa.value.status)) {
+            pararEnquete();
+        }
+    } catch (erro) {
+        console.error('Erro ao buscar status do rastreador:', erro);
+        pararEnquete(); // Para em caso de erro persistente
+    }
+};
 
 onMounted(() => {
-    // Não iniciar enquete automaticamente
+    iniciarEnquete();
 });
 
 onUnmounted(() => {
-    // Limpeza se necessário
+    pararEnquete();
 });
 </script>
 
