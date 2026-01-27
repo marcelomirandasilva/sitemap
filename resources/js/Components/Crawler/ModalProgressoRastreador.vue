@@ -28,53 +28,32 @@ const larguraBarra = computed(() => {
     return tarefa.value.progress || 0;
 });
 
-// URLs Fictícias para Preview (já que não temos armazenado individualmente)
 const urlsPreview = computed(() => {
-    const dominio = props.projeto.url.replace(/\/$/, '');
-    const data = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-    return [
-        { url: `${dominio}/`, priority: '1.0000', freq: 'daily', lastMod: `${data}T12:00:00+00:00` },
-        { url: `${dominio}/about`, priority: '0.8000', freq: 'daily', lastMod: `${data}T12:00:00+00:00` },
-        { url: `${dominio}/contact`, priority: '0.8000', freq: 'daily', lastMod: `${data}T12:00:00+00:00` },
-        { url: `${dominio}/products`, priority: '0.8000', freq: 'daily', lastMod: `${data}T12:00:00+00:00` },
-        { url: `${dominio}/login`, priority: '0.8000', freq: 'daily', lastMod: `${data}T12:00:00+00:00` },
-        { url: `${dominio}/blog`, priority: '0.8000', freq: 'daily', lastMod: `${data}T12:00:00+00:00` },
-    ];
+    if (!tarefa.value || !tarefa.value.preview_urls) {
+        const dominio = props.projeto.url.replace(/\/$/, '');
+        const data = new Date().toISOString().split('T')[0];
+        return [
+            { url: `${dominio}/`, priority: '1.0000', freq: 'daily', lastMod: `${data}T12:00:00+00:00` },
+        ];
+    }
+    return tarefa.value.preview_urls;
 });
 
 const arquivosMapeados = computed(() => {
     if (!tarefa.value || !tarefa.value.artifacts) return [];
     
-    // Mapeando artefatos reais para a estrutura visual
-    // Procurando sitemap.xml e urllist.txt
-    const xml = tarefa.value.artifacts.find(a => a.name.endsWith('.xml'));
-    const txt = tarefa.value.artifacts.find(a => a.name.endsWith('.txt'));
-    
-    const lista = [];
-    if (xml) {
-        lista.push({ 
-            name: xml.name, 
-            type: 'xml',
-            count: tarefa.value.pages_count, 
-            url: xml.download_url 
-        });
-        // Fake HTML version for visual parity
-        lista.push({ 
-            name: xml.name.replace('.xml', '.html'), 
-            type: 'html',
-            count: tarefa.value.pages_count, 
-            url: xml.download_url // Link pro XML por enqto
-        });
-    }
-    if (txt) {
-        lista.push({ 
-            name: txt.name, 
-            type: 'txt',
-            count: tarefa.value.pages_count, 
-            url: txt.download_url 
-        });
-    }
-    return lista;
+    return tarefa.value.artifacts.map(arq => {
+        let type = 'xml';
+        if (arq.name.endsWith('.txt')) type = 'txt';
+        if (arq.name.endsWith('.html')) type = 'html';
+        
+        return {
+            name: arq.name,
+            type: type,
+            count: tarefa.value.pages_count, // Idealmente cada arq teria seu count, mas usamos o total por enqto
+            url: arq.download_url
+        };
+    });
 });
 
 // Lógica de Cronômetro
@@ -90,35 +69,66 @@ const atualizarCronometro = () => {
 
 let intervaloCronometro = null;
 
+// Polling recursivo seguro
+const agendarProximaBusca = () => {
+    if (enquete.value === null) return; // Se foi parado, não agenda
+    enquete.value = setTimeout(buscarStatus, 2000);
+};
+
 const buscarStatus = async () => {
     try {
         const resposta = await axios.get(route('crawler.status', props.projeto.id));
         tarefa.value = resposta.data;
+        console.log('Crawler Status:', tarefa.value.status, tarefa.value.progress);
 
         // Se finalizou, para tudo
         if (['completed', 'failed', 'cancelled'].includes(tarefa.value.status)) {
             pararEnquete();
-            if (intervaloCronometro) clearInterval(intervaloCronometro);
+        } else {
+            // Se continua rodando, agenda o próximo
+            agendarProximaBusca();
         }
     } catch (erro) {
         console.error('Erro no modal:', erro);
+        // Em caso de erro, tenta de novo após um delay maior para não floodar
+        if (enquete.value !== null) {
+            enquete.value = setTimeout(buscarStatus, 5000);
+        }
     }
 };
 
 const iniciarEnquete = () => {
     if (enquete.value) return;
-    enquete.value = setInterval(buscarStatus, 2000); 
+    
+    // Marca como ativo (qualquer valor truthy que não seja null)
+    enquete.value = true; 
+    
+    // Inicia cronometro visual
     if (!inicioRastreamento.value) {
         inicioRastreamento.value = new Date(); 
     }
-    intervaloCronometro = setInterval(atualizarCronometro, 1000);
+    if (!intervaloCronometro) {
+        intervaloCronometro = setInterval(atualizarCronometro, 1000);
+    }
+
+    // Dispara a primeira busca Imediatamente
+    buscarStatus();
 };
 
 const pararEnquete = () => {
-    if (enquete.value) clearInterval(enquete.value);
+    if (enquete.value) clearTimeout(enquete.value);
     enquete.value = null;
-    if (intervaloCronometro) clearInterval(intervaloCronometro);
+    if (intervaloCronometro) {
+        clearInterval(intervaloCronometro);
+        intervaloCronometro = null;
+    }
 };
+
+onMounted(() => {
+    if (props.show) {
+        iniciarEnquete();
+    }
+});
 
 watch(() => props.show, (novoValor) => {
     if (novoValor) {
@@ -274,26 +284,26 @@ onUnmounted(() => {
                             </div>
                         </div>
 
-                        <!-- Images Card (Fake) -->
-                        <div class="border rounded shadow-sm overflow-hidden opacity-75">
+                        <!-- Images Card -->
+                        <div class="border rounded shadow-sm overflow-hidden">
                             <div class="bg-[#d2d6de] text-white text-center py-1 font-bold uppercase text-lg">IMAGES</div>
                             <div class="p-4 flex justify-between items-center bg-white">
                                 <div class="text-center w-full">
-                                    <span class="text-3xl font-bold text-gray-400">0</span>
-                                    <div class="text-[10px] font-bold text-gray-400 uppercase mt-1">INDEXED</div>
-                                    <span class="bg-[#5cb85c] text-white text-[9px] px-1 py-0.5 rounded uppercase mt-1 inline-block">🔒 Available in Pro</span>
+                                    <span class="text-3xl font-bold text-[#31708f]">{{ tarefa?.images_count || 0 }}</span>
+                                    <div class="text-[10px] font-bold text-[#31708f] uppercase mt-1">INDEXED</div>
+                                    <a v-if="tarefa?.images_count > 0" href="#" class="text-[10px] text-[#c0392b] border border-[#c0392b] rounded px-1 mt-1 inline-block hover:bg-[#c0392b] hover:text-white transition">☑ VIEW SITEMAP</a>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Videos Card (Fake) -->
-                        <div class="border rounded shadow-sm overflow-hidden opacity-75">
+                        <!-- Videos Card -->
+                        <div class="border rounded shadow-sm overflow-hidden">
                             <div class="bg-[#d2d6de] text-white text-center py-1 font-bold uppercase text-lg">VIDEOS</div>
                             <div class="p-4 flex justify-between items-center bg-white">
                                 <div class="text-center w-full">
-                                    <span class="text-3xl font-bold text-gray-400">0</span>
-                                    <div class="text-[10px] font-bold text-gray-400 uppercase mt-1">INDEXED</div>
-                                    <span class="bg-[#5cb85c] text-white text-[9px] px-1 py-0.5 rounded uppercase mt-1 inline-block">🔒 Available in Pro</span>
+                                    <span class="text-3xl font-bold text-[#31708f]">{{ tarefa?.videos_count || 0 }}</span>
+                                    <div class="text-[10px] font-bold text-[#31708f] uppercase mt-1">INDEXED</div>
+                                    <a v-if="tarefa?.videos_count > 0" href="#" class="text-[10px] text-[#c0392b] border border-[#c0392b] rounded px-1 mt-1 inline-block hover:bg-[#c0392b] hover:text-white transition">☑ VIEW SITEMAP</a>
                                 </div>
                             </div>
                         </div>
@@ -381,6 +391,21 @@ onUnmounted(() => {
                         </button>
                     </div>
 
+                </div>
+
+                <!-- 4. ESTADO: INICIALIZANDO / ERRO -->
+                <div v-else class="flex flex-col items-center justify-center py-20">
+                     <div v-if="!tarefa" class="text-center">
+                        <svg class="animate-spin w-10 h-10 text-blue-500 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <p class="text-gray-500 font-semibold mb-2">Iniciando serviço de rastreamento...</p>
+                        <p class="text-xs text-red-400 max-w-xs mx-auto">
+                            Se demorar muito, verifique se a API do Crawler está online. <br>
+                            Tente recarregar a página.
+                        </p>
+                     </div>
                 </div>
 
             </div>

@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from 'vue';
+import { Link } from '@inertiajs/vue3';
 import { trans as t } from 'laravel-vue-i18n';
 import StatusRastreador from '@/Components/Crawler/StatusRastreador.vue';
 
@@ -37,9 +38,9 @@ const badgePlano = computed(() => 'FREE 500');
 
         <!-- Domain Column -->
         <td class="p-4 align-top">
-            <a :href="projeto.url" target="_blank" class="text-base font-normal text-[#c0392b] hover:underline block truncate">
+            <Link :href="route('projects.show', projeto.id)" class="text-base font-normal text-[#c0392b] hover:underline block truncate">
                 {{ projeto.url.replace(/^https?:\/\//, '').replace(/\/$/, '') }}
-            </a>
+            </Link>
         </td>
 
         <!-- Title Column -->

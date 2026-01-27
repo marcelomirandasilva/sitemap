@@ -11,6 +11,7 @@ class SitemapJob extends Model
         'external_job_id',
         'status',
         'progress',
+        'pages_count',
         'artifacts',
         'message',
         'started_at',
@@ -19,6 +20,7 @@ class SitemapJob extends Model
 
     protected $casts = [
         'progress' => 'float',
+        'pages_count' => 'integer',
         'artifacts' => 'array',
         'started_at' => 'datetime',
         'completed_at' => 'datetime',

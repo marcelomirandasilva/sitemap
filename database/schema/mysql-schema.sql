@@ -199,6 +199,7 @@ CREATE TABLE `sitemap_jobs` (
   `external_job_id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
   `status` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'queued',
   `progress` double NOT NULL DEFAULT '0',
+  `pages_count` int NOT NULL DEFAULT '0',
   `artifacts` json DEFAULT NULL,
   `message` text COLLATE utf8mb4_unicode_ci,
   `started_at` timestamp NULL DEFAULT NULL,
@@ -248,3 +249,4 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (8,'2026_01_26_1451
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (9,'2026_01_26_145227_create_pages_table',2);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (10,'2026_01_26_145247_create_links_table',2);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (11,'2026_01_26_152000_create_sitemap_jobs_table',3);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (12,'2026_01_26_160000_add_pages_count_to_sitemap_jobs_table',4);

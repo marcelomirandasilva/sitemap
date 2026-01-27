@@ -99,5 +99,6 @@
     "table.to": "a",
     "table.of": "de",
     "table.entries": "registros",
-    "table.csv": "CSV"
+    "table.csv": "CSV",
+    "crawler.file_ready": "Pronto"
 }

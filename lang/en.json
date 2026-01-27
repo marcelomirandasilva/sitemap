@@ -99,5 +99,6 @@
     "table.to": "to",
     "table.of": "of",
     "table.entries": "entries",
-    "table.csv": "CSV"
+    "table.csv": "CSV",
+    "crawler.file_ready": "Ready"
 }

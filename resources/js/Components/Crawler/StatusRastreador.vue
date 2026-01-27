@@ -46,7 +46,8 @@ const iniciarRastreador = () => {
     formulario.post(route('crawler.store', props.projeto.id), {
         onSuccess: () => {
              buscarStatus();
-             iniciarEnquete();
+             // Atualiza apenas uma vez
+             buscarStatus();
         },
         onFinish: () => iniciando.value = false
     });
@@ -57,35 +58,24 @@ const buscarStatus = async () => {
         const resposta = await axios.get(route('crawler.status', props.projeto.id));
         tarefa.value = resposta.data;
         
-        if (['completed', 'failed', 'cancelled'].includes(tarefa.value.status)) {
-            pararEnquete();
-        }
+        // if (['completed', 'failed', 'cancelled'].includes(tarefa.value.status)) {
+        //     pararEnquete();
+        // }
     } catch (erro) {
         console.error('Erro ao buscar status do rastreador:', erro);
         pararEnquete();
     }
 };
 
-const iniciarEnquete = () => {
-    if (enquete.value) return;
-    enquete.value = setInterval(buscarStatus, 3000);
-};
-
-const pararEnquete = () => {
-    if (enquete.value) {
-        clearInterval(enquete.value);
-        enquete.value = null;
-    }
-};
+// Polling removido para evitar flood de requisições na listagem.
+// A atualização de status agora deve ser feita apenas via Modal ou refresh da página.
 
 onMounted(() => {
-    if (tarefa.value && ['queued', 'running'].includes(tarefa.value.status)) {
-        iniciarEnquete();
-    }
+    // Não iniciar enquete automaticamente
 });
 
 onUnmounted(() => {
-    pararEnquete();
+    // Limpeza se necessário
 });
 </script>
 
@@ -134,8 +124,11 @@ onUnmounted(() => {
                         class="block w-full text-center px-3 py-2 bg-white border border-gray-300 rounded text-xs text-blue-600 hover:bg-blue-50 transition"
                     >
                         ⬇️ {{ artefato.name }}
-                        <span class="block text-[10px] text-gray-400">
+                        <span v-if="artefato.size_bytes > 0" class="block text-[10px] text-gray-400">
                             {{ (artefato.size_bytes / 1024).toFixed(1) }} KB
+                        </span>
+                        <span v-else class="block text-[10px] text-gray-400">
+                            {{ $t('crawler.file_ready') }}
                         </span>
                     </a>
                 </div>

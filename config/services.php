@@ -42,7 +42,7 @@ return [
     ],
 
     'sitemap_generator' => [
-        'base_url' => env('SITEMAP_GENERATOR_BASE_URL', 'http://localhost:8000'),
+        'base_url' => env('SITEMAP_GENERATOR_BASE_URL', env('PYTHON_CRAWLER_API', 'http://localhost:8000')),
         'username' => env('SITEMAP_GENERATOR_USERNAME', 'admin'),
         'password' => env('SITEMAP_GENERATOR_PASSWORD'),
         'timeout' => env('SITEMAP_GENERATOR_TIMEOUT', 30),

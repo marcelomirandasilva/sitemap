@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from 'vue';
+import { Link } from '@inertiajs/vue3';
 import StatusRastreador from '@/Components/Crawler/StatusRastreador.vue';
 
 const props = defineProps({
@@ -29,7 +30,9 @@ const badgePlano = computed(() => 'FREE 500');
         <div class="p-5 border-b border-gray-100 bg-gray-50/50 flex justify-between items-start">
             <div class="overflow-hidden">
                 <h3 class="text-xl font-bold text-gray-800 truncate" :title="projeto.name || projeto.url">
-                    {{ projeto.url.replace(/^https?:\/\//, '').replace(/\/$/, '') }}
+                    <Link :href="route('projects.show', projeto.id)" class="hover:underline hover:text-blue-600 transition-colors">
+                        {{ projeto.url.replace(/^https?:\/\//, '').replace(/\/$/, '') }}
+                    </Link>
                 </h3>
                 <a :href="projeto.url" target="_blank" class="text-xs text-blue-500 hover:underline flex items-center gap-1 mt-1">
                     {{ projeto.url }}

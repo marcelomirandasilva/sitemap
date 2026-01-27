@@ -64,27 +64,44 @@ class CrawlerController extends Controller
             return response()->json(['message' => 'Nenhum job encontrado'], 404);
         }
 
-        // Se o job já terminou, retornamos o status salvo sem consultar a API (performance)
-        if (in_array($latestJob->status, ['completed', 'failed', 'cancelled'])) {
+        // Se o job já terminou, verificamos se temos os dados completos.
+        // Se estiver concluído mas sem artefatos ou pages_count, forçamos uma atualização.
+        $hasData = !empty($latestJob->artifacts) && $latestJob->pages_count > 0;
+
+        if (in_array($latestJob->status, ['completed', 'failed', 'cancelled']) && $hasData) {
             return response()->json([
                 'status' => $latestJob->status,
                 'progress' => $latestJob->progress,
+                'pages_count' => $latestJob->pages_count,
                 'artifacts' => $latestJob->artifacts,
             ]);
         }
 
         // Consultar API externa para atualização
+        Log::info("CrawlerController: Consultando API para Job {$latestJob->external_job_id}");
         $statusData = $this->sitemapService->checkStatus($latestJob->external_job_id);
 
         if ($statusData) {
+            Log::info("CrawlerController: Resposta recebida da API", [
+                'status' => $statusData['status'] ?? 'N/A',
+                'progress' => $statusData['progress'] ?? 'N/A'
+            ]);
+
             $latestJob->update([
                 'status' => $statusData['status'] ?? $latestJob->status,
                 'progress' => $statusData['progress'] ?? $latestJob->progress,
+                'pages_count' => $statusData['result']['total_urls'] ?? $statusData['urls_found'] ?? $statusData['pages_count'] ?? $latestJob->pages_count ?? 0,
+                'images_count' => $statusData['result']['total_images'] ?? $statusData['images_found'] ?? 0,
+                'videos_count' => $statusData['result']['total_videos'] ?? $statusData['videos_found'] ?? 0,
                 'message' => $statusData['message'] ?? null,
+                'artifacts' => $statusData['artifacts'] ?? $latestJob->artifacts ?? [],
             ]);
 
-            // Se completou agora, buscar artefatos
+            Log::info("CrawlerController: Job atualizado no BD", ['id' => $latestJob->id, 'status' => $latestJob->status]);
+
+            // Se completou agora e ainda não temos artifacts (fallback), buscar artefatos
             if ($latestJob->status === 'completed' && empty($latestJob->artifacts)) {
+                Log::info("CrawlerController: Buscando artefatos explicitamente...");
                 $artifacts = $this->sitemapService->getArtifacts($latestJob->external_job_id);
                 $latestJob->update([
                     'artifacts' => $artifacts,
@@ -96,7 +113,9 @@ class CrawlerController extends Controller
         return response()->json([
             'status' => $latestJob->status,
             'progress' => $latestJob->progress,
+            'pages_count' => $latestJob->pages_count,
             'artifacts' => $latestJob->artifacts,
+            'preview_urls' => $latestJob->status === 'completed' ? $this->sitemapService->getPreviewUrls($latestJob->artifacts ?? [], $latestJob->external_job_id) : [],
         ]);
     }
 }

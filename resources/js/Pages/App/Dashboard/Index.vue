@@ -3,6 +3,7 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import CartaoProjeto from '@/Components/Project/CartaoProjeto.vue';
+import LinhaTabelaProjeto from '@/Components/Project/LinhaTabelaProjeto.vue';
 import ModalProgressoRastreador from '@/Components/Crawler/ModalProgressoRastreador.vue';
 
 const props = defineProps({
