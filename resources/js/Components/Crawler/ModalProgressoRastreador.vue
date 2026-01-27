@@ -77,7 +77,7 @@ const agendarProximaBusca = () => {
 
 const buscarStatus = async () => {
     try {
-        const resposta = await axios.get(route('crawler.status', props.projeto.id));
+        const resposta = await axios.get(route('crawler.show', props.projeto.id));
         tarefa.value = resposta.data;
         console.log('Crawler Status:', tarefa.value.status, tarefa.value.progress);
 

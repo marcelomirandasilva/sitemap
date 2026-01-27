@@ -73,7 +73,7 @@ const pararEnquete = () => {
 
 const buscarStatus = async () => {
     try {
-        const resposta = await axios.get(route('crawler.status', props.projeto.id));
+        const resposta = await axios.get(route('crawler.show', props.projeto.id));
         
         // Só atualiza se houver mudança ou progresso
         if (JSON.stringify(tarefa.value) !== JSON.stringify(resposta.data)) {
