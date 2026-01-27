@@ -64,24 +64,16 @@ class CrawlerController extends Controller
             return response()->json(['message' => 'Nenhum job encontrado'], 404);
         }
 
-        // Se o job já terminou, verificamos se temos os dados completos.
-        // Se estiver concluído mas sem artefatos ou pages_count, forçamos uma atualização.
-        $hasData = !empty($latestJob->artifacts) && $latestJob->pages_count > 0;
 
-        if (in_array($latestJob->status, ['completed', 'failed', 'cancelled']) && $hasData) {
-            return response()->json([
-                'status' => $latestJob->status,
-                'progress' => $latestJob->progress,
-                'pages_count' => $latestJob->pages_count,
-                'artifacts' => $latestJob->artifacts,
-            ]);
-        }
+        // Consultar API externa para atualização somente se necessário
+        // (Podemos otimizar futuramente para não chamar API se acabou de completar)
+        $shouldCheckApi = !in_array($latestJob->status, ['completed', 'failed', 'cancelled']) || empty($latestJob->artifacts);
 
-        // Consultar API externa para atualização
-        Log::info("CrawlerController: Consultando API para Job {$latestJob->external_job_id}");
-        $statusData = $this->sitemapService->checkStatus($latestJob->external_job_id);
+        if ($shouldCheckApi) {
+            Log::info("CrawlerController: Consultando API para Job {$latestJob->external_job_id}");
+            $statusData = $this->sitemapService->checkStatus($latestJob->external_job_id);
 
-        if ($statusData) {
+            if ($statusData) {
             Log::info("CrawlerController: Resposta recebida da API", [
                 'status' => $statusData['status'] ?? 'N/A',
                 'progress' => $statusData['progress'] ?? 'N/A'
@@ -109,13 +101,20 @@ class CrawlerController extends Controller
                 ]);
             }
         }
+        }
+
+        $previewUrls = [];
+        if ($latestJob->status === 'completed') {
+            $previewUrls = $this->sitemapService->getPreviewUrls($latestJob->artifacts ?? [], $latestJob->external_job_id);
+            Log::info("CrawlerController: Gerado preview para Job {$latestJob->external_job_id}. Total URLs: " . count($previewUrls));
+        }
 
         return response()->json([
             'status' => $latestJob->status,
             'progress' => $latestJob->progress,
             'pages_count' => $latestJob->pages_count,
             'artifacts' => $latestJob->artifacts,
-            'preview_urls' => $latestJob->status === 'completed' ? $this->sitemapService->getPreviewUrls($latestJob->artifacts ?? [], $latestJob->external_job_id) : [],
+            'preview_urls' => $previewUrls,
         ]);
     }
 }

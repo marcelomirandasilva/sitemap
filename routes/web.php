@@ -31,7 +31,6 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     Route::post('/projects', [ProjectController::class, 'store'])->name('projects.store');
-    Route::post('/projects', [ProjectController::class, 'store'])->name('projects.store');
     Route::get('/projects/{project}', [ProjectController::class, 'show'])->name('projects.show');
 
     // Rota de Download via Proxy
@@ -43,7 +42,7 @@ Route::get('auth/google/callback', [App\Http\Controllers\Auth\SocialAuthControll
 
 Route::middleware(['auth'])->group(function () {
     Route::post('/projects/{project}/crawler', [App\Http\Controllers\CrawlerController::class, 'store'])->name('crawler.store');
-    Route::get('/projects/{project}/crawler-status', [App\Http\Controllers\CrawlerController::class, 'show'])->name('crawler.status');
+    Route::get('/projects/{project}/crawler-status', [App\Http\Controllers\CrawlerController::class, 'show'])->name('crawler.show');
 });
 
 // Rotas de Desenvolvimento
