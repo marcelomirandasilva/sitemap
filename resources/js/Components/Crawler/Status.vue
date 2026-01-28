@@ -12,6 +12,10 @@ const props = defineProps({
     ultimaTarefa: {
         type: Object,
         default: null
+    },
+    simple: {
+        type: Boolean,
+        default: false
     }
 });
 
@@ -100,7 +104,15 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <div class="w-full">
+    <div v-if="simple">
+        <span 
+            :class="['px-2 py-1 text-[10px] font-bold uppercase tracking-wider rounded-sm shadow-sm whitespace-nowrap text-white', corStatusPonto]"
+        >
+            {{ rotuloStatus }}
+        </span>
+    </div>
+
+    <div v-else class="w-full">
         <div class="flex items-center justify-between mb-3">
             <div class="flex items-center gap-2">
                 <span v-if="tarefa" :class="['w-2 h-2 rounded-full', corStatusPonto]"></span>
@@ -132,7 +144,7 @@ onUnmounted(() => {
                 </div>
             </div>
             <p v-if="['running', 'queued'].includes(tarefa.status)" class="text-[10px] text-right text-gray-400 font-mono">
-                {{ tarefa.progress || 0 }}%
+                {{ Math.round(tarefa.progress || 0) }}%
             </p>
 
             <!-- Links de Download -->

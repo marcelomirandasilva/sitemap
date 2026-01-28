@@ -20,6 +20,11 @@ return new class extends Migration {
             // Progresso em porcentagem (0-100)
             $table->float('progress')->default(0);
 
+            // Estatísticas
+            $table->integer('pages_count')->default(0);
+            $table->integer('images_count')->default(0);
+            $table->integer('videos_count')->default(0);
+
             // JSON com os links dos artefatos gerados (sitemap.xml, images, etc)
             $table->json('artifacts')->nullable();
 

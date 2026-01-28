@@ -70,6 +70,8 @@ class SitemapGeneratorService
             'max_pages' => $project->max_pages ?? 1000,
             'include_images' => $project->check_images ?? true,
             'include_videos' => $project->check_videos ?? true,
+            'delay' => $project->delay_between_requests ?? 1.0,
+            'concurrency' => $project->max_concurrent_requests ?? 2,
             // 'webhook_url' => route('api.webhook.sitemap.finished'), // Futuro
         ];
 
@@ -79,7 +81,14 @@ class SitemapGeneratorService
                 ->post("{$this->baseUrl}/api/v1/sitemaps", $payload);
 
             if ($response->created() || $response->ok()) {
-                return $response->json('job_id');
+                $jobId = $response->json('job_id');
+
+                // Salva o Rastreio (Vital!)
+                $project->update([
+                    'current_crawler_job_id' => $jobId
+                ]);
+
+                return $jobId;
             }
 
             Log::error('Falha ao criar job de sitemap', ['project_id' => $project->id, 'response' => $response->body()]);

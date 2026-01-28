@@ -2,9 +2,9 @@
 import AppLayout from '@/Layouts/AppLayout.vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
-import CartaoProjeto from '@/Components/Project/CartaoProjeto.vue';
-import LinhaTabelaProjeto from '@/Components/Project/LinhaTabelaProjeto.vue';
-import ModalProgressoRastreador from '@/Components/Crawler/ModalProgressoRastreador.vue';
+import CartaoProjeto from '@/Components/Project/Card.vue';
+import ProjectList from '@/Components/Project/List.vue';
+import ModalProgressoRastreador from '@/Components/Crawler/ProgressModal.vue';
 
 const props = defineProps({
     projetos: {
@@ -110,7 +110,7 @@ const projetosFiltrados = computed(() => {
                         {{ $t('dashboard.add_another') }}
                     </button>
 
-                    <div class="relative w-full md:w-96">
+                    <div class="relative w-full md:w-96" v-if="modoVisualizacao === 'grid'">
                         <input 
                             v-model="termoBusca"
                             type="text" 
@@ -181,59 +181,31 @@ const projetosFiltrados = computed(() => {
                 <div v-if="projetosFiltrados.length > 0">
                     
                     <!-- Grid View -->
-                    <div v-if="modoVisualizacao === 'grid'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <CartaoProjeto 
-                            v-for="projeto in projetosFiltrados" 
-                            :key="projeto.id" 
-                            :projeto="projeto" 
-                            @click-status="abrirProgresso(projeto)"
-                        />
+                    <div v-if="modoVisualizacao === 'grid'">
+                        <!-- Filters Filters only for Grid? No, Index handles filtering tabs, List handles implementation.
+                             Actually, List.vue handles filtering internally? 
+                             The implementation plan says Index.vue passes filtered projects.
+                             So User filters by Tabs in Index, and then searches/sorts in List.
+                             Ideally we should hide the Index search bar if in List mode to avoid confusion.
+                         -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <CartaoProjeto 
+                                v-for="projeto in projetosFiltrados" 
+                                :key="projeto.id" 
+                                :projeto="projeto" 
+                                @click-status="abrirProgresso(projeto)"
+                            />
+                        </div>
                     </div>
 
-                    <!-- Table View (List) -->
-                    <div v-else class="bg-white border-t border-gray-200">
-                        <table class="w-full text-left border-collapse">
-                            <thead>
-                                <tr class="border-b border-gray-200 bg-gray-50 text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                    <th class="px-4 py-3 font-semibold">{{ $t('table.status') }}</th>
-                                    <th class="px-4 py-3 font-semibold">{{ $t('table.domain') }}</th>
-                                    <th class="px-4 py-3 font-semibold">{{ $t('table.title') }}</th>
-                                    <th class="px-4 py-3 font-semibold">{{ $t('table.updated') }}</th>
-                                </tr>
-                                <!-- Search Filters Row -->
-                                <tr class="bg-gray-50 border-b border-gray-200">
-                                    <th class="px-4 py-2">
-                                        <input type="text" :placeholder="$t('table.search_status')" class="w-full text-xs px-2 py-1 border border-gray-300 rounded shadow-sm focus:ring-1 focus:ring-blue-300 font-normal">
-                                    </th>
-                                    <th class="px-4 py-2">
-                                        <input type="text" :placeholder="$t('table.search_domain')" class="w-full text-xs px-2 py-1 border border-gray-300 rounded shadow-sm focus:ring-1 focus:ring-blue-300 font-normal">
-                                    </th>
-                                    <th class="px-4 py-2">
-                                        <input type="text" :placeholder="$t('table.search_title')" class="w-full text-xs px-2 py-1 border border-gray-300 rounded shadow-sm focus:ring-1 focus:ring-blue-300 font-normal">
-                                    </th>
-                                    <th class="px-4 py-2">
-                                        <input type="text" :placeholder="$t('table.search_updated')" class="w-full text-xs px-2 py-1 border border-gray-300 rounded shadow-sm focus:ring-1 focus:ring-blue-300 font-normal">
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-100">
-                                <LinhaTabelaProjeto 
-                                    v-for="projeto in projetosFiltrados" 
-                                    :key="projeto.id" 
-                                    :projeto="projeto"
-                                    @click-status="abrirProgresso(projeto)"
-                                />
-                            </tbody>
-                        </table>
-                        
-                        <!-- Table Footer -->
-                        <div class="px-4 py-3 border-t border-gray-200 bg-gray-50 text-xs text-gray-500 flex justify-between items-center">
-                            <span>{{ $t('table.showing') }} 1 {{ $t('table.to') }} {{ projetosFiltrados.length }} {{ $t('table.of') }} {{ projetosFiltrados.length }} {{ $t('table.entries') }}</span>
-                            <button class="px-3 py-1 bg-gray-600 text-white rounded hover:bg-gray-700 flex items-center gap-1 shadow-sm">
-                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                                {{ $t('table.csv') }}
-                            </button>
-                        </div>
+                    <!-- Table View (DataTable) -->
+                    <div v-else>
+                        <!-- Passamos apenas os projetos já filtrados pelas Abas (Todos/Gratis/Progresso)
+                             A busca textual e paginação ficam por conta do componente ListAgora -->
+                        <ProjectList 
+                            :projetos="projetosFiltrados"
+                            @click-status="abrirProgresso"
+                        />
                     </div>
 
                 </div>

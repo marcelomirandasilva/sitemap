@@ -53,6 +53,11 @@ class Plan extends Model
         return $this->price_yearly_usd / 100;
     }
 
+    public function subscriptions()
+    {
+        return $this->hasMany(Subscription::class);
+    }
+
     public function users()
     {
         return $this->hasMany(User::class);

@@ -141,6 +141,18 @@ watch(() => props.show, (novoValor) => {
     }
 });
 
+const iniciarCrawler = async () => {
+    try {
+        tarefa.value = { status: 'queued', progress: 0, pages_count: 0 }; // Otimistic UI
+        await axios.post(route('crawler.store', props.projeto.id));
+        // A enquete já vai pegar o status real na próxima chamada
+        buscarStatus();
+    } catch (erro) {
+        console.error('Erro ao iniciar crawler:', erro);
+        alert('Falha ao iniciar o crawler. Verifique o console.');
+    }
+};
+
 onUnmounted(() => {
     pararEnquete();
 });
@@ -393,7 +405,24 @@ onUnmounted(() => {
 
                 </div>
 
-                <!-- 4. ESTADO: INICIALIZANDO / ERRO -->
+                <!-- 4. ESTADO: PRONTO / NENHUM JOB -->
+                <div v-else-if="!tarefa?.status" class="flex flex-col items-center justify-center py-20 text-center">
+                     <div class="mb-6">
+                        <svg class="w-16 h-16 text-gray-300 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                     </div>
+                     <h3 class="text-xl font-bold text-gray-700 mb-2">Ready to Crawl</h3>
+                     <p class="text-gray-500 mb-8 max-w-md mx-auto">
+                        Project configuration is saved. You can now start the crawler to generate your sitemap.
+                     </p>
+                     <button @click="iniciarCrawler" class="bg-[#007da0] hover:bg-[#006480] text-white font-bold py-3 px-8 rounded shadow-lg transition-transform transform hover:scale-105 flex items-center gap-2 mx-auto">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        START CRAWLING NOW
+                    </button>
+                </div>
+
+                <!-- 5. ESTADO: INICIALIZANDO / ERRO -->
                 <div v-else class="flex flex-col items-center justify-center py-20">
                      <div v-if="!tarefa" class="text-center">
                         <svg class="animate-spin w-10 h-10 text-blue-500 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

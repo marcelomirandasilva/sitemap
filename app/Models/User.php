@@ -60,6 +60,23 @@ class User extends Authenticatable
     /**
      * Helper para saber se é Admin (útil para o futuro)
      */
+    public function subscriptions()
+    {
+        return $this->hasMany(Subscription::class);
+    }
+
+    public function activeSubscription()
+    {
+        return $this->subscriptions()
+            ->where('status', 'active')
+            ->where(function ($query) {
+                $query->whereNull('ends_at')
+                      ->orWhere('ends_at', '>', now());
+            })
+            ->latest()
+            ->first();
+    }
+
     public function isAdmin(): bool
     {
         return $this->role === 'admin';

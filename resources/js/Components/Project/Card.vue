@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
-import StatusRastreador from '@/Components/Crawler/StatusRastreador.vue';
+import StatusRastreador from '@/Components/Crawler/Status.vue';
 
 const props = defineProps({
     projeto: {
