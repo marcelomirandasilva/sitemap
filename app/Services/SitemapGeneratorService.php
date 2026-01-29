@@ -68,8 +68,8 @@ class SitemapGeneratorService
             'start_urls' => [$project->url],
             'max_depth' => $project->max_depth ?? 3,
             'max_pages' => $project->max_pages ?? 1000,
-            'include_images' => $project->check_images ?? true,
-            'include_videos' => $project->check_videos ?? true,
+            'include_images' => (bool) $project->check_images,
+            'include_videos' => (bool) $project->check_videos,
             'delay' => $project->delay_between_requests ?? 1.0,
             'concurrency' => $project->max_concurrent_requests ?? 2,
 

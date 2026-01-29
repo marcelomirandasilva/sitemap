@@ -134,6 +134,8 @@ class CrawlerController extends Controller
             'status' => $latestJob->status,
             'progress' => $latestJob->progress,
             'pages_count' => $latestJob->pages_count,
+            'images_count' => $latestJob->images_count ?? 0,
+            'videos_count' => $latestJob->videos_count ?? 0,
             'artifacts' => $latestJob->artifacts,
             'preview_urls' => $previewUrls,
         ]);

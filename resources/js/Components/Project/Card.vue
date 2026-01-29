@@ -27,7 +27,7 @@ const formataData = (data) => {
 // Conectado ao plano real do usuário
 const badgePlano = computed(() => {
     if (props.userPlan) {
-        return `${props.userPlan.name} ${props.userPlan.max_pages}`;
+        return `${props.userPlan.name} `;
     }
     return 'FREE 500'; 
 }); 

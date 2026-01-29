@@ -18,6 +18,10 @@ const props = defineProps({
     preview_urls: {
         type: Array,
         default: () => []
+    },
+    features: {
+        type: Object,
+        default: () => ({ images_videos: false })
     }
 });
 
@@ -218,12 +222,19 @@ const downloadUrl = computed(() => {
                         <div class="bg-[#d2d6de] text-gray-600 text-center py-2 font-bold uppercase tracking-wider">{{
                             $t('project.images') }}</div>
                         <div class="p-6 text-center">
-                            <span class="text-4xl font-bold text-gray-400">0</span>
-                            <div class="text-xs font-bold text-gray-400 uppercase mt-1">{{ $t('project.stat_indexed') }}
+                            <div v-if="features.images_videos">
+                                <span class="text-4xl font-bold text-[#31708f]">{{ tarefa.images_count || 0 }}</span>
+                                <div class="text-xs font-bold text-gray-400 uppercase mt-1">{{ $t('project.stat_indexed') }}
+                                </div>
                             </div>
-                            <span
-                                class="mt-2 inline-block bg-green-500 text-white text-[10px] px-2 py-0.5 rounded uppercase font-bold">{{
-                                $t('project.pro_feature') }}</span>
+                            <div v-else>
+                                <span class="text-4xl font-bold text-gray-400">0</span>
+                                <div class="text-xs font-bold text-gray-400 uppercase mt-1">{{ $t('project.stat_indexed') }}
+                                </div>
+                                <span
+                                    class="mt-2 inline-block bg-green-500 text-white text-[10px] px-2 py-0.5 rounded uppercase font-bold">{{
+                                    $t('project.pro_feature') }}</span>
+                            </div>
                         </div>
                     </div>
 
@@ -232,12 +243,19 @@ const downloadUrl = computed(() => {
                         <div class="bg-[#d2d6de] text-gray-600 text-center py-2 font-bold uppercase tracking-wider">{{
                             $t('project.videos') }}</div>
                         <div class="p-6 text-center">
-                            <span class="text-4xl font-bold text-gray-400">0</span>
-                            <div class="text-xs font-bold text-gray-400 uppercase mt-1">{{ $t('project.stat_indexed') }}
+                            <div v-if="features.images_videos">
+                                <span class="text-4xl font-bold text-[#31708f]">{{ tarefa.videos_count || 0 }}</span>
+                                <div class="text-xs font-bold text-gray-400 uppercase mt-1">{{ $t('project.stat_indexed') }}
+                                </div>
                             </div>
-                            <span
-                                class="mt-2 inline-block bg-green-500 text-white text-[10px] px-2 py-0.5 rounded uppercase font-bold">{{
-                                $t('project.pro_feature') }}</span>
+                            <div v-else>
+                                <span class="text-4xl font-bold text-gray-400">0</span>
+                                <div class="text-xs font-bold text-gray-400 uppercase mt-1">{{ $t('project.stat_indexed') }}
+                                </div>
+                                <span
+                                    class="mt-2 inline-block bg-green-500 text-white text-[10px] px-2 py-0.5 rounded uppercase font-bold">{{
+                                    $t('project.pro_feature') }}</span>
+                            </div>
                         </div>
                     </div>
                 </div>

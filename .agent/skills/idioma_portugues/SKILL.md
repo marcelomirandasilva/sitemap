@@ -9,7 +9,7 @@ Esta skill impõe o uso do Português Brasileiro (pt-BR) como o idioma padrão e
 # Regras Obrigatórias
 
 ## 1. Comunicação no Chat
-- Todas as respostas, explicações e "pensamentos" devem ser escritos em **Português Brasileiro**.
+- Todas as respostas, explicações e "pensamentos" (thinking) devem ser escritos em **Português Brasileiro**.
 - Evite misturar inglês no meio das frases, a menos que sejam termos técnicos universais (ex: framework, deploy, commit) que não tenham tradução natural.
 
 ## 2. Artefatos e Documentação

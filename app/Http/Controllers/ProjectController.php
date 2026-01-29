@@ -31,15 +31,22 @@ class ProjectController extends Controller
         // 3. Verifica limites do plano (OPCIONAL - Faremos depois)
         // ...
 
-        // 4. Cria o projeto
-        $project = $request->user()->projects()->create([
+        // 4. Verifica se usuário tem plano PRO (com features avançadas)
+        $user = $request->user();
+        $user->load('plan');
+        $temRecursosAvancados = $user->plan && $user->plan->has_advanced_features;
+
+        // 5. Cria o projeto com configurações baseadas no plano
+        $project = $user->projects()->create([
             'name' => $name,
             'url' => $validated['url'],
             'status' => 'pending',
             'frequency' => 'manual',
+            'check_images' => $temRecursosAvancados,
+            'check_videos' => $temRecursosAvancados,
         ]);
 
-        // 5. Inicia o Crawler Automaticamente
+        // 6. Inicia o Crawler Automaticamente
         try {
             $externalJobId = $this->sitemapService->startJob($project);
 
@@ -79,10 +86,19 @@ class ProjectController extends Controller
         // Removido auto-recovery síncrono e getPreviewUrls síncrono para evitar bloquear o render.
         // O frontend (Show.vue) agora faz uma chamada AJAX para buscar esses dados assim que monta via CrawlerController.
 
+        // Eager load do plano para verificar permissões
+        $user = auth()->user();
+        $user->load('plan');
+
+        $features = [
+            'images_videos' => $user->plan ? (bool) $user->plan->has_advanced_features : false,
+        ];
+
         return Inertia::render('App/Projects/Show', [
             'project' => $project,
             'latest_job' => $latestJob,
-            'preview_urls' => [] // Frontend busca via AJAX
+            'preview_urls' => [], // Frontend busca via AJAX
+            'features' => $features
         ]);
     }
 }
