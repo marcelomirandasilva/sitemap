@@ -7,6 +7,10 @@ const props = defineProps({
     projeto: {
         type: Object,
         required: true
+    },
+    userPlan: {
+        type: Object,
+        default: null
     }
 });
 
@@ -20,8 +24,13 @@ const formataData = (data) => {
     });
 };
 
-// Exemplo estático por enquanto, depois conectar com Model Plan
-const badgePlano = computed(() => 'FREE 500'); 
+// Conectado ao plano real do usuário
+const badgePlano = computed(() => {
+    if (props.userPlan) {
+        return `${props.userPlan.name} ${props.userPlan.max_pages}`;
+    }
+    return 'FREE 500'; 
+}); 
 </script>
 
 <template>

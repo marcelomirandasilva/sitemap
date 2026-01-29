@@ -36,7 +36,7 @@ class ProjectController extends Controller
             'name' => $name,
             'url' => $validated['url'],
             'status' => 'pending',
-            'frequency' => 'weekly',
+            'frequency' => 'manual',
         ]);
 
         // 5. Inicia o Crawler Automaticamente

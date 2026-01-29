@@ -48,7 +48,7 @@ class CrawlerController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Erro no CrawlerController@store', ['error' => $e->getMessage()]);
-            return response()->json(['message' => 'Erro interno: ' . $e->getMessage()], 500);
+            return response()->json(['message' => 'Ocorreu um erro interno ao iniciar o rastreamento. Tente novamente em instantes.'], 500);
         }
     }
 
@@ -96,15 +96,29 @@ class CrawlerController extends Controller
                     'artifacts' => $statusData['artifacts'] ?? $latestJob->artifacts ?? [],
                 ]);
 
-                Log::info("CrawlerController: Job atualizado no BD", ['id' => $latestJob->id, 'status' => $latestJob->status]);
+                // IMPORTANTE: Recarregar o modelo para refletir as alterações do banco
+                $latestJob->refresh();
+
+                Log::info("CrawlerController: Job atualizado no BD", ['id' => $latestJob->id, 'status' => $latestJob->status, 'progress' => $latestJob->progress]);
 
                 // Se completou agora e ainda não temos artifacts (fallback), buscar artefatos
-                if ($latestJob->status === 'completed' && empty($latestJob->artifacts)) {
-                    Log::info("CrawlerController: Buscando artefatos explicitamente...");
-                    $artifacts = $this->sitemapService->getArtifacts($latestJob->external_job_id);
-                    $latestJob->update([
-                        'artifacts' => $artifacts,
-                        'completed_at' => now(),
+                if ($latestJob->status === 'completed') {
+                    if (empty($latestJob->artifacts)) {
+                        Log::info("CrawlerController: Buscando artefatos explicitamente...");
+                        $artifacts = $this->sitemapService->getArtifacts($latestJob->external_job_id);
+                        $latestJob->update([
+                            'artifacts' => $artifacts,
+                        ]);
+                        $latestJob->refresh();
+                    }
+
+                    // Atualizar status do Job e timestamp
+                    $latestJob->update(['completed_at' => now()]);
+
+                    // Atualizar o PROJETO pai
+                    $project->update([
+                        'last_crawled_at' => now(),
+                        'status' => 'active' // Ativa o projeto se estava pendente
                     ]);
                 }
             }
@@ -123,5 +137,84 @@ class CrawlerController extends Controller
             'artifacts' => $latestJob->artifacts,
             'preview_urls' => $previewUrls,
         ]);
+    }
+
+    /**
+     * Retorna paginated URLs a partir do arquivo sitemap/txt
+     */
+    public function getUrls(Request $request, Project $project)
+    {
+        try {
+            if ($project->user_id !== auth()->id()) {
+                abort(403);
+            }
+
+            $latestJob = $project->sitemapJobs()->latest()->first();
+
+            if (!$latestJob || empty($latestJob->artifacts)) {
+                return response()->json([
+                    'data' => [],
+                    'total' => 0,
+                    'message' => 'Nenhum artefato encontrado para leitura.'
+                ]);
+            }
+
+            // Determinar qual arquivo ler (XML preferencia ou TXT)
+            $artifacts = collect($latestJob->artifacts);
+
+            $targetArtifact = $artifacts->firstWhere(function ($a) {
+                return isset($a['name']) && str_ends_with($a['name'], 'sitemap.xml');
+            }) ?? $artifacts->firstWhere(function ($a) {
+                return isset($a['name']) && str_ends_with($a['name'], '.txt');
+            });
+
+            if (!$targetArtifact) {
+                return response()->json(['data' => [], 'total' => 0]);
+            }
+
+            // Helper para resolver path (reaproveitando lógica do Service original ou duplicando simples)
+            // Como o SitemapDataReaderService precisa de PATH, vamos resolver.
+            // A estrutura de pastas deve bater com a do seu servidor.
+            $paths = [
+                base_path('../api-sitemap/sitemaps/projects/' . $project->id . '/' . $targetArtifact['name']),
+                base_path('../api-sitemap/sitemaps/' . $latestJob->external_job_id . '/' . $targetArtifact['name']),
+            ];
+
+            $validPath = null;
+            foreach ($paths as $p) {
+                if (file_exists($p)) {
+                    $validPath = $p;
+                    break;
+                }
+            }
+
+            if (!$validPath) {
+                // Debug: retornar paths tentados
+                return response()->json([
+                    'data' => [],
+                    'total' => 0,
+                    'error' => 'Arquivo físico não encontrado',
+                    'debug_paths' => $paths
+                ]);
+            }
+
+            // Instanciar leitor (Idealmente injetado, mas new aqui facilita por agora)
+            $reader = new \App\Services\SitemapDataReaderService();
+
+            $page = $request->input('page', 1);
+            $perPage = $request->input('per_page', 50);
+            $search = $request->input('q');
+
+            $result = $reader->getPaginatedUrls($validPath, $page, $perPage, $search);
+
+            return response()->json($result);
+
+        } catch (\Throwable $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ], 500);
+        }
     }
 }

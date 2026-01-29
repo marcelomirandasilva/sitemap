@@ -24,8 +24,12 @@ class DashboardController extends Controller
                 return $project;
             });
 
+        $user = Auth::user();
+        $user->load('plan'); // Garante que o plano está carregado
+
         return Inertia::render('App/Dashboard/Index', [
             'projetos' => $projects,
+            'userPlan' => $user->plan, // Passa o objeto do plano
         ]);
     }
 }

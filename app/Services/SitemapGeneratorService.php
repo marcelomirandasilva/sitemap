@@ -72,7 +72,11 @@ class SitemapGeneratorService
             'include_videos' => $project->check_videos ?? true,
             'delay' => $project->delay_between_requests ?? 1.0,
             'concurrency' => $project->max_concurrent_requests ?? 2,
-            // 'webhook_url' => route('api.webhook.sitemap.finished'), // Futuro
+
+            // Ativa o modo de processamento massivo e define diretório fixo por projeto
+            // Isso permite que o sistema crie checkpoints e retome o processamento em caso de falha
+            'massive_processing' => true,
+            'output_directory' => 'sitemaps/projects/' . $project->id,
         ];
 
         try {
@@ -184,7 +188,7 @@ class SitemapGeneratorService
             return [
                 'status' => 'failed',
                 'progress' => 0,
-                'message' => 'Erro ao comunicar com o serviço de sitemap: ' . $e->getMessage()
+                'message' => 'Falha na comunicação com o serviço de rastreamento. Os detalhes foram registrados no log.'
             ];
         }
     }
@@ -223,8 +227,26 @@ class SitemapGeneratorService
     public function getFileContent(string $jobId, string $filename): ?string
     {
         // 1. Tentar disco direto (Mais rápido e confiável localmente)
+        // Lógica Híbrida: Tenta primeiro no diretório antigo (pelo Job ID),
+        // Se falhar, tenta descobrir o diretório do projeto via DB.
+
         $basePath = base_path('../api-sitemap/sitemaps/' . $jobId . '/');
         $filePath = $basePath . $filename;
+
+        // Se não existir, tenta procurar no diretório do projeto (novo modelo de resume)
+        if (!file_exists($filePath) && !file_exists($filePath . '.zip')) {
+            try {
+                $job = \App\Models\SitemapJob::where('external_job_id', $jobId)->first();
+                if ($job && $job->project_id) {
+                    $projectPath = base_path('../api-sitemap/sitemaps/projects/' . $job->project_id . '/');
+                    if (file_exists($projectPath . $filename) || file_exists($projectPath . $filename . '.zip')) {
+                        $filePath = $projectPath . $filename;
+                    }
+                }
+            } catch (\Exception $e) {
+                // Silently fail DB lookup
+            }
+        }
 
         // Fallback para .zip se o arquivo solicitado sem .zip não existir
         if (!file_exists($filePath) && !str_ends_with($filename, '.zip')) {

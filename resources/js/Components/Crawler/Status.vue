@@ -1,6 +1,5 @@
 <script setup>
-import { ref, onMounted, onUnmounted, computed } from 'vue';
-import { useForm } from '@inertiajs/vue3';
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
 import axios from 'axios';
 import { trans as t } from 'laravel-vue-i18n';
 
@@ -19,9 +18,12 @@ const props = defineProps({
     }
 });
 
+const emit = defineEmits(['update:job']);
+
 const tarefa = ref(props.ultimaTarefa);
 const enquete = ref(null);
 const iniciando = ref(false);
+const jobIdMonitorado = ref(null); // ID do job que iniciamos manualmente
 
 const corStatusPonto = computed(() => {
     switch (tarefa.value?.status) {
@@ -43,59 +45,116 @@ const rotuloStatus = computed(() => {
     }
 });
 
-const iniciarRastreador = () => {
-    iniciando.value = true;
-    const formulario = useForm({});
+const mensagemErroSanitizada = computed(() => {
+    const msg = tarefa.value?.message || '';
+    // Palavras-chave técnicas para ocultar
+    const techTerms = ['cURL', 'SQL', 'Exception', 'Stack trace', 'line', 'http', 'failed to connect'];
     
-    formulario.post(route('crawler.store', props.projeto.id), {
-        onSuccess: () => {
-             buscarStatus();
-             iniciarEnquete(); // Garante que comece a monitorar
-        },
-        onFinish: () => iniciando.value = false
-    });
-};
+    if (techTerms.some(term => msg.toLowerCase().includes(term.toLowerCase()))) {
+        return t('crawler.error_generic') || 'Ocorreu uma falha técnica. Detalhes foram registrados no log.';
+    }
+    
+    return msg || t('crawler.error_unknown') || 'Erro desconhecido.';
+});
 
-let intervaloEnquete = null;
+const iniciarRastreador = async () => {
+    if (iniciando.value) return;
+    
+    iniciando.value = true;
+    try {
+        const res = await axios.post(route('crawler.store', props.projeto.id));
+        
+        // Captura o ID do novo job
+        const newJobId = res.data.external_job_id || res.data.job_id;
+        if (newJobId) {
+            jobIdMonitorado.value = newJobId;
+            // UI Otimista: Já mostra como Queued imediatamente
+            tarefa.value = { 
+                ...tarefa.value, 
+                status: 'queued', 
+                progress: 0,
+                external_job_id: newJobId 
+            };
+        }
 
-const iniciarEnquete = () => {
-    // Evita múltiplos intervalos
-    if (intervaloEnquete) return;
-
-    // Só inicia se o status for ativo
-    if (tarefa.value && ['queued', 'running'].includes(tarefa.value.status)) {
-        intervaloEnquete = setInterval(buscarStatus, 5000); // 5s intervalo
+        iniciarEnquete();
+    } catch (error) {
+        console.error('Erro ao iniciar rastreador:', error);
+        alert('Falha ao iniciar o crawler. Verifique o console.');
+    } finally {
+        iniciando.value = false;
     }
 };
 
-const pararEnquete = () => {
-    if (intervaloEnquete) {
-        clearInterval(intervaloEnquete);
-        intervaloEnquete = null;
-    }
+const agendarProximaBusca = () => {
+    if (enquete.value === null) return;
+    enquete.value = setTimeout(buscarStatus, 3000);
 };
 
 const buscarStatus = async () => {
     try {
-        const resposta = await axios.get(route('crawler.show', props.projeto.id));
-        
-        // Só atualiza se houver mudança ou progresso
-        if (JSON.stringify(tarefa.value) !== JSON.stringify(resposta.data)) {
-            tarefa.value = resposta.data;
+        const resposta = await axios.get(route('crawler.show', props.projeto.id) + '?t=' + new Date().getTime());
+        const jobRecebido = resposta.data;
+
+        // VALIDAÇÃO DE CORRIDA:
+        // Se estamos monitorando um job específico (pq acabamos de iniciar), 
+        // e a API retorna um job diferente OU um job 'completed' antigo... ignoramos por enquanto.
+        if (jobIdMonitorado.value) {
+            // Se o ID não bate, pode ser cache ou delay do banco. Ignora e tenta de novo.
+            if (jobRecebido.external_job_id && jobRecebido.external_job_id !== jobIdMonitorado.value) {
+                console.warn('Status.vue: Recebido job antigo, aguardando propagação...');
+                agendarProximaBusca();
+                return;
+            }
+        }
+
+        // Se mudou algo, atualiza
+        if (JSON.stringify(tarefa.value) !== JSON.stringify(jobRecebido)) {
+            tarefa.value = jobRecebido;
+            emit('update:job', tarefa.value); // IMPORTANTE: Avisa o pai (Index.vue)
+            console.log('Status.vue: Atualizado para', tarefa.value?.status, tarefa.value?.progress);
         }
         
-        // Se terminou, para o polling
+        // Lógica de parada
         if (tarefa.value && ['completed', 'failed', 'cancelled'].includes(tarefa.value.status)) {
+            jobIdMonitorado.value = null; // Limpa monitoramento específico
             pararEnquete();
+        } else if (['queued', 'running'].includes(tarefa.value?.status)) {
+            agendarProximaBusca();
         }
     } catch (erro) {
-        console.error('Erro ao buscar status do rastreador:', erro);
-        pararEnquete(); // Para em caso de erro persistente
+        console.error('Erro ao buscar status:', erro);
+        if (enquete.value !== null) {
+            enquete.value = setTimeout(buscarStatus, 5000);
+        }
     }
 };
 
+const iniciarEnquete = () => {
+    if (enquete.value) return; 
+    enquete.value = true;
+    buscarStatus();
+};
+
+const pararEnquete = () => {
+    if (enquete.value) clearTimeout(enquete.value);
+    enquete.value = null;
+};
+
+// Se a prop mudar (ex: via Modal), atualizamos o local
+watch(() => props.ultimaTarefa, (novaTarefa) => {
+    if (novaTarefa && JSON.stringify(tarefa.value) !== JSON.stringify(novaTarefa)) {
+        tarefa.value = novaTarefa;
+        if (['queued', 'running'].includes(novaTarefa.status)) {
+            iniciarEnquete();
+        }
+    }
+}, { deep: true });
+
 onMounted(() => {
-    iniciarEnquete();
+    if (tarefa.value && ['queued', 'running'].includes(tarefa.value.status)) {
+        iniciarEnquete();
+    }
 });
 
 onUnmounted(() => {
@@ -166,9 +225,9 @@ onUnmounted(() => {
                 </div>
             </div>
 
-            <!-- Mensagem de Erro -->
+            <!-- Mensagem de Erro (Sanitizada no Frontend também) -->
             <div v-if="tarefa.status === 'failed'" class="mt-2 text-xs text-red-600 bg-red-50 p-2 rounded border border-red-100">
-                {{ tarefa.message || 'Erro desconhecido ao processar sitemap.' }}
+                {{ mensagemErroSanitizada }}
             </div>
         </div>
     </div>

@@ -14,12 +14,12 @@ class PlanSeeder extends Seeder
             [
                 'slug' => 'free',
                 'name' => 'Free',
-                'max_pages' => 500,
+                'max_pages' => 100,
                 'price_monthly_brl' => 0,
                 'price_yearly_brl' => 0,
                 'price_monthly_usd' => 0,
                 'price_yearly_usd' => 0,
-                'max_projects' => 10, // Default conforme migration, mas explícito aqui
+                'max_projects' => 5, // Default conforme migration, mas explícito aqui
                 'has_advanced_features' => false,
             ],
             // 2. Pro 1k

@@ -10,6 +10,10 @@ const props = defineProps({
     projetos: {
         type: Array,
         default: () => []
+    },
+    userPlan: {
+        type: Object,
+        default: null
     }
 });
 
@@ -29,23 +33,39 @@ const filtroAtivo = ref('todos'); // 'todos' | 'gratis' | 'progresso'
 const salvarProjeto = () => {
     formulario.post(route('projects.store'), {
         onSuccess: () => {
-             formulario.reset();
-             mostrarModalAdicionar.value = false;
-             
-             // Abre o modal de progresso automaticamente para o novo projeto (primeiro da lista)
-             // Assumindo que o back retorna latest(). Precisa garantir que props.projetos atualizou? 
-             // O Inertia atualiza props automaticamente. Vamos pegar o topo.
-             if (props.projetos.length > 0) {
-                 projetoSelecionado.value = props.projetos[0];
-                 mostrarModalProgresso.value = true;
-             }
+            formulario.reset();
+            mostrarModalAdicionar.value = false;
+
+            // Abre o modal de progresso automaticamente para o novo projeto (primeiro da lista)
+            // Assumindo que o back retorna latest(). Precisa garantir que props.projetos atualizou? 
+            // O Inertia atualiza props automaticamente. Vamos pegar o topo.
+            if (props.projetos.length > 0) {
+                projetoSelecionado.value = props.projetos[0];
+                mostrarModalProgresso.value = true;
+            }
         },
     });
 };
 
 const abrirProgresso = (projeto) => {
+    lara
     projetoSelecionado.value = projeto;
     mostrarModalProgresso.value = true;
+};
+
+const atualizarJobProjeto = (job) => {
+    if (!projetoSelecionado.value) return;
+
+    // Atualiza o objeto selecionado (para o modal)
+    projetoSelecionado.value.latest_job = job;
+
+    // Atualiza na lista principal (para os cards)
+    // Nota: Como props são readonly, o ideal seria ter uma cópia local, mas modificação profunda em Objetos dentro de Array prop funciona no Vue 3.
+    // Se falhar, precisaremos clonar props.projetos para um ref local.
+    const projetoNaLista = props.projetos.find(p => p.id === projetoSelecionado.value.id);
+    if (projetoNaLista) {
+        projetoNaLista.latest_job = job;
+    }
 };
 
 // Computados para contagem dos filtros
@@ -70,8 +90,8 @@ const projetosFiltrados = computed(() => {
     // 2. Filtro de Busca
     if (termoBusca.value) {
         const termo = termoBusca.value.toLowerCase();
-        resultado = resultado.filter(p => 
-            p.url.toLowerCase().includes(termo) || 
+        resultado = resultado.filter(p =>
+            p.url.toLowerCase().includes(termo) ||
             (p.name && p.name.toLowerCase().includes(termo))
         );
     }
@@ -81,6 +101,7 @@ const projetosFiltrados = computed(() => {
 </script>
 
 <template>
+
     <Head :title="$t('dashboard.control_panel')" />
 
     <AppLayout>
@@ -90,7 +111,9 @@ const projetosFiltrados = computed(() => {
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
                     <h1 class="text-3xl font-light text-gray-700 flex items-center justify-center gap-3">
                         <svg class="w-8 h-8 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path>
+                            <path
+                                d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z">
+                            </path>
                         </svg>
                         {{ $t('dashboard.control_panel') }}
                     </h1>
@@ -99,79 +122,82 @@ const projetosFiltrados = computed(() => {
 
             <!-- Toolbar & Content -->
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                
+
                 <!-- Action Bar -->
-                <div class="flex flex-col md:flex-row justify-between items-center bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-6 gap-4">
-                    <button 
-                        @click="mostrarModalAdicionar = !mostrarModalAdicionar"
-                        class="bg-[#007da0] hover:bg-[#006480] text-white font-bold py-2.5 px-6 rounded text-sm uppercase tracking-wide transition shadow-sm flex items-center gap-2"
-                    >
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                <div
+                    class="flex flex-col md:flex-row justify-between items-center bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-6 gap-4">
+                    <button @click="mostrarModalAdicionar = !mostrarModalAdicionar"
+                        class="bg-[#007da0] hover:bg-[#006480] text-white font-bold py-2.5 px-6 rounded text-sm uppercase tracking-wide transition shadow-sm flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4">
+                            </path>
+                        </svg>
                         {{ $t('dashboard.add_another') }}
                     </button>
 
                     <div class="relative w-full md:w-96" v-if="modoVisualizacao === 'grid'">
-                        <input 
-                            v-model="termoBusca"
-                            type="text" 
-                            :placeholder="$t('dashboard.search_placeholder')" 
-                            class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded text-gray-600 focus:ring-1 focus:ring-blue-400 focus:border-blue-400 bg-gray-50 shadow-inner"
-                        >
-                        <svg class="w-5 h-5 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        <input v-model="termoBusca" type="text" :placeholder="$t('dashboard.search_placeholder')"
+                            class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded text-gray-600 focus:ring-1 focus:ring-blue-400 focus:border-blue-400 bg-gray-50 shadow-inner">
+                        <svg class="w-5 h-5 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
                     </div>
                 </div>
 
                 <!-- Filters Bar -->
-                 <div v-if="projetos.length > 0" class="flex flex-col md:flex-row justify-between items-center mb-6 px-2 gap-4">
+                <div v-if="projetos.length > 0"
+                    class="flex flex-col md:flex-row justify-between items-center mb-6 px-2 gap-4">
                     <!-- Tabs -->
                     <div class="flex items-center gap-2 text-sm text-gray-600">
-                        <button 
-                            @click="filtroAtivo = 'todos'"
-                            :class="['px-3 py-1 rounded transition border', filtroAtivo === 'todos' ? 'bg-white border-gray-300 shadow-sm font-bold text-gray-800' : 'border-transparent hover:bg-gray-100']"
-                        >
-                            {{ $t('dashboard.show_all') }} <span class="bg-gray-100 border border-gray-200 px-1.5 rounded-md text-xs ml-1">{{ contagens.todos }}</span>
+                        <button @click="filtroAtivo = 'todos'"
+                            :class="['px-3 py-1 rounded transition border', filtroAtivo === 'todos' ? 'bg-white border-gray-300 shadow-sm font-bold text-gray-800' : 'border-transparent hover:bg-gray-100']">
+                            {{ $t('dashboard.show_all') }} <span
+                                class="bg-gray-100 border border-gray-200 px-1.5 rounded-md text-xs ml-1">{{
+                                contagens.todos }}</span>
                         </button>
-                        <button 
-                            @click="filtroAtivo = 'gratis'"
-                            :class="['px-3 py-1 rounded transition border', filtroAtivo === 'gratis' ? 'bg-white border-gray-300 shadow-sm font-bold text-gray-800' : 'border-transparent hover:bg-gray-100']"
-                        >
-                            {{ $t('dashboard.filters.free_sites') }} <span class="bg-gray-100 border border-gray-200 px-1.5 rounded-md text-xs ml-1">{{ contagens.gratis }}</span>
+                        <button @click="filtroAtivo = 'gratis'"
+                            :class="['px-3 py-1 rounded transition border', filtroAtivo === 'gratis' ? 'bg-white border-gray-300 shadow-sm font-bold text-gray-800' : 'border-transparent hover:bg-gray-100']">
+                            {{ $t('dashboard.filters.free_sites') }} <span
+                                class="bg-gray-100 border border-gray-200 px-1.5 rounded-md text-xs ml-1">{{
+                                contagens.gratis }}</span>
                         </button>
-                        <button 
-                            @click="filtroAtivo = 'progresso'"
-                            :class="['px-3 py-1 rounded transition border', filtroAtivo === 'progresso' ? 'bg-white border-gray-300 shadow-sm font-bold text-gray-800' : 'border-transparent hover:bg-gray-100']"
-                        >
-                            {{ $t('dashboard.filters.in_progress') }} <span class="bg-gray-100 border border-gray-200 px-1.5 rounded-md text-xs ml-1">{{ contagens.progresso }}</span>
+                        <button @click="filtroAtivo = 'progresso'"
+                            :class="['px-3 py-1 rounded transition border', filtroAtivo === 'progresso' ? 'bg-white border-gray-300 shadow-sm font-bold text-gray-800' : 'border-transparent hover:bg-gray-100']">
+                            {{ $t('dashboard.filters.in_progress') }} <span
+                                class="bg-gray-100 border border-gray-200 px-1.5 rounded-md text-xs ml-1">{{
+                                contagens.progresso }}</span>
                         </button>
                     </div>
 
                     <!-- View Toggle -->
-                    <button 
-                        @click="modoVisualizacao = modoVisualizacao === 'grid' ? 'list' : 'grid'"
-                        class="text-xs font-bold uppercase text-[#c0392b] flex items-center gap-1 hover:underline"
-                    >
-                        <svg v-if="modoVisualizacao === 'list'" class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
-                        <svg v-else class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"></path></svg>
+                    <button @click="modoVisualizacao = modoVisualizacao === 'grid' ? 'list' : 'grid'"
+                        class="text-xs font-bold uppercase text-[#c0392b] flex items-center gap-1 hover:underline">
+                        <svg v-if="modoVisualizacao === 'list'" class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path
+                                d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z">
+                            </path>
+                        </svg>
+                        <svg v-else class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd"
+                                d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"
+                                clip-rule="evenodd"></path>
+                        </svg>
                         {{ modoVisualizacao === 'grid' ? $t('dashboard.switch_list') : $t('dashboard.switch_grid') }}
                     </button>
                 </div>
 
                 <!-- Add Form Toggle (Simple) -->
-                <div v-if="mostrarModalAdicionar" class="mb-8 p-6 bg-gray-50 border border-blue-100 rounded-lg animate-fade-in-down">
-                    <h3 class="text-lg font-light text-gray-600 mb-4 text-center">{{ $t('dashboard.add_new_title') }}</h3>
+                <div v-if="mostrarModalAdicionar"
+                    class="mb-8 p-6 bg-gray-50 border border-blue-100 rounded-lg animate-fade-in-down">
+                    <h3 class="text-lg font-light text-gray-600 mb-4 text-center">{{ $t('dashboard.add_new_title') }}
+                    </h3>
                     <form @submit.prevent="salvarProjeto" class="max-w-md mx-auto flex gap-2">
-                        <input 
-                            v-model="formulario.url"
-                            type="url" 
-                            required
-                            placeholder="https://example.com"
-                            class="flex-1 border border-gray-300 shadow-inner px-4 py-3 text-gray-600 focus:ring-1 focus:ring-blue-400 focus:border-blue-400 rounded-md"
-                        >
-                        <button 
-                            :disabled="formulario.processing"
-                            type="submit"
-                            class="bg-green-600 hover:bg-green-700 text-white font-bold px-6 rounded shadow-sm disabled:opacity-50"
-                        >
+                        <input v-model="formulario.url" type="url" required placeholder="https://example.com"
+                            class="flex-1 border border-gray-300 shadow-inner px-4 py-3 text-gray-600 focus:ring-1 focus:ring-blue-400 focus:border-blue-400 rounded-md">
+                        <button :disabled="formulario.processing" type="submit"
+                            class="bg-green-600 hover:bg-green-700 text-white font-bold px-6 rounded shadow-sm disabled:opacity-50">
                             {{ $t('dashboard.add_submit') }}
                         </button>
                     </form>
@@ -179,7 +205,7 @@ const projetosFiltrados = computed(() => {
 
                 <!-- Project Grid / List -->
                 <div v-if="projetosFiltrados.length > 0">
-                    
+
                     <!-- Grid View -->
                     <div v-if="modoVisualizacao === 'grid'">
                         <!-- Filters Filters only for Grid? No, Index handles filtering tabs, List handles implementation.
@@ -193,6 +219,7 @@ const projetosFiltrados = computed(() => {
                                 v-for="projeto in projetosFiltrados" 
                                 :key="projeto.id" 
                                 :projeto="projeto" 
+                                :user-plan="userPlan"
                                 @click-status="abrirProgresso(projeto)"
                             />
                         </div>
@@ -202,10 +229,7 @@ const projetosFiltrados = computed(() => {
                     <div v-else>
                         <!-- Passamos apenas os projetos já filtrados pelas Abas (Todos/Gratis/Progresso)
                              A busca textual e paginação ficam por conta do componente ListAgora -->
-                        <ProjectList 
-                            :projetos="projetosFiltrados"
-                            @click-status="abrirProgresso"
-                        />
+                        <ProjectList :projetos="projetosFiltrados" @click-status="abrirProgresso" />
                     </div>
 
                 </div>
@@ -218,14 +242,12 @@ const projetosFiltrados = computed(() => {
 
 
                 <!-- Modal de Progresso -->
-                <ModalProgressoRastreador 
-                    v-if="projetoSelecionado"
-                    :show="mostrarModalProgresso"
-                    :projeto="projetoSelecionado"
-                    @close="mostrarModalProgresso = false"
-                />
+                <ModalProgressoRastreador v-if="projetoSelecionado" :show="mostrarModalProgresso"
+                    :projeto="projetoSelecionado" @close="mostrarModalProgresso = false"
+                    @update:job="atualizarJobProjeto" />
 
             </div>
         </template>
     </AppLayout>
 </template>
+```

@@ -43,6 +43,7 @@ Route::get('auth/google/callback', [App\Http\Controllers\Auth\SocialAuthControll
 Route::middleware(['auth'])->group(function () {
     Route::post('/projects/{project}/crawler', [App\Http\Controllers\CrawlerController::class, 'store'])->name('crawler.store');
     Route::get('/projects/{project}/crawler-status', [App\Http\Controllers\CrawlerController::class, 'show'])->name('crawler.show');
+    Route::get('/projects/{project}/urls', [App\Http\Controllers\CrawlerController::class, 'getUrls'])->name('crawler.urls');
 });
 
 // Rotas de Desenvolvimento
