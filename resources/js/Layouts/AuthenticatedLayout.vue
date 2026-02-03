@@ -39,6 +39,12 @@ const showingNavigationDropdown = ref(false);
                                 >
                                     Dashboard
                                 </NavLink>
+                                <NavLink
+                                    :href="route('subscription.index')"
+                                    :active="route().current('subscription.index')"
+                                >
+                                    Planos
+                                </NavLink>
                             </div>
                         </div>
 
@@ -75,6 +81,11 @@ const showingNavigationDropdown = ref(false);
                                             :href="route('profile.edit')"
                                         >
                                             Profile
+                                        </DropdownLink>
+                                        <DropdownLink
+                                            :href="route('subscription.portal')"
+                                        >
+                                            Minha Assinatura
                                         </DropdownLink>
                                         <DropdownLink
                                             :href="route('logout')"
@@ -145,6 +156,12 @@ const showingNavigationDropdown = ref(false);
                             :active="route().current('dashboard')"
                         >
                             Dashboard
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink
+                            :href="route('subscription.index')"
+                            :active="route().current('subscription.index')"
+                        >
+                            Planos
                         </ResponsiveNavLink>
                     </div>
 

@@ -44,6 +44,12 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/projects/{project}/crawler', [App\Http\Controllers\CrawlerController::class, 'store'])->name('crawler.store');
     Route::get('/projects/{project}/crawler-status', [App\Http\Controllers\CrawlerController::class, 'show'])->name('crawler.show');
     Route::get('/projects/{project}/urls', [App\Http\Controllers\CrawlerController::class, 'getUrls'])->name('crawler.urls');
+
+
+    // Assinaturas (Cashier)
+    Route::get('/subscription', [App\Http\Controllers\SubscriptionController::class, 'index'])->name('subscription.index');
+    Route::get('/subscription/checkout/{priceId}', [App\Http\Controllers\SubscriptionController::class, 'checkout'])->name('subscription.checkout');
+    Route::get('/billing-portal', [App\Http\Controllers\SubscriptionController::class, 'portal'])->name('subscription.portal');
 });
 
 // Rotas de Desenvolvimento

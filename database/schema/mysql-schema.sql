@@ -96,7 +96,7 @@ DROP TABLE IF EXISTS `migrations`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `migrations` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
-  `migration` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `migration` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `batch` int NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -139,6 +139,7 @@ CREATE TABLE `plans` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `slug` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `stripe_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `max_pages` int NOT NULL,
   `price_monthly_brl` int DEFAULT NULL,
   `price_yearly_brl` int DEFAULT NULL,
@@ -218,33 +219,43 @@ CREATE TABLE `sitemap_jobs` (
   CONSTRAINT `sitemap_jobs_project_id_foreign` FOREIGN KEY (`project_id`) REFERENCES `projects` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `subscription_items`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `subscription_items` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `subscription_id` bigint unsigned NOT NULL,
+  `stripe_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `stripe_product` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `stripe_price` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `meter_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `meter_event_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `quantity` int DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `subscription_items_stripe_id_unique` (`stripe_id`),
+  KEY `subscription_items_subscription_id_stripe_price_index` (`subscription_id`,`stripe_price`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `subscriptions`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `subscriptions` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `user_id` bigint unsigned NOT NULL,
-  `plan_id` bigint unsigned NOT NULL,
-  `billing_cycle` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `price_paid` decimal(10,2) NOT NULL,
-  `currency` varchar(3) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'BRL',
-  `status` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'active',
-  `starts_at` timestamp NULL DEFAULT NULL,
-  `ends_at` timestamp NULL DEFAULT NULL,
+  `type` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `stripe_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `stripe_status` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `stripe_price` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `quantity` int DEFAULT NULL,
   `trial_ends_at` timestamp NULL DEFAULT NULL,
-  `canceled_at` timestamp NULL DEFAULT NULL,
-  `external_subscription_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `external_payer_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `ends_at` timestamp NULL DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `subscriptions_user_id_foreign` (`user_id`),
-  KEY `subscriptions_plan_id_foreign` (`plan_id`),
-  KEY `subscriptions_status_index` (`status`),
-  KEY `subscriptions_ends_at_index` (`ends_at`),
-  KEY `subscriptions_external_subscription_id_index` (`external_subscription_id`),
-  CONSTRAINT `subscriptions_plan_id_foreign` FOREIGN KEY (`plan_id`) REFERENCES `plans` (`id`),
-  CONSTRAINT `subscriptions_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+  UNIQUE KEY `subscriptions_stripe_id_unique` (`stripe_id`),
+  KEY `subscriptions_user_id_stripe_status_index` (`user_id`,`stripe_status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `users`;
@@ -255,14 +266,19 @@ CREATE TABLE `users` (
   `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `email` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `email_verified_at` timestamp NULL DEFAULT NULL,
-  `password` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `remember_token` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
   `plan_id` bigint unsigned DEFAULT NULL,
   `role` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'user',
+  `password` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `remember_token` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `stripe_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `pm_type` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `pm_last_four` varchar(4) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `trial_ends_at` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `users_email_unique` (`email`),
+  KEY `users_stripe_id_index` (`stripe_id`),
   KEY `users_plan_id_foreign` (`plan_id`),
   CONSTRAINT `users_plan_id_foreign` FOREIGN KEY (`plan_id`) REFERENCES `plans` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -274,15 +290,13 @@ CREATE TABLE `users` (
 /*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (8,'2026_01_26_145138_add_crawler_configs_to_projects_table',2);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (12,'2026_01_26_160000_add_pages_count_to_sitemap_jobs_table',4);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (14,'0001_01_01_000000_create_users_table',5);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (15,'0001_01_01_000001_create_cache_table',5);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (16,'0001_01_01_000002_create_jobs_table',5);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (17,'2026_01_20_180601_create_plans_table',5);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (18,'2026_01_20_180602_create_projects_table',5);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (19,'2026_01_20_180603_add_plan_and_role_to_users_table',5);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (20,'2026_01_26_145227_create_pages_table',5);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (21,'2026_01_26_145247_create_links_table',5);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (22,'2026_01_26_152000_create_sitemap_jobs_table',5);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (23,'2026_01_28_155200_create_subscriptions_table',5);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (1,'0001_01_01_000000_create_users_table',1);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (2,'0001_01_01_000001_create_cache_table',1);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (3,'0001_01_01_000002_create_jobs_table',1);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (4,'2026_01_20_180601_create_plans_table',1);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (5,'2026_01_20_180602_create_projects_table',1);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (6,'2026_01_26_145227_create_pages_table',1);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (7,'2026_01_26_145247_create_links_table',1);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (8,'2026_01_26_152000_create_sitemap_jobs_table',1);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (9,'2026_02_02_222555_create_subscriptions_table',1);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (10,'2026_02_02_222556_create_subscription_items_table',1);

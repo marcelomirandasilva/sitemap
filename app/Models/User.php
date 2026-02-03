@@ -6,11 +6,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Cashier\Billable;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, Billable;
 
     /**
      * The attributes that are mass assignable.
@@ -60,22 +61,7 @@ class User extends Authenticatable
     /**
      * Helper para saber se é Admin (útil para o futuro)
      */
-    public function subscriptions()
-    {
-        return $this->hasMany(Subscription::class);
-    }
 
-    public function activeSubscription()
-    {
-        return $this->subscriptions()
-            ->where('status', 'active')
-            ->where(function ($query) {
-                $query->whereNull('ends_at')
-                      ->orWhere('ends_at', '>', now());
-            })
-            ->latest()
-            ->first();
-    }
 
     public function isAdmin(): bool
     {

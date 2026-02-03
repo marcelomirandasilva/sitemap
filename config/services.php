@@ -41,6 +41,15 @@ return [
         'redirect' => env('GOOGLE_REDIRECT_URL'),
     ],
 
+    'stripe' => [
+        'key' => env('STRIPE_KEY'),
+        'secret' => env('STRIPE_SECRET'),
+        'webhook' => [
+            'secret' => env('STRIPE_WEBHOOK_SECRET'),
+            'tolerance' => env('STRIPE_WEBHOOK_TOLERANCE', 300),
+        ],
+    ],
+
     'sitemap_generator' => [
         'base_url' => env('SITEMAP_GENERATOR_BASE_URL', env('PYTHON_CRAWLER_API', 'http://localhost:8000')),
         'username' => env('SITEMAP_GENERATOR_USERNAME', 'admin'),

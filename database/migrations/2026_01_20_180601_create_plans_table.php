@@ -14,6 +14,7 @@ return new class extends Migration {
             $table->id();
             $table->string('name');
             $table->string('slug')->unique();
+            $table->string('stripe_id')->nullable(); // ID do produto no Stripe
             $table->integer('max_pages'); // Limite de páginas
 
             // Preços em Centavos (Nullable para permitir planos Free ou customizados)
@@ -27,6 +28,10 @@ return new class extends Migration {
 
             $table->timestamps();
         });
+
+        Schema::table('users', function (Blueprint $table) {
+            $table->foreign('plan_id')->references('id')->on('plans')->nullOnDelete();
+        });
     }
 
     /**
@@ -34,6 +39,9 @@ return new class extends Migration {
      */
     public function down(): void
     {
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropForeign(['plan_id']);
+        });
         Schema::dropIfExists('plans');
     }
 };
