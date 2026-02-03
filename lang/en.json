@@ -201,5 +201,18 @@
     "freq.weekly": "Weekly",
     "freq.monthly": "Monthly",
     "freq.yearly": "Yearly",
-    "freq.never": "Never"
+    "freq.never": "Never",
+    "subscription.title": "Plans & Billing",
+    "subscription.header_title": "Plans & Pricing",
+    "subscription.hero_title": "Choose the perfect plan",
+    "subscription.hero_subtitle": "Start small and scale as you need. Cancel anytime.",
+    "subscription.price_per_month": "/mo",
+    "subscription.features.max_pages": "Up to :count pages",
+    "subscription.features.max_projects": "Up to :count projects",
+    "subscription.features.advanced": "Image & Video Sitemaps",
+    "subscription.features.api": "Automation API",
+    "subscription.current_plan": "Your Current Plan",
+    "subscription.subscribe_now": "Subscribe Now",
+    "subscription.available": "Available",
+    "subscription.ideal_for_scaling": "Ideal for scaling your sitemaps."
 }

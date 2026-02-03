@@ -53,9 +53,9 @@ const badgePlano = computed(() => {
                 <span class="px-2 py-1 bg-gray-200 text-gray-600 text-[10px] font-bold uppercase tracking-wider rounded-sm border border-gray-300">
                     {{ badgePlano }}
                 </span>
-                <button class="text-[10px] text-green-600 font-bold uppercase hover:underline">
+                <Link :href="route('subscription.index')" class="text-[10px] text-green-600 font-bold uppercase hover:underline">
                     {{ $t('project.upgrade') }}
-                </button>
+                </Link>
             </div>
         </div>
 

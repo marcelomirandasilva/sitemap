@@ -2,6 +2,7 @@
 import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
 import { trans as t } from 'laravel-vue-i18n';
 import axios from 'axios';
+import { Link } from '@inertiajs/vue3';
 
 const props = defineProps({
     show: {
@@ -170,9 +171,9 @@ onUnmounted(() => {
                     
                     <div class="flex items-center gap-2 mb-3">
                         <span class="px-2 py-0.5 bg-white border border-gray-300 text-[10px] font-bold text-gray-500 uppercase">Free 500</span>
-                        <span class="text-[10px] font-bold text-green-600 uppercase flex items-center cursor-pointer hover:underline">
+                        <Link :href="route('subscription.index')" class="text-[10px] font-bold text-green-600 uppercase flex items-center cursor-pointer hover:underline">
                             <span class="text-[8px] mr-1">︽</span> {{ $t('project.upgrade') }} NOW
-                        </span>
+                        </Link>
                     </div>
 
                     <!-- Menu Topo -->
@@ -182,7 +183,7 @@ onUnmounted(() => {
                             {{ $t('modal.my_sitemap') }}
                         </span>
                         <span class="cursor-pointer hover:text-gray-900 border-b-2 border-transparent hover:border-[#c0392b] pb-2">{{ $t('modal.settings') }}</span>
-                        <span class="cursor-pointer hover:text-gray-900 font-bold text-green-600 border-b-2 border-transparent pb-2">{{ $t('modal.upgrade') }}</span>
+                        <Link :href="route('subscription.index')" class="cursor-pointer hover:text-gray-900 font-bold text-green-600 border-b-2 border-transparent pb-2">{{ $t('modal.upgrade') }}</Link>
                         <span class="cursor-pointer font-bold text-gray-800 border-b-2 border-transparent border-t border-l border-r rounded-t bg-white px-2 py-1 -mb-2.5 relative top-0.5 z-10 flex items-center gap-1">
                             <span v-if="['running', 'queued'].includes(tarefa?.status)" class="animate-spin">🔁</span>
                             <span v-else>✔</span>

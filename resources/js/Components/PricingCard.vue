@@ -21,42 +21,50 @@ const formatCurrency = (value) => {
     >
         <div class="mb-5">
             <h3 class="text-lg font-semibold leading-8 text-gray-900">{{ plan.name }}</h3>
-            <p class="mt-4 text-base leading-6 text-gray-600">Ideal para escalar seus sitemaps.</p>
+            <p class="mt-4 text-base leading-6 text-gray-600">{{ $t('subscription.ideal_for_scaling') }}</p>
             <p class="mt-6 flex items-baseline gap-x-1">
                 <span class="text-4xl font-bold tracking-tight text-gray-900">{{ formatCurrency(plan.price_monthly_brl) }}</span>
-                <span class="text-sm font-semibold leading-6 text-gray-600">/mês</span>
+                <span class="text-sm font-semibold leading-6 text-gray-600">{{ $t('subscription.price_per_month') }}</span>
             </p>
         </div>
         
         <ul role="list" class="mt-8 space-y-3 text-sm leading-6 text-gray-600 flex-1">
             <li class="flex gap-x-3">
                 <CheckIcon class="h-6 w-5 flex-none text-blue-600" aria-hidden="true" />
-                Até {{ plan.max_pages }} páginas
+                {{ $t('subscription.features.max_pages', { count: plan.max_pages }) }}
             </li>
             <li class="flex gap-x-3">
                 <CheckIcon class="h-6 w-5 flex-none text-blue-600" aria-hidden="true" />
-                Até {{ plan.max_projects }} projetos
+                {{ $t('subscription.features.max_projects', { count: plan.max_projects }) }}
             </li>
             <li v-if="plan.has_advanced_features" class="flex gap-x-3">
                 <CheckIcon class="h-6 w-5 flex-none text-blue-600" aria-hidden="true" />
-                Sitemap de Imagens e Vídeos
+                {{ $t('subscription.features.advanced') }}
             </li>
              <li v-if="plan.has_advanced_features" class="flex gap-x-3">
                 <CheckIcon class="h-6 w-5 flex-none text-blue-600" aria-hidden="true" />
-                API de Automação
+                {{ $t('subscription.features.api') }}
             </li>
         </ul>
 
         <a 
-            :href="route('subscription.checkout', plan.stripe_id || 'price_default')" 
-            class="mt-8 block w-full rounded-md px-3 py-2 text-center text-sm font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+            v-if="plan.stripe_id && !active"
+            :href="route('subscription.checkout', plan.stripe_id)" 
+            class="mt-8 block w-full rounded-md px-3 py-2 text-center text-sm font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100"
+        >
+            {{ $t('subscription.subscribe_now') }}
+        </a>
+        <button 
+            v-else
+            disabled
+            class="mt-8 block w-full rounded-md px-3 py-2 text-center text-sm font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 cursor-default"
             :class="[
                 active 
-                    ? 'bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600' 
-                    : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
+                    ? 'bg-blue-600 text-white' 
+                    : 'bg-gray-100 text-gray-400'
             ]"
         >
-            {{ active ? 'Seu Plano Atual' : 'Assinar Agora' }}
-        </a>
+            {{ active ? $t('subscription.current_plan') : $t('subscription.available') }}
+        </button>
     </div>
 </template>

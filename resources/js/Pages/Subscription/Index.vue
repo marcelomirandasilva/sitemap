@@ -18,18 +18,18 @@ const displayPlans = props.plans.length ? props.plans : [
 </script>
 
 <template>
-    <Head title="Planos e Assinatura" />
+    <Head :title="$t('subscription.title')" />
 
     <AppLayout>
         <template #header>
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">Planos & Preços</h2>
+            <h2 class="font-semibold text-xl text-gray-800 leading-tight">{{ $t('subscription.header_title') }}</h2>
         </template>
 
         <div class="py-12">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
                 <div class="text-center max-w-2xl mx-auto mb-16">
-                     <h2 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Escolha o plano ideal</h2>
-                     <p class="mt-6 text-lg leading-8 text-gray-600">Comece pequeno e escale conforme sua necessidade. Cancele quando quiser.</p>
+                     <h2 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">{{ $t('subscription.hero_title') }}</h2>
+                     <p class="mt-6 text-lg leading-8 text-gray-600">{{ $t('subscription.hero_subtitle') }}</p>
                 </div>
 
                 <div class="grid grid-cols-1 gap-y-8 sm:grid-cols-2 lg:grid-cols-3 gap-x-8">
