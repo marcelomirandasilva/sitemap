@@ -11,6 +11,9 @@ const props = defineProps({
     }
 });
 
+// Emits para o componente pai saber que o botão foi clicado
+const emit = defineEmits(['subscribe']);
+
 const formatCurrency = (value) => {
     if (!value) return 'R$ 0,00';
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value / 100);
@@ -26,17 +29,16 @@ const displayPrice = computed(() => {
 // Define qual sufixo mostrar (/mês ou /ano)
 const priceSuffix = computed(() => {
     return props.billingCycle === 'yearly' 
-        ? '/ano' // ou use $t('subscription.per_year')
-        : '/mês'; // ou use $t('subscription.per_month')
+        ? '/ano' 
+        : '/mês';
 });
 
-// Define qual ID do Stripe enviar para o Checkout
+// Define qual ID do Stripe vamos usar (Apenas para validação visual, o envio é via evento)
 const targetStripePriceId = computed(() => {
     return props.billingCycle === 'yearly'
         ? props.plan.stripe_yearly_price_id
         : props.plan.stripe_monthly_price_id;
 });
-
 </script>
 
 <template>
@@ -84,13 +86,13 @@ const targetStripePriceId = computed(() => {
             </li>
         </ul>
 
-        <a 
+        <button 
             v-if="targetStripePriceId && !active"
-            :href="route('subscription.checkout', targetStripePriceId)" 
-            class="mt-8 block w-full rounded-md px-3 py-2 text-center text-sm font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors"
+            @click="emit('subscribe')"
+            class="mt-8 block w-full rounded-md px-3 py-2 text-center text-sm font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors cursor-pointer"
         >
             {{ $t('subscription.subscribe_now') }}
-        </a>
+        </button>
         
         <button 
             v-else

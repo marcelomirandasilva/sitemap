@@ -84,11 +84,17 @@ class PlanSeeder extends Seeder
             ],
         ];
 
+        $stripeService = new \App\Services\StripePlanService();
+
         foreach ($plans as $plan) {
+            $stripeIds = $stripeService->syncPlan($plan);
+
             DB::table('plans')->upsert(
                 array_merge($plan, [
                     'created_at' => now(),
-                    'updated_at' => now()
+                    'updated_at' => now(),
+                    'stripe_monthly_price_id' => $stripeIds['stripe_monthly_price_id'],
+                    'stripe_yearly_price_id' => $stripeIds['stripe_yearly_price_id'],
                 ]),
                 ['slug'] // Garante que atualiza se o slug já existir
             );

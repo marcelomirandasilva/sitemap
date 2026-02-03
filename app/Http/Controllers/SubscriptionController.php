@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\Plan;
+use Laravel\Cashier\Exceptions\IncompletePayment;
 
 class SubscriptionController extends Controller
 {
@@ -14,35 +15,56 @@ class SubscriptionController extends Controller
     public function index()
     {
         return Inertia::render('Subscription/Index', [
+            // Trazendo planos ordenados pelo preço
             'plans' => Plan::orderBy('price_monthly_brl', 'asc')->get(),
+
+            // Dados da assinatura atual
             'currentSubscription' => auth()->user()->subscription('default'),
+
+            // Dados parciais do cartão para a mensagem de confirmação
+            'userCardLast4' => auth()->user()->pm_last_four,
+            'userCardBrand' => auth()->user()->pm_type,
         ]);
     }
 
     /**
-     * Inicia o Checkout da Assinatura
+     * Processa o Checkout ou a Troca de Plano (Swap)
      */
     public function checkout(Request $request, string $priceId)
     {
         $user = $request->user();
 
-        // Se já tem assinatura, faz o SWAP (Troca de Plano)
+        // ----------------------------------------------------------------------
+        // CENÁRIO 1: Usuário já é assinante (UPGRADE/DOWNGRADE)
+        // ----------------------------------------------------------------------
         if ($user->subscribed('default')) {
             try {
-                // Tenta trocar o plano usando o metodo de pagamento atual
+                // Tenta trocar o plano e cobrar a diferença (Prorata) imediatamente
+                // usando o cartão já salvo.
                 $user->subscription('default')->swapAndInvoice($priceId);
 
-                // IMPORTANTE: Disparar evento de upgrade manualmente se necessário ou confiar no Webhook.
-                // Como temos o StripeEventListener, o webhook vai atualizar o plan_id em breve.
+                // Se passar, volta com sucesso
+                return redirect()->route('subscription.index')
+                    ->with('success', 'Plano atualizado com sucesso! O acesso foi liberado.');
 
-                return redirect()->route('subscription.index')->with('success', 'Seu plano foi alterado com sucesso!');
+            } catch (IncompletePayment $exception) {
+                // CENÁRIO DE ERRO: O cartão foi recusado ou pede autenticação 3DS.
+                // Redireciona para a página de pagamento seguro do Cashier.
+                return redirect()->route(
+                    'cashier.payment',
+                    [$exception->payment->id, 'redirect' => route('subscription.index')]
+                );
+
             } catch (\Exception $e) {
-                // Se falhar (ex: cartão recusado), redireciona para o portal ou mostra erro
-                return redirect()->route('subscription.index')->with('error', 'Erro ao alterar o plano: ' . $e->getMessage());
+                // Erro genérico? Manda para o portal para ele ver o que houve.
+                return redirect()->route('subscription.portal')
+                    ->with('error', 'Houve um problema no pagamento automátio. Por favor, verifique seu cartão.');
             }
         }
 
-        // Se NÃO tem assinatura, inicia Checkout do Stripe
+        // ----------------------------------------------------------------------
+        // CENÁRIO 2: Novo Assinante (Checkout Padrão)
+        // ----------------------------------------------------------------------
         return $user->newSubscription('default', $priceId)
             ->checkout([
                 'success_url' => route('dashboard') . '?checkout=success',
@@ -51,10 +73,10 @@ class SubscriptionController extends Controller
     }
 
     /**
-     * Portal do Cliente (para cancelar/atualizar cartão)
+     * Portal do Cliente (para cancelar/atualizar cartão manualmente)
      */
     public function portal(Request $request)
     {
-        return $request->user()->redirectToBillingPortal(route('dashboard'));
+        return $request->user()->redirectToBillingPortal(route('subscription.index'));
     }
 }

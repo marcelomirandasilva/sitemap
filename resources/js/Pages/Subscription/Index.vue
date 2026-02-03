@@ -1,25 +1,67 @@
 <script setup>
 import AppLayout from '@/Layouts/AppLayout.vue';
-import { Head } from '@inertiajs/vue3';
+import { Head, router } from '@inertiajs/vue3'; // Importei o router
 import PricingCard from '@/Components/PricingCard.vue';
 import { ref } from 'vue';
 
 const props = defineProps({
     plans: Array,
     currentSubscription: Object,
+    userCardLast4: String, // Recebe o final do cartão
+    userCardBrand: String, // Recebe a bandeira (Visa, Master)
 });
 
 // Estado do Ciclo de Cobrança ('monthly' ou 'yearly')
 const billingCycle = ref('monthly');
 
-// Removemos o Mock. Agora a verdade vem apenas do banco de dados via props.
+// A verdade vem do banco de dados via props
 const displayPlans = props.plans;
 
-// Helper para verificar se o plano está ativo (independente se é mensal ou anual)
+// Helper para verificar se o plano está ativo
 const isPlanActive = (plan) => {
     const currentPrice = props.currentSubscription?.stripe_price;
     if (!currentPrice) return false;
     return currentPrice === plan.stripe_monthly_price_id || currentPrice === plan.stripe_yearly_price_id;
+};
+
+// --- LÓGICA DE ASSINATURA INTELIGENTE ---
+const handleSubscribe = (plan) => {
+    // 1. Descobrir qual ID de preço estamos comprando (Mensal ou Anual?)
+    const targetPriceId = billingCycle.value === 'yearly' 
+        ? plan.stripe_yearly_price_id 
+        : plan.stripe_monthly_price_id;
+
+    if (!targetPriceId) {
+        alert("Erro na configuração do plano. Contate o suporte.");
+        return;
+    }
+
+    // 2. Se for um Novo Assinante (não tem plano), vai direto pro Checkout do Stripe
+    if (!props.currentSubscription) {
+        window.location.href = route('subscription.checkout', targetPriceId);
+        return;
+    }
+
+    // 3. Se for Assinante Existente (Troca de Plano), pede confirmação
+    const cardInfo = props.userCardLast4 
+        ? `cartão final ${props.userCardLast4}` 
+        : 'seu cartão cadastrado';
+
+    const message = `CONFIRMAÇÃO DE MUDANÇA:\n\n` +
+                    `Você deseja alterar seu plano para: ${plan.name}?\n` +
+                    `A diferença de valor será cobrada (ou creditada) imediatamente no ${cardInfo}.\n\n` +
+                    `Clique em OK para confirmar a cobrança.\n` +
+                    `Clique em Cancelar se preferir trocar o cartão antes.`;
+
+    if (confirm(message)) {
+        // Usuário aceitou a cobrança imediata -> Envia para o controller fazer o swapAndInvoice
+        router.get(route('subscription.checkout', targetPriceId));
+    } else {
+        // Usuário cancelou -> Oferece ir para o portal
+        if(confirm("Deseja ir para o Portal do Cliente para gerenciar seus cartões?")) {
+            window.location.href = route('subscription.portal');
+        }
+    }
 };
 </script>
 
@@ -73,6 +115,7 @@ const isPlanActive = (plan) => {
                         :plan="plan" 
                         :billing-cycle="billingCycle"
                         :active="isPlanActive(plan)"
+                        @subscribe="handleSubscribe(plan)" 
                     />
                 </div>
             </div>
