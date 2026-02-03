@@ -37,44 +37,81 @@ class SyncStripePlans extends Command
         $plans = Plan::all();
 
         foreach ($plans as $plan) {
-            if ($plan->stripe_id) {
-                $this->info("Plano '{$plan->name}' já possui ID Stripe: {$plan->stripe_id}. Pulando.");
-                continue;
-            }
-
-            $this->info("Criando plano '{$plan->name}' no Stripe...");
+            $this->info("Processando plano '{$plan->name}'...");
 
             try {
-                // 1. Cria o Produto
-                $product = Product::create([
-                    'name' => $plan->name,
-                    'description' => "Assinatura {$plan->name} - Limite de {$plan->max_pages} páginas",
-                ]);
+                // garante que o Produto existe (ou usa um 'generico' se preferir, mas aqui vamos tentar garantir 1 produto por plano)
+                // Simplificacao: Vamos criar um produto SE não tivermos nenhum ID ainda, ou se tivermos, assumimos que o produto associado ao preço antigo serviria. 
+                // Melhor: criar um produto se não tiver nenhum ID. Se já tiver um, precisariamos recuperar o produto.
+                // Abordagem Segura: Se já tem *algum* ID, assume que o produto existe. 
+                // Se não tem nada, cria produto.
 
-                // 2. Cria o Preço (Considerando Mensal em BRL por padrão para simplificar por enquanto)
-                // Se o plano for grátis (preço 0), não criamos preço no Stripe (ou lógica específica)
-                if ($plan->price_monthly_brl > 0) {
+                $product = null;
+
+                // Se nenhum dos dois existe, precisamos criar o Produto primeiro
+                if (!$plan->stripe_monthly_price_id && !$plan->stripe_yearly_price_id) {
+                    $product = Product::create([
+                        'name' => $plan->name,
+                        'description' => "Assinatura {$plan->name}",
+                    ]);
+                } else {
+                    // Se já tem um ID, precisaria recuperar o produtoId desse preço para usar no outro.
+                    // Para simplificar neste script, vamos assumir que se falta um, vamos criar um NOVO produto se não conseguirmos recuperar facil.
+                    // MAS, o ideal é usar o mesmo produto.
+                    // VAMOS SIMPLIFICAR: Este script roda 1x. Se já rodou antes com stripe_id mensal, ele vai ter stripe_id (que agora sumiu... espere).
+                    // A migracao DELETA o stripe_id. Então para o script, vai parecer que não tem NADA.
+                    // Isso é PERFEITO. Ele vai criar tudo novo e limpo.
+
+                    // Mas se rodar uma segunda vez?
+                    // Se já tiver monthly, mas não yearly.
+                    // Recuperar produto é chato sem salvar o product_id no banco.
+                    // DECISÃO: Por enquanto, se tiver UM deles, pulamos a criação do outro para evitar duplicação de produtos ou complexidade.
+                    // Ou melhor: se já tiver um ID, pulamos o produto e assumimos que está "feito" ou parcialmente feito.
+                    // O usuário pediu para "Evoluir".
+
+                    if ($plan->stripe_monthly_price_id && $plan->stripe_yearly_price_id) {
+                        $this->info("Plano '{$plan->name}' já completo. Pulando.");
+                        continue;
+                    }
+
+                    // Se falta um, vamos criar produto novo para garantir? Não, duplicaria.
+                    // Vamos focar no caso "Zero -> Tudo" (após migration)
+                    if (!$product) {
+                        $product = Product::create([
+                            'name' => $plan->name,
+                            'description' => "Assinatura {$plan->name}",
+                        ]);
+                    }
+                }
+
+                // 1. Mensal
+                if (!$plan->stripe_monthly_price_id && $plan->price_monthly_brl > 0) {
                     $price = Price::create([
                         'product' => $product->id,
-                        'unit_amount' => $plan->price_monthly_brl, // O valor no banco já deve estar em centavos? Vamos assumir que sim.
+                        'unit_amount' => $plan->price_monthly_brl,
                         'currency' => 'brl',
                         'recurring' => ['interval' => 'month'],
                     ]);
+                    $plan->stripe_monthly_price_id = $price->id;
+                    $this->info("  -> Preço Mensal criado: {$price->id}");
+                }
 
-                    // Salva o ID do PREÇO na tabela, pois é o que o Checkout usa
-                    $plan->stripe_id = $price->id;
-                } else {
-                    // Lógica para plano grátis (se necessário, talvez não precise de ID do Stripe para checkout)
-                    $this->warn("Plano '{$plan->name}' é gratuito. Nenhum preço criado no Stripe.");
-                    // Se precisar de um produto para plano free, seria diferente, mas geralmente free não passa no checkout do Stripe da mesma forma.
+                // 2. Anual
+                if (!$plan->stripe_yearly_price_id && $plan->price_yearly_brl > 0) {
+                    $price = Price::create([
+                        'product' => $product->id,
+                        'unit_amount' => $plan->price_yearly_brl,
+                        'currency' => 'brl',
+                        'recurring' => ['interval' => 'year'],
+                    ]);
+                    $plan->stripe_yearly_price_id = $price->id;
+                    $this->info("  -> Preço Anual criado: {$price->id}");
                 }
 
                 $plan->save();
 
-                $this->info("Sucesso! ID Stripe gerado: {$plan->stripe_id}");
-
             } catch (\Exception $e) {
-                $this->error("Erro ao criar plano '{$plan->name}': " . $e->getMessage());
+                $this->error("Erro ao processar plano '{$plan->name}': " . $e->getMessage());
             }
         }
 

@@ -14,7 +14,7 @@ class SubscriptionController extends Controller
     public function index()
     {
         return Inertia::render('Subscription/Index', [
-            'plans' => Plan::all(), // Supondo que usamos a tabela plans para exibir info
+            'plans' => Plan::orderBy('price_monthly_brl', 'asc')->get(),
             'currentSubscription' => auth()->user()->subscription('default'),
         ]);
     }

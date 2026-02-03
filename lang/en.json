@@ -214,5 +214,8 @@
     "subscription.current_plan": "Your Current Plan",
     "subscription.subscribe_now": "Subscribe Now",
     "subscription.available": "Available",
-    "subscription.ideal_for_scaling": "Ideal for scaling your sitemaps."
+    "subscription.ideal_for_scaling": "Ideal for scaling your sitemaps.",
+    "subscription.save_badge": "-20% OFF",
+    "subscription.yearly": "Yearly",
+    "subscription.monthly": "Monthly"
 }

@@ -55,13 +55,17 @@ class StripeEventListener
         $user = User::where('stripe_id', $stripeId)->first();
 
         if ($user) {
-            // 2. Achar o plano local pelo ID do preço do Stripe
-            $plan = Plan::where('stripe_id', $priceId)->first();
+            // 2. Achar o plano local pelo ID do preço do Stripe (Mensal ou Anual)
+            $plan = Plan::where('stripe_monthly_price_id', $priceId)
+                ->orWhere('stripe_yearly_price_id', $priceId)
+                ->first();
 
             if ($plan) {
                 $user->plan_id = $plan->id;
                 $user->save();
                 Log::info("Webhook Stripe: Plano do usuário {$user->id} atualizado para {$plan->name}");
+            } else {
+                Log::warning("Webhook Stripe: Plano local não encontrado para o price_id {$priceId}");
             }
         }
     }

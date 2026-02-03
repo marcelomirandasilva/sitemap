@@ -212,5 +212,9 @@
     "subscription.current_plan": "Seu Plano Atual",
     "subscription.subscribe_now": "Assinar Agora",
     "subscription.available": "Disponível",
-    "subscription.ideal_for_scaling": "Ideal para escalar seus sitemaps."
+    "subscription.ideal_for_scaling": "Ideal para escalar seus sitemaps.",
+    "subscription.save_badge": "-20% OFF", 
+    "subscription.yearly": "Anual",
+    "subscription.monthly": "Mensal"
+
 }
