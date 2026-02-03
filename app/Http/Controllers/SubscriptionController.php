@@ -26,12 +26,23 @@ class SubscriptionController extends Controller
     {
         $user = $request->user();
 
-        // Se já tem assinatura, redireciona para portal ou avisa
+        // Se já tem assinatura, faz o SWAP (Troca de Plano)
         if ($user->subscribed('default')) {
-            return redirect()->route('subscription.index')->with('error', 'Você já possui uma assinatura ativa.');
+            try {
+                // Tenta trocar o plano usando o metodo de pagamento atual
+                $user->subscription('default')->swapAndInvoice($priceId);
+
+                // IMPORTANTE: Disparar evento de upgrade manualmente se necessário ou confiar no Webhook.
+                // Como temos o StripeEventListener, o webhook vai atualizar o plan_id em breve.
+
+                return redirect()->route('subscription.index')->with('success', 'Seu plano foi alterado com sucesso!');
+            } catch (\Exception $e) {
+                // Se falhar (ex: cartão recusado), redireciona para o portal ou mostra erro
+                return redirect()->route('subscription.index')->with('error', 'Erro ao alterar o plano: ' . $e->getMessage());
+            }
         }
 
-        // Inicia Checkout do Stripe
+        // Se NÃO tem assinatura, inicia Checkout do Stripe
         return $user->newSubscription('default', $priceId)
             ->checkout([
                 'success_url' => route('dashboard') . '?checkout=success',

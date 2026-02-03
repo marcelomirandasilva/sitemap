@@ -34,6 +34,12 @@ class AppServiceProvider extends ServiceProvider
 
         Vite::prefetch(concurrency: 3);
 
+        // Listener para Webhooks do Cashier
+        Event::listen(
+            \Laravel\Cashier\Events\WebhookReceived::class,
+            [\App\Listeners\StripeEventListener::class, 'handle']
+        );
+
 
     }
 }
