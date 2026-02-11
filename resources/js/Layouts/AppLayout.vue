@@ -6,24 +6,24 @@ import AppFooter from '@/Components/App/Footer.vue';
 </script>
 
 <template>
-    <div class="min-h-screen bg-[#f5f5f5] font-sans text-gray-700 flex flex-col">
-        <!-- Gradient Top Strip -->
-        <div class="bg-gradient-to-b from-[#e8f4fc] to-[#f5f5f5] border-b border-gray-200">
+    <div class="min-h-screen bg-gradient-to-b from-[#e8f4fc] to-[#f5f5f5] font-sans text-gray-700 flex flex-col">
+        
+        <div>
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between items-center h-20">
-                    <!-- Header (Logo) -->
                     <AppHeader />
 
-                    <!-- Topbar (Nav + User) -->
                     <AppTopbar />
                 </div>
             </div>
+            
+            <div v-if="$slots.hero" class="pb-12">
+                <slot name="hero" />
+            </div>
         </div>
 
-        <!-- Main Content Area -->
         <main class="flex-grow">
-            <!-- Breadcrumbs / Page Title Slot -->
-            <header v-if="$slots.header" class="bg-white shadow-sm border-b border-gray-100">
+            <header v-if="$slots.header" class="bg-white/50 backdrop-blur-sm shadow-sm border-b border-gray-100">
                 <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
                     <slot name="header" />
                 </div>
@@ -34,7 +34,6 @@ import AppFooter from '@/Components/App/Footer.vue';
             </div>
         </main>
 
-        <!-- Footer -->
         <AppFooter />
     </div>
 </template>

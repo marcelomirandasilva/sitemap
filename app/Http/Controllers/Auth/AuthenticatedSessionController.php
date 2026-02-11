@@ -18,9 +18,14 @@ class AuthenticatedSessionController extends Controller
      */
     public function create(): Response
     {
-        return Inertia::render('Auth/Login', [
+        return Inertia::render('Public/LandingPage', [
             'canResetPassword' => Route::has('password.request'),
             'status' => session('status'),
+            'canLogin' => Route::has('login'),
+            'canRegister' => Route::has('register'),
+            'laravelVersion' => \Illuminate\Foundation\Application::VERSION,
+            'phpVersion' => PHP_VERSION,
+            'defaultTab' => 'login',
         ]);
     }
 
