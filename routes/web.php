@@ -57,6 +57,15 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/subscription', [App\Http\Controllers\SubscriptionController::class, 'index'])->name('subscription.index');
     Route::get('/subscription/checkout/{priceId}', [App\Http\Controllers\SubscriptionController::class, 'checkout'])->name('subscription.checkout');
     Route::get('/billing-portal', [App\Http\Controllers\SubscriptionController::class, 'portal'])->name('subscription.portal');
+
+    // Preferências do Usuário
+    Route::put('/preferences/ui', [App\Http\Controllers\PreferencesController::class, 'updateUi'])->name('preferences.ui.update');
+    Route::put('/preferences/notifications', [App\Http\Controllers\PreferencesController::class, 'updateNotifications'])->name('preferences.notifications.update');
+    Route::put('/preferences/billing', [App\Http\Controllers\PreferencesController::class, 'updateBilling'])->name('preferences.billing.update');
+    Route::get('/preferences', [App\Http\Controllers\PreferencesController::class, 'edit'])->name('preferences.edit');
+
+    // Histórico de Pagamentos
+    Route::get('/billing', [App\Http\Controllers\BillingController::class, 'index'])->name('billing.index');
 });
 
 // Rotas de Desenvolvimento

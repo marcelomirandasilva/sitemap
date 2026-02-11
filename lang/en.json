@@ -217,5 +217,52 @@
     "subscription.ideal_for_scaling": "Ideal for scaling your sitemaps.",
     "subscription.save_badge": "-20% OFF",
     "subscription.yearly": "Yearly",
-    "subscription.monthly": "Monthly"
+    "subscription.monthly": "Monthly",
+
+    "preferences.title": "Account Preferences",
+    "preferences.tabs.personalize": "Personalize",
+    "preferences.tabs.password": "Password",
+    "preferences.tabs.sitemaps": "Sitemaps Domain",
+    "preferences.tabs.remove_account": "Remove Account",
+
+    "preferences.notifications.title": "Email Notifications",
+    "preferences.notifications.weekly_summary": "Weekly Summary",
+    "preferences.notifications.weekly_summary_desc": "Receive notifications when your sitemap is updated",
+    "preferences.notifications.critical_alerts": "Critical Alerts",
+    "preferences.notifications.critical_alerts_desc": "Receive notification about outdated sitemaps or errors",
+    "preferences.notifications.save": "SAVE CHANGES",
+
+    "preferences.appearance.title": "Appearance",
+    "preferences.appearance.color_scheme": "Preferred Color Scheme",
+    "preferences.appearance.light": "LIGHT",
+    "preferences.appearance.dark": "DARK",
+    "preferences.appearance.timezone": "Custom Time Zone",
+    "preferences.appearance.timezone_desc": "* used in your detailed sitemap reports",
+    "preferences.appearance.select_timezone": "Select Timezone...",
+    "preferences.appearance.save": "SAVE CHANGES",
+
+    "preferences.billing.title": "Your Business Name and Address",
+    "preferences.billing.desc": "* optional setting, this information will be used in your",
+    "preferences.billing.invoices": "invoices",
+    "preferences.billing.vat_number": "VAT number (if applicable)",
+    "preferences.billing.vat_placeholder": "Your VAT number...",
+    "preferences.billing.address": "Address",
+    "preferences.billing.address_placeholder": "Business address...",
+    "preferences.billing.save": "SAVE CHANGES",
+
+    "preferences.password.desc": "Password change functionality is available in specific settings.",
+    "preferences.password.link": "Go to Profile Security",
+    "preferences.saved": "Saved.",
+
+    "billing.history.title": "Payment History",
+    "billing.history.description": "View and download your past invoices.",
+    "billing.history.date": "Date",
+    "billing.history.amount": "Amount",
+    "billing.history.status": "Status",
+    "billing.history.download": "Download PDF",
+    "billing.history.no_invoices": "No invoices found.",
+    "billing.history.status.paid": "Paid",
+    "billing.history.status.open": "Open",
+    "billing.history.status.void": "Void",
+    "billing.history.status.uncollectible": "Uncollectible"
 }

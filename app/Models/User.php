@@ -24,6 +24,11 @@ class User extends Authenticatable
         'password',
         'plan_id',
         'role',
+        'timezone',
+        'ui_preferences',
+        'notification_preferences',
+        'billing_address',
+        'vat_number',
     ];
 
     /**
@@ -46,7 +51,17 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'ui_preferences' => 'array',
+            'notification_preferences' => 'array',
         ];
+    }
+
+    /**
+     * Helper para obter o timezone preferido do usuário
+     */
+    public function preferredTimezone(): string
+    {
+        return $this->timezone ?? config('app.timezone');
     }
     public function plan()
     {

@@ -139,8 +139,8 @@ CREATE TABLE `plans` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `slug` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `stripe_monthly_price_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `stripe_yearly_price_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `stripe_monthly_price_id` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `stripe_yearly_price_id` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `max_pages` int NOT NULL,
   `price_monthly_brl` int DEFAULT NULL,
   `price_yearly_brl` int DEFAULT NULL,
@@ -268,6 +268,11 @@ CREATE TABLE `users` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `email` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `timezone` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'UTC',
+  `ui_preferences` json DEFAULT NULL,
+  `notification_preferences` json DEFAULT NULL,
+  `billing_address` text COLLATE utf8mb4_unicode_ci,
+  `vat_number` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `email_verified_at` timestamp NULL DEFAULT NULL,
   `plan_id` bigint unsigned DEFAULT NULL,
   `role` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'user',
@@ -304,3 +309,4 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (8,'2026_01_26_1520
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (9,'2026_02_02_222555_create_subscriptions_table',1);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (10,'2026_02_02_222556_create_subscription_items_table',1);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (11,'2026_02_03_200128_update_plans_table_split_prices',2);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (12,'2026_02_04_174301_add_preferences_to_users_table',3);
