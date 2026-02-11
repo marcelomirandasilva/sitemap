@@ -6,11 +6,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Cashier\Billable;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, Billable;
 
     /**
      * The attributes that are mass assignable.
@@ -23,6 +24,11 @@ class User extends Authenticatable
         'password',
         'plan_id',
         'role',
+        'timezone',
+        'ui_preferences',
+        'notification_preferences',
+        'billing_address',
+        'vat_number',
     ];
 
     /**
@@ -45,7 +51,17 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'ui_preferences' => 'array',
+            'notification_preferences' => 'array',
         ];
+    }
+
+    /**
+     * Helper para obter o timezone preferido do usuário
+     */
+    public function preferredTimezone(): string
+    {
+        return $this->timezone ?? config('app.timezone');
     }
     public function plan()
     {
@@ -60,6 +76,8 @@ class User extends Authenticatable
     /**
      * Helper para saber se é Admin (útil para o futuro)
      */
+
+
     public function isAdmin(): bool
     {
         return $this->role === 'admin';

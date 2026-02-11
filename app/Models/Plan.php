@@ -12,6 +12,8 @@ class Plan extends Model
     protected $fillable = [
         'name',
         'slug',
+        'stripe_monthly_price_id',
+        'stripe_yearly_price_id',
         'max_pages',
         'price_monthly_brl',
         'price_yearly_brl',
@@ -51,6 +53,11 @@ class Plan extends Model
     public function getYearlyPriceUsdAttribute()
     {
         return $this->price_yearly_usd / 100;
+    }
+
+    public function subscriptions()
+    {
+        return $this->hasMany(Subscription::class);
     }
 
     public function users()
