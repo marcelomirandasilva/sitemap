@@ -11,13 +11,19 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::table('plans', function (Blueprint $table) {
-            $table->dropColumn('stripe_id');
-            $table->string('stripe_monthly_price_id')->nullable()->after('slug');
-            $table->string('stripe_yearly_price_id')->nullable()->after('stripe_monthly_price_id');
+            if (Schema::hasColumn('plans', 'stripe_id')) {
+                $table->dropColumn('stripe_id');
+            }
 
-            // Índices para busca rápida no Webhook
-            $table->index('stripe_monthly_price_id');
-            $table->index('stripe_yearly_price_id');
+            if (!Schema::hasColumn('plans', 'stripe_monthly_price_id')) {
+                $table->string('stripe_monthly_price_id')->nullable()->after('slug');
+                $table->index('stripe_monthly_price_id');
+            }
+
+            if (!Schema::hasColumn('plans', 'stripe_yearly_price_id')) {
+                $table->string('stripe_yearly_price_id')->nullable()->after('stripe_monthly_price_id');
+                $table->index('stripe_yearly_price_id');
+            }
         });
     }
 
@@ -27,8 +33,13 @@ return new class extends Migration {
     public function down(): void
     {
         Schema::table('plans', function (Blueprint $table) {
-            $table->dropColumn(['stripe_monthly_price_id', 'stripe_yearly_price_id']);
-            $table->string('stripe_id')->nullable()->after('slug');
+            if (Schema::hasColumn('plans', 'stripe_monthly_price_id')) {
+                $table->dropColumn(['stripe_monthly_price_id', 'stripe_yearly_price_id']);
+            }
+
+            if (!Schema::hasColumn('plans', 'stripe_id')) {
+                $table->string('stripe_id')->nullable()->after('slug');
+            }
         });
     }
 };
