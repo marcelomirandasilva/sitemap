@@ -54,6 +54,30 @@ class StripeEventListener
         // 1. Achar o usuário pelo ID do Stripe
         $user = User::where('stripe_id', $stripeId)->first();
 
+        // Se não achou pelo ID, tenta pelo e-mail (caso o webhook chegue antes do sync ou seja a primeira assinatura)
+        if (!$user) {
+            try {
+                // Configura a chave se necessário (geralmente o Cashier já faz, mas por garantia)
+                if (!\Stripe\Stripe::getApiKey()) {
+                    \Stripe\Stripe::setApiKey(config('cashier.secret'));
+                }
+
+                $customer = \Stripe\Customer::retrieve($stripeId);
+
+                if ($customer && $customer->email) {
+                    $user = User::where('email', $customer->email)->first();
+
+                    if ($user) {
+                        $user->stripe_id = $stripeId;
+                        $user->save();
+                        Log::info("Webhook Stripe: Usuário {$user->id} ({$user->email}) vinculado ao Customer {$stripeId}.");
+                    }
+                }
+            } catch (\Exception $e) {
+                Log::error("Webhook Stripe: Erro ao buscar customer {$stripeId}: " . $e->getMessage());
+            }
+        }
+
         if ($user) {
             // 2. Achar o plano local pelo ID do preço do Stripe (Mensal ou Anual)
             $plan = Plan::where('stripe_monthly_price_id', $priceId)

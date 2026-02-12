@@ -1,0 +1,49 @@
+name: Deploy Production
+
+on:
+  push:
+    branches: [ "main" ] # Ou "master", dependendo do nome da sua branch principal
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            # 1. Entrar na pasta do projeto (AJUSTE O CAMINHO AQUI)
+            cd /home/miranda/htdocs/genmap.app
+
+            # 2. Ativar modo de manutenção (Opcional, mas recomendado)
+            php artisan down || true
+
+            # 3. Atualizar Código
+            git pull origin main
+
+            # 4. Instalar Dependências PHP
+            composer install --no-dev --optimize-autoloader
+
+            # 5. Rodar Migrations (O --force é obrigatório em produção)
+            php artisan migrate --force
+
+            # 6. Instalar Dependências JS e Buildar (Vite)
+            npm install
+            npm run build
+
+            # 7. Limpar e Recriar Caches do Laravel
+            php artisan optimize:clear
+            php artisan config:cache
+            php artisan event:cache
+            php artisan route:cache
+            php artisan view:cache
+
+            # 8. Reiniciar Filas (CRUCIAL se usar Supervisor/Redis)
+            php artisan queue:restart
+
+            # 9. Voltar do modo de manutenção
+            php artisan up

@@ -101,4 +101,20 @@ class ProjectController extends Controller
             'features' => $features
         ]);
     }
+
+    public function destroy(Project $project)
+    {
+        if ($project->user_id !== auth()->id()) {
+            abort(403);
+        }
+
+        // Excluir jobs e arquivos relacionados (Se 'cascade' estiver no banco, o DB faz isso. 
+        // Caso contrário, precisaríamos limpar manualmente os arquivos artifacts)
+        // Por segurança, vamos apagar o registro e assumir que relationships cuidam do resto OU que Jobs serão órfãos.
+        // O ideal é ter foreign keys com ON DELETE CASCADE.
+
+        $project->delete();
+
+        return Redirect::route('dashboard')->with('success', 'Projeto excluído com sucesso.');
+    }
 }

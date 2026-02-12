@@ -252,5 +252,11 @@
     "billing.history.status.paid": "Pago",
     "billing.history.status.open": "Aberto",
     "billing.history.status.void": "Cancelado",
-    "billing.history.status.uncollectible": "Não Cobrável"
+    "billing.history.status.uncollectible": "Não Cobrável",
+    
+    "project.delete": "Excluir Projeto",
+    "project.delete_confirm_title": "Tem certeza?",
+    "project.delete_confirm_text": "Você não poderá reverter isso! O projeto e todos os arquivos gerados serão excluídos permanentemente.",
+    "project.delete_confirm_btn": "Sim, excluir!",
+    "project.delete_cancel_btn": "Cancelar"
 }

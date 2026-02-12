@@ -1,7 +1,8 @@
 <script setup>
 import AppLayout from "@/Layouts/AppLayout.vue";
-import { Head, Link } from "@inertiajs/vue3";
+import { Head, Link, router } from "@inertiajs/vue3";
 import { computed, ref, onMounted } from "vue";
+import Swal from 'sweetalert2';
 import { trans as t } from "laravel-vue-i18n";
 import axios from 'axios';
 import UrlDataTable from '@/Components/Project/UrlDataTable.vue';
@@ -110,7 +111,26 @@ onMounted(() => {
     if (listaUrls.value.length === 0 || ['queued', 'running'].includes(tarefa.value.status)) {
         buscarDetalhesJob();
     }
+
 });
+
+const confirmarExclusao = () => {
+    Swal.fire({
+        title: t('project.delete_confirm_title'),
+        text: t('project.delete_confirm_text'),
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: t('project.delete_confirm_btn'),
+        cancelButtonText: t('project.delete_cancel_btn')
+    }).then((result) => {
+        if (result.isConfirmed) {
+            router.delete(route('projects.destroy', props.project.id));
+        }
+    })
+};
+
 
 const downloadUrl = computed(() => {
     if (!tarefa.value || !tarefa.value.artifacts) return null;
@@ -161,6 +181,16 @@ const downloadUrl = computed(() => {
                                 <span v-else class="w-2 h-2 rounded-full bg-current"></span>
                                 {{ tarefa.status ? $t('crawler.status.' + tarefa.status) : 'No Job' }}
                             </span>
+                            <button @click="confirmarExclusao"
+                                class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded text-sm uppercase shadow-sm flex items-center gap-2 transition">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                                    </path>
+                                </svg>
+                                {{ $t('project.delete') }}
+                            </button>
+                            
                             <button
                                 class="bg-[#007da0] hover:bg-[#006480] text-white font-bold py-2 px-4 rounded text-sm uppercase shadow-sm flex items-center gap-2">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

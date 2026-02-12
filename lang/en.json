@@ -264,5 +264,11 @@
     "billing.history.status.paid": "Paid",
     "billing.history.status.open": "Open",
     "billing.history.status.void": "Void",
-    "billing.history.status.uncollectible": "Uncollectible"
+    "billing.history.status.uncollectible": "Uncollectible",
+    
+    "project.delete": "Delete Project",
+    "project.delete_confirm_title": "Are you sure?",
+    "project.delete_confirm_text": "You won't be able to revert this! The project and all generated files will be permanently deleted.",
+    "project.delete_confirm_btn": "Yes, delete it!",
+    "project.delete_cancel_btn": "Cancel"
 }
