@@ -443,7 +443,7 @@ class SitemapGeneratorService
     /**
      * Busca o conteúdo do urllist.txt ou sitemap.xml e retorna um array formatado para o preview.
      */
-    public function getPreviewUrls(array $artifacts, string $jobId = null): array
+    public function getPreviewUrls(array $artifacts, ?string $jobId = null): array
     {
         // 1. Tentar urllist.txt (preferencial)
         $txtArtifact = collect($artifacts)->firstWhere(function ($a) {

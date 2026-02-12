@@ -25,7 +25,8 @@ jobs:
             # 2. Ativar modo de manutenção
             php artisan down || true
 
-            # 3. Atualizar Código
+            # 3. Atualizar Código (Forçar reset para garantir integridade)
+            git reset --hard
             git pull origin main
 
             # 4. Instalar Dependências PHP (Otimizado)
