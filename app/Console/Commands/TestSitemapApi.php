@@ -27,15 +27,15 @@ class TestSitemapApi extends Command
     public function handle(SitemapGeneratorService $service)
     {
         $this->info('Iniciando teste de conexão com a API...');
-        
+
         $config = config('services.sitemap_generator');
-        $this->line("URL Configurada: " . ($config['base_url'] ?? 'N/A'));
+        $this->line("URL Configurada:  " . ($config['base_url'] ?? 'N/A'));
         $this->line("Usuário: " . ($config['username'] ?? 'N/A'));
-        
+
         $this->newLine();
-        
+
         $result = $service->testConnection();
-        
+
         if ($result['success']) {
             $this->info('✅ ' . $result['message']);
             $this->line("Status: " . $result['status']);
@@ -45,14 +45,14 @@ class TestSitemapApi extends Command
             $this->error('❌ ' . $result['message']);
             $this->line("Status: " . ($result['status'] ?? 'N/A'));
             $this->line("Duração: " . ($result['duration_ms'] ?? 0) . "ms");
-            
+
             if (isset($result['debug_creds'])) {
-                 $this->table(['Debug Info', 'Value'], [
-                     ['User', $result['debug_creds']['user'] ?? ''],
-                     ['Base URL', $result['base_url'] ?? ''],
-                 ]);
+                $this->table(['Debug Info', 'Value'], [
+                    ['User', $result['debug_creds']['user'] ?? ''],
+                    ['Base URL', $result['base_url'] ?? ''],
+                ]);
             }
-            
+
             if (isset($result['response_body'])) {
                 $this->newLine();
                 $this->line("Resposta da API:");
