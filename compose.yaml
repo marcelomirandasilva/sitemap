@@ -19,6 +19,7 @@ services:
             IGNITION_LOCAL_SITES_PATH: '${PWD}'
         volumes:
             - '.:/var/www/html'
+            - '../api-sitemap:/var/www/api-sitemap'
         networks:
             - sail
         depends_on:
