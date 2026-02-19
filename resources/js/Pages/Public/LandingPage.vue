@@ -240,8 +240,8 @@ const submitLogin = () => {
                                     <input v-model="registerForm.terms" id="terms" type="checkbox" required
                                         class="mt-1 w-4 h-4 text-[#a4332b] border-gray-300 rounded focus:ring-[#a4332b]">
                                     <label for="terms" class="text-xs text-gray-500 italic">
-                                        * {{ $t('auth.agree_prefix') }} <a href="#" class="text-[#a4332b] hover:underline">{{ $t('auth.privacy_policy') }}</a> 
-                                        {{ $t('auth.and') }} <a href="#" class="text-[#a4332b] hover:underline">{{ $t('auth.terms_of_use') }}</a> {{ $t('auth.service_suffix') }}
+                                        * {{ $t('auth.agree_prefix') }} <Link :href="route('info.article', 'privacy-policy')" class="text-[#a4332b] hover:underline" target="_blank">{{ $t('auth.privacy_policy') }}</Link> 
+                                        {{ $t('auth.and') }} <Link :href="route('info.article', 'terms-of-use')" class="text-[#a4332b] hover:underline" target="_blank">{{ $t('auth.terms_of_use') }}</Link> {{ $t('auth.service_suffix') }}
                                     </label>
                                 </div>
 
