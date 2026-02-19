@@ -3,100 +3,116 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
+use App\Models\Plan;
 
 class PlanSeeder extends Seeder
 {
+    /**
+     * Run the database seeds.
+     */
     public function run(): void
     {
+        // Limpar tabela antes de rodar (opcional, mas bom para garantir limpeza se não for migrate:fresh)
+        // Plan::truncate(); 
+
         $plans = [
-            // 1. FREE
+            // 1. Free
             [
                 'slug' => 'free',
                 'name' => 'Free',
-                'max_pages' => 100,
-                'price_monthly_brl' => 0,
-                'price_yearly_brl' => 0,
+                'stripe_monthly_price_id' => null,
+                'stripe_yearly_price_id' => null,
                 'price_monthly_usd' => 0,
                 'price_yearly_usd' => 0,
-                'max_projects' => 5,
+                'price_monthly_brl' => 0,
+                'price_yearly_brl' => 0,
+                'max_pages' => 500,
+                'max_projects' => 1,
                 'has_advanced_features' => false,
+                'update_frequency' => 'Manual',
+                'ideal_for' => 'Testes e sites pequenos',
             ],
-            // 2. Pro 1k (R$ 35,90/mês -> R$ 344,64/ano)
+            // 2. Solo
             [
-                'slug' => 'pro-1k',
-                'name' => 'Pro 1k',
-                'max_pages' => 1000,
+                'slug' => 'solo',
+                'name' => 'Solo',
+                // $5.99 -> R$ 35.90 | $50.28/yr -> R$ 301.68
                 'price_monthly_usd' => 599,
-                'price_yearly_usd' => 5750,  // 20% OFF
+                'price_yearly_usd' => 5028,
                 'price_monthly_brl' => 3590,
-                'price_yearly_brl' => 34464, // 20% OFF
-                'max_projects' => 10,
-                'has_advanced_features' => true,
+                'price_yearly_brl' => 30168,
+                'max_pages' => 1600,
+                'max_projects' => 3,
+                'has_advanced_features' => false,
+                'update_frequency' => 'Semanal',
+                'ideal_for' => 'Sites pequenos com atualização',
             ],
-            // 3. Pro 5k (R$ 53,90/mês -> R$ 517,44/ano)
+            // 3. Growth
             [
-                'slug' => 'pro-5k',
-                'name' => 'Pro 5k',
-                'max_pages' => 5000,
-                'price_monthly_usd' => 899,
-                'price_yearly_usd' => 8630,  // 20% OFF
-                'price_monthly_brl' => 5390,
-                'price_yearly_brl' => 51744, // 20% OFF
-                'max_projects' => 10,
-                'has_advanced_features' => true,
-            ],
-            // 4. Pro 10k (R$ 71,90/mês -> R$ 690,24/ano)
-            [
-                'slug' => 'pro-10k',
-                'name' => 'Pro 10k',
-                'max_pages' => 10000,
+                'slug' => 'growth',
+                'name' => 'Growth',
+                // $11.99 -> R$ 71.90 | $100.68/yr -> R$ 604.08
                 'price_monthly_usd' => 1199,
-                'price_yearly_usd' => 11510, // 20% OFF
+                'price_yearly_usd' => 10068,
                 'price_monthly_brl' => 7190,
-                'price_yearly_brl' => 69024, // 20% OFF
+                'price_yearly_brl' => 60408,
+                'max_pages' => 16000,
                 'max_projects' => 10,
                 'has_advanced_features' => true,
+                'update_frequency' => 'Diária',
+                'ideal_for' => 'Conteúdo frequente / e-commerce',
             ],
-            // 5. Pro 25k (R$ 107,90/mês -> R$ 1.035,84/ano)
+            // 4. Pro
             [
-                'slug' => 'pro-25k',
-                'name' => 'Pro 25k',
-                'max_pages' => 25000,
-                'price_monthly_usd' => 1799,
-                'price_yearly_usd' => 17270, // 20% OFF
-                'price_monthly_brl' => 10790,
-                'price_yearly_brl' => 103584, // 20% OFF
-                'max_projects' => 10,
-                'has_advanced_features' => true,
-            ],
-            // 6. Pro 50k (R$ 143,90/mês -> R$ 1.381,44/ano)
-            [
-                'slug' => 'pro-50k',
-                'name' => 'Pro 50k',
-                'max_pages' => 50000,
+                'slug' => 'pro',
+                'name' => 'Pro',
+                // $23.99 -> R$ 143.90 | $201.48/yr -> R$ 1208.88
                 'price_monthly_usd' => 2399,
-                'price_yearly_usd' => 23030, // 20% OFF
+                'price_yearly_usd' => 20148,
                 'price_monthly_brl' => 14390,
-                'price_yearly_brl' => 138144, // 20% OFF
-                'max_projects' => 10,
+                'price_yearly_brl' => 120888,
+                'max_pages' => 80000,
+                'max_projects' => 25,
                 'has_advanced_features' => true,
+                'update_frequency' => 'Diária',
+                'ideal_for' => 'SEO avançado e relatórios',
+            ],
+            // 5. Scale
+            [
+                'slug' => 'scale',
+                'name' => 'Scale',
+                // $47.99 -> R$ 287.90 | $403.08/yr -> R$ 2418.48
+                'price_monthly_usd' => 4799,
+                'price_yearly_usd' => 40308,
+                'price_monthly_brl' => 28790,
+                'price_yearly_brl' => 241848,
+                'max_pages' => 320000,
+                'max_projects' => 50,
+                'has_advanced_features' => true,
+                'update_frequency' => 'Diária + delta crawl',
+                'ideal_for' => 'Agências e sites grandes',
+            ],
+            // 6. Enterprise
+            [
+                'slug' => 'enterprise',
+                'name' => 'Enterprise',
+                // $149.99 -> R$ 899.90 | $1259.88/yr -> R$ 7559.28
+                'price_monthly_usd' => 14999,
+                'price_yearly_usd' => 125988,
+                'price_monthly_brl' => 89990,
+                'price_yearly_brl' => 755928,
+                'max_pages' => 1600000,
+                'max_projects' => 100,
+                'has_advanced_features' => true,
+                'update_frequency' => 'Custom',
+                'ideal_for' => 'Portais gigantes / SLA',
             ],
         ];
 
-        $stripeService = new \App\Services\StripePlanService();
-
-        foreach ($plans as $plan) {
-            $stripeIds = $stripeService->syncPlan($plan);
-
-            DB::table('plans')->upsert(
-                array_merge($plan, [
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                    'stripe_monthly_price_id' => $stripeIds['stripe_monthly_price_id'],
-                    'stripe_yearly_price_id' => $stripeIds['stripe_yearly_price_id'],
-                ]),
-                ['slug'] // Garante que atualiza se o slug já existir
+        foreach ($plans as $planData) {
+            Plan::updateOrCreate(
+                ['slug' => $planData['slug']],
+                $planData
             );
         }
     }

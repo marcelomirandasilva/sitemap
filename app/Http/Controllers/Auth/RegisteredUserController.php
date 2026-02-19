@@ -28,6 +28,7 @@ class RegisteredUserController extends Controller
             'laravelVersion' => \Illuminate\Foundation\Application::VERSION,
             'phpVersion' => PHP_VERSION,
             'defaultTab' => 'signup',
+            'plans' => \App\Models\Plan::all(), // Planos injetados
         ]);
     }
 
@@ -41,26 +42,42 @@ class RegisteredUserController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|lowercase|email|max:255|unique:' . User::class,
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            // 'password' => ['required', 'confirmed', Rules\Password::defaults()], // Removido
             'url' => 'required|url',
-
         ]);
+
+        // Gerar senha aleatória
+        $password = \Illuminate\Support\Str::password(12);
 
         // 1. Cria o Usuário (Sempre no plano Free ID 1)
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
-            'password' => Hash::make($request->password),
+            'password' => Hash::make($password),
             'plan_id' => 1,
             'role' => 'user',
         ]);
 
-
+        // 2. Cria o Primeiro Projeto automaticamente
+        $domain = parse_url($request->url, PHP_URL_HOST) ?? $request->url;
+        Project::create([
+            'user_id' => $user->id,
+            'name' => $domain,
+            'url' => $request->url,
+        ]);
 
         event(new Registered($user));
 
+        // Enviar notificação com a senha
+        try {
+            $user->notify(new \App\Notifications\WelcomeNewUser($password));
+        } catch (\Exception $e) {
+            // Logar erro de envio de email, mas não falhar o cadastro
+            \Illuminate\Support\Facades\Log::error('Erro ao enviar email de boas-vindas: ' . $e->getMessage());
+        }
+
         Auth::login($user);
 
-        return redirect(route('dashboard', absolute: false));
+        return redirect(route('dashboard', absolute: false))->with('success', 'Conta criada com sucesso! Sua senha foi enviada para o seu e-mail.');
     }
 }

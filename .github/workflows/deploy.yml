@@ -35,6 +35,9 @@ jobs:
             # 5. Rodar Migrations
             php artisan migrate --force
 
+            # 5.1 Rodar Seeders de Planos (Garante dados atualizados)
+            php artisan db:seed --class=PlanSeeder --force
+
             # 6. Instalar Dependências JS e Buildar (Vite)
             # Nota: Em alguns servidores compartilhados, o npm pode não estar no PATH padrão.
             # Se falhar, use o caminho completo (ex: /opt/cpanel/ea-nodejs16/bin/npm)

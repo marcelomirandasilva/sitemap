@@ -18,8 +18,12 @@ Route::get('/', function () {
         'canRegister' => Route::has('register'),
         'laravelVersion' => Application::VERSION,
         'phpVersion' => PHP_VERSION,
+        'plans' => \App\Models\Plan::all(), // Planos injetados
     ]);
 });
+
+Route::get('/about-sitemaps', fn() => redirect()->route('info.article', 'about-sitemaps'));
+Route::get('/info/{slug}', [\App\Http\Controllers\InfoArticleController::class, 'show'])->name('info.article');
 
 Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])

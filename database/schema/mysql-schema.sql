@@ -148,6 +148,8 @@ CREATE TABLE `plans` (
   `price_yearly_usd` int DEFAULT NULL,
   `max_projects` int NOT NULL DEFAULT '10',
   `has_advanced_features` tinyint(1) NOT NULL DEFAULT '0',
+  `update_frequency` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `ideal_for` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
@@ -268,11 +270,11 @@ CREATE TABLE `users` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `email` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `timezone` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'UTC',
+  `timezone` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'UTC',
   `ui_preferences` json DEFAULT NULL,
   `notification_preferences` json DEFAULT NULL,
-  `billing_address` text COLLATE utf8mb4_unicode_ci,
-  `vat_number` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `billing_address` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `vat_number` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `email_verified_at` timestamp NULL DEFAULT NULL,
   `plan_id` bigint unsigned DEFAULT NULL,
   `role` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'user',
@@ -310,3 +312,4 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (9,'2026_02_02_2225
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (10,'2026_02_02_222556_create_subscription_items_table',1);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (11,'2026_02_03_200128_update_plans_table_split_prices',2);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (12,'2026_02_04_174301_add_preferences_to_users_table',3);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (13,'2026_02_19_092500_add_details_to_plans_table',4);

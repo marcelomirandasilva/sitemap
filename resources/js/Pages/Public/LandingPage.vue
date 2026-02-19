@@ -9,38 +9,82 @@ const props = defineProps({
     defaultTab: {
         type: String,
         default: 'signup'
-    }
+    },
+    plans: Array // Planos injetados via Inertia
 });
 
 const activeTab = ref(props.defaultTab || 'signup');
 const appName = import.meta.env.VITE_APP_NAME;
 const anoAtual = new Date().getFullYear();
+const currentCurrency = ref('USD'); // Padrão USD
 
 const mudarIdioma = (lang) => {
     localStorage.setItem('user_locale', lang);
     loadLanguageAsync(lang);
+    
+    // Atualiza moeda baseada no idioma
+    if (lang === 'pt') {
+        currentCurrency.value = 'BRL';
+    } else {
+        currentCurrency.value = 'USD';
+    }
 };
 
 onMounted(() => {
     const savedLocale = localStorage.getItem('user_locale');
     if (savedLocale) {
         loadLanguageAsync(savedLocale);
+        if (savedLocale === 'pt') {
+            currentCurrency.value = 'BRL';
+        }
     }
 });
 
+// Helpers de Preço
+const getMonthlyPrice = (plan) => {
+    return currentCurrency.value === 'BRL' ? plan.price_monthly_brl : plan.price_monthly_usd;
+};
+
+const getYearlyPrice = (plan) => {
+    return currentCurrency.value === 'BRL' ? plan.price_yearly_brl : plan.price_yearly_usd;
+};
+
+const formatPrice = (plan, type) => {
+    const locale = currentCurrency.value === 'BRL' ? 'pt-BR' : 'en-US';
+    const currency = currentCurrency.value;
+    
+    let value = 0;
+    
+    if (type === 'monthly') {
+        value = getMonthlyPrice(plan);
+    } else if (type === 'yearly_monthly') {
+        // Preço anual dividido por 12
+        value = getYearlyPrice(plan) / 12;
+    }
+
+    // Se valor for 0
+    if (value <= 0) {
+        return currentCurrency.value === 'BRL' ? 'R$ 0' : '$0';
+    }
+
+    return new Intl.NumberFormat(locale, {
+        style: 'currency',
+        currency: currency
+    }).format(value / 100);
+};
+
 // --- LÓGICA DE REGISTRO (SIGNUP) ---
-// Removemos o campo 'url' daqui
 const registerForm = useForm({
     name: '',
+    url: '', // Campo URL Adicionado
     email: '',
-    password: '',
-    password_confirmation: '',
+    // Password removido (gerado automaticamente)
     terms: false,
 });
 
 const submitRegister = () => {
     registerForm.post(route('register'), {
-        onFinish: () => registerForm.reset('password', 'password_confirmation'),
+        onFinish: () => registerForm.reset(),
     });
 };
 
@@ -61,11 +105,22 @@ const submitLogin = () => {
 <template>
     <Head title="Gerador de Sitemap XML" />
 
-    <div class="min-h-screen bg-[#f5f5f5] font-sans text-gray-700">
-        <div class="relative bg-gradient-to-b from-[#e8f4fc] to-[#f5f5f5] border-b border-gray-200">
+    <div class="min-h-screen bg-gradient-to-b from-[#e8f4fc] to-[#f5f5f5] font-sans text-gray-700 flex flex-col">
+        <!-- Flash Message -->
+        <div v-if="$page.props.flash.success" class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 fixed top-0 right-0 m-4 z-50 shadow-md rounded" role="alert">
+            <p class="font-bold">Sucesso!</p>
+            <p>{{ $page.props.flash.success }}</p>
+        </div>
+        <div v-if="$page.props.flash.error" class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 fixed top-0 right-0 m-4 z-50 shadow-md rounded" role="alert">
+            <p class="font-bold">Erro!</p>
+            <p>{{ $page.props.flash.error }}</p>
+        </div>
 
-            <header class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Header (Replica AppHeader + Topbar) -->
+        <div class="sticky top-0 z-40 bg-white/95 backdrop-blur-sm border-b border-gray-200">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
                 <div class="flex justify-between items-center h-20">
+                    <!-- Logo / Brand (igual AppHeader.vue) -->
                     <div class="flex items-center gap-2">
                         <div class="text-[#a4332b]">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" viewBox="0 0 24 24" fill="currentColor">
@@ -81,97 +136,122 @@ const submitLogin = () => {
                         </div>
                     </div>
 
-                    <nav class="hidden md:flex space-x-6 text-sm font-medium text-gray-600 items-center">
-                        <a href="#" class="hover:text-[#a4332b] transition">{{ $t('nav.support') }}</a>
-                        <a href="#" class="hover:text-[#a4332b] transition">{{ $t('nav.help') }}</a>
-                        <template v-if="$page.props.auth.user">
-                            <Link :href="route('dashboard')" class="text-[#a4332b] hover:underline">
-                                Dashboard
-                            </Link>
-                        </template>
-                        <div class="flex items-center gap-2 mr-2">
-                            <button @click="mudarIdioma('pt')" class="hover:scale-110 transition-transform cursor-pointer" title="Português">
-                                <img src="/flags/br.svg" alt="Português" class="w-6 h-auto shadow-sm rounded-sm" />
+                    <!-- Nav Links (igual Topbar.vue) -->
+                    <nav class="hidden md:flex items-center gap-3 text-sm font-bold text-[#a4332b] uppercase tracking-wide">
+                        <a href="#" class="flex items-center gap-1 hover:opacity-80 transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                            {{ $t('nav.support') }}
+                        </a>
+                        <a href="#" class="flex items-center gap-1 hover:opacity-80 transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                            {{ $t('nav.help') }}
+                        </a>
+
+                        <!-- Lang Switch (igual Topbar.vue) -->
+                        <div class="flex items-center gap-2 border-l border-gray-300 pl-4 ml-2">
+                            <button @click="mudarIdioma('pt')" class="hover:scale-110 transition-transform cursor-pointer opacity-80 hover:opacity-100" title="Português">
+                                <img src="/flags/br.svg" alt="Português" class="w-5 h-auto shadow-sm rounded-sm" />
                             </button>
-                            <button @click="mudarIdioma('en')" class="hover:scale-110 transition-transform cursor-pointer" title="English">
-                                <img src="/flags/us.svg" alt="English" class="w-6 h-auto shadow-sm rounded-sm" />
+                            <button @click="mudarIdioma('en')" class="hover:scale-110 transition-transform cursor-pointer opacity-80 hover:opacity-100" title="English">
+                                <img src="/flags/us.svg" alt="English" class="w-5 h-auto shadow-sm rounded-sm" />
                             </button>
                         </div>
                     </nav>
                 </div>
-            </header>
+            </div>
+        </div>
 
-            <div class="max-w-3xl mx-auto px-4 py-12 text-center">
-                <div class="bg-white rounded-lg shadow-xl overflow-hidden max-w-2xl mx-auto mt-4">
-                    <div class="flex text-lg font-bold tracking-wide uppercase cursor-pointer">
-                        <div @click="activeTab = 'signup'" :class="[
-                            'flex-1 py-4 transition-colors duration-200',
-                            activeTab === 'signup'
-                                ? 'bg-white text-[#a4332b] border-t-2 border-[#a4332b]'
-                                : 'bg-[#64b5f6] text-white hover:bg-[#42a5f5]'
-                        ]">
-                            {{ $t('auth.signup_tab') }}
-                        </div>
-                        <div @click="activeTab = 'login'" :class="[
-                            'flex-1 py-4 transition-colors duration-200',
-                            activeTab === 'login'
-                                ? 'bg-white text-[#a4332b] border-t-2 border-[#a4332b]'
-                                : 'bg-[#64b5f6] text-white hover:bg-[#42a5f5]'
-                        ]">
-                            {{ $t('auth.login_tab') }}
+        <!-- Hero Section -->
+        <div class="pb-16 pt-10 text-center flex-grow">
+            
+            <h1 class="text-3xl font-light text-gray-700 flex items-center justify-center gap-3 mb-10">
+                <svg class="w-8 h-8 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z">
+                    </path>
+                </svg>
+                {{ $t('hero.main_title') }}
+            </h1>
+
+            <div class="max-w-3xl mx-auto px-4">
+                <!-- Card Container -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-200 max-w-2xl mx-auto overflow-hidden">
+                    
+                    <!-- Tabs (Pill Toggle – estilo Subscription/Index.vue) -->
+                    <div class="flex justify-center pt-8 pb-4">
+                        <div class="relative flex rounded-full bg-gray-100 p-1 ring-1 ring-gray-200">
+                            <button 
+                                type="button"
+                                @click="activeTab = 'signup'"
+                                :class="[
+                                    activeTab === 'signup' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-900',
+                                    'rounded-full px-8 py-2 text-sm font-semibold leading-5 transition-all duration-200 uppercase tracking-wide'
+                                ]"
+                            >
+                                {{ $t('auth.signup_tab') }}
+                            </button>
+                            <button 
+                                type="button"
+                                @click="activeTab = 'login'"
+                                :class="[
+                                    activeTab === 'login' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-900',
+                                    'rounded-full px-8 py-2 text-sm font-semibold leading-5 transition-all duration-200 uppercase tracking-wide'
+                                ]"
+                            >
+                                {{ $t('auth.login_tab') }}
+                            </button>
                         </div>
                     </div>
 
-                    <div class="p-8 md:p-10">
-
-                        <div v-if="activeTab === 'signup'" class="space-y-6">
-                            <h2 class="text-xl text-gray-600 font-light mb-6">
+                    <!-- Conteúdo do Form -->
+                    <div class="p-8 md:p-12">
+                        
+                         <div v-if="activeTab === 'signup'" class="space-y-6">
+                            <h2 class="text-xl text-gray-500 font-light mb-8">
                                 {{ $t('hero.subtitle') }}
                             </h2>
 
-                            <form @submit.prevent="submitRegister" class="space-y-4 text-left">
+                            <form @submit.prevent="submitRegister" class="space-y-5 text-left max-w-lg mx-auto">
                                 
+                                <!-- URL Input -->
                                 <div>
-                                    <input v-model="registerForm.name" type="text" required
-                                        :placeholder="$t('form.name_placeholder')"
-                                        class="w-full border-0 border-b border-gray-300 px-0 py-2 text-gray-700 placeholder-gray-400 focus:ring-0 focus:border-blue-500 transition">
-                                    <div v-if="registerForm.errors.name" class="text-red-500 text-xs mt-1">{{ registerForm.errors.name }}</div>
+                                    <input v-model="registerForm.url" type="url" required
+                                        :placeholder="'* ' + $t('form.url_placeholder')"
+                                        class="w-full border-0 border-b border-gray-300 px-0 py-2 text-gray-600 placeholder-gray-400 focus:ring-0 focus:border-blue-400 transition bg-transparent text-sm">
+                                     <div v-if="registerForm.errors.url" class="text-red-500 text-xs mt-1">{{ registerForm.errors.url }}</div>
                                 </div>
 
+                                <!-- Email Input -->
                                 <div>
                                     <input v-model="registerForm.email" type="email" required
-                                        :placeholder="'* ' + $t('form.email_placeholder')"
-                                        class="w-full border-0 border-b border-gray-300 px-0 py-2 text-gray-700 placeholder-gray-400 focus:ring-0 focus:border-blue-500 transition">
+                                        :placeholder="$t('form.email_create_account')"
+                                        class="w-full border-0 border-b border-gray-300 px-0 py-2 text-gray-600 placeholder-gray-400 focus:ring-0 focus:border-blue-400 transition bg-transparent text-sm">
                                     <div v-if="registerForm.errors.email" class="text-red-500 text-xs mt-1">{{ registerForm.errors.email }}</div>
                                 </div>
 
-                                <div class="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <input v-model="registerForm.password" type="password" required
-                                            :placeholder="$t('form.password_placeholder')"
-                                            class="w-full border-0 border-b border-gray-300 px-0 py-2 text-gray-700 placeholder-gray-400 focus:ring-0 focus:border-blue-500 transition">
-                                    </div>
-                                    <div>
-                                        <input v-model="registerForm.password_confirmation" type="password" required
-                                            :placeholder="$t('form.confirm_password_placeholder')"
-                                            class="w-full border-0 border-b border-gray-300 px-0 py-2 text-gray-700 placeholder-gray-400 focus:ring-0 focus:border-blue-500 transition">
-                                    </div>
+                                <!-- Name -->
+                                 <div>
+                                    <input v-model="registerForm.name" type="text" required
+                                        :placeholder="$t('form.name_placeholder')"
+                                        class="w-full border-0 border-b border-gray-300 px-0 py-2 text-gray-600 placeholder-gray-400 focus:ring-0 focus:border-blue-400 transition bg-transparent text-sm">
                                 </div>
-                                <div v-if="registerForm.errors.password" class="text-red-500 text-xs mt-1">{{ registerForm.errors.password }}</div>
 
-                                <div class="flex items-start gap-3 mt-4">
+                                <!-- Checkbox -->
+                                <div class="flex items-start gap-2 mt-4">
                                     <input v-model="registerForm.terms" id="terms" type="checkbox" required
-                                        class="mt-1 w-5 h-5 text-[#a4332b] border-gray-300 rounded focus:ring-[#a4332b]">
-                                    <label for="terms" class="text-sm text-gray-500">
-                                        * {{ $t('auth.agree_prefix') }} <a href="#" class="text-[#a4332b] font-bold hover:underline">{{ $t('auth.privacy_policy') }}</a> 
-                                        {{ $t('auth.and') }} <a href="#" class="text-[#a4332b] font-bold hover:underline">{{ $t('auth.terms_of_use') }}</a> {{ $t('auth.service_suffix') }}
+                                        class="mt-1 w-4 h-4 text-[#a4332b] border-gray-300 rounded focus:ring-[#a4332b]">
+                                    <label for="terms" class="text-xs text-gray-500 italic">
+                                        * {{ $t('auth.agree_prefix') }} <Link :href="route('info.article', 'privacy-policy')" class="text-[#a4332b] hover:underline" target="_blank">{{ $t('auth.privacy_policy') }}</Link> 
+                                        {{ $t('auth.and') }} <Link :href="route('info.article', 'terms-of-use')" class="text-[#a4332b] hover:underline" target="_blank">{{ $t('auth.terms_of_use') }}</Link> {{ $t('auth.service_suffix') }}
                                     </label>
                                 </div>
 
-                                <button :disabled="registerForm.processing"
-                                    class="w-full sm:w-auto bg-[#a4332b] hover:bg-[#8f2c25] text-white font-bold py-3 px-12 rounded shadow-md uppercase tracking-wide mt-4 transition disabled:opacity-50">
-                                    {{ registerForm.processing ? '...' : $t('hero.cta') }}
-                                </button>
+                                <!-- Button -->
+                                <div class="text-center pt-2">
+                                     <button :disabled="registerForm.processing"
+                                        class="bg-[#a4332b] hover:bg-[#8f2c25] text-white text-sm font-bold py-3 px-8 rounded shadow uppercase tracking-wide transition disabled:opacity-50">
+                                        {{ registerForm.processing ? 'PROCESING...' : $t('hero.cta') }}
+                                    </button>
+                                </div>
                             </form>
                             
                             <div class="relative py-4">
@@ -244,83 +324,146 @@ const submitLogin = () => {
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <div class="max-w-5xl mx-auto px-4 py-16">
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                <div class="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-gray-200">
-                    <div class="p-6 bg-gray-50 md:col-span-1 flex flex-col justify-center">
-                        <h3 class="text-lg font-bold text-gray-800 mb-2">{{ $t('pricing.features') }}</h3>
-                        <p class="text-sm text-gray-500">{{ $t('pricing.compare') }}</p>
-                    </div>
-                    <div class="p-6 text-center">
-                        <h3 class="text-2xl font-bold text-green-600 mb-1">{{ $t('pricing.free') }}</h3>
-                        <p class="text-sm text-gray-500 mb-6">{{ $t('pricing.small_sites') }}</p>
-                        <button class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition text-sm mb-6">
-                            {{ $t('pricing.start_now') }}
-                        </button>
-                    </div>
-                    <div class="p-6 text-center bg-blue-50/30">
-                        <h3 class="text-2xl font-bold text-[#a4332b] mb-1">{{ $t('pricing.pro') }}</h3>
-                        <p class="text-sm text-gray-500 mb-6">{{ $t('pricing.pro_price') }}</p>
-                        <button class="w-full bg-[#a4332b] hover:bg-[#8f2c25] text-white font-bold py-2 px-4 rounded transition text-sm mb-6">
-                            {{ $t('pricing.view_plans') }}
-                        </button>
+                <!-- Seção Informativa (Professional Sitemap Solution) -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-200 max-w-4xl mx-auto mt-10 p-8 md:p-12">
+                    <h2 class="text-2xl font-light text-gray-700 text-center mb-10">
+                        {{ $t('info.title') }}
+                    </h2>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+                        <!-- Coluna Esquerda: O que é um sitemap? -->
+                        <div class="text-left">
+                            <h3 class="text-lg font-semibold text-gray-700 mb-3">{{ $t('info.what_title') }}</h3>
+                            <p class="text-sm text-gray-600 leading-relaxed mb-4">
+                                {{ $t('info.what_text') }}
+                            </p>
+                            <Link :href="route('info.article', 'about-sitemaps')" class="text-sm font-bold text-[#a4332b] uppercase tracking-wide hover:underline">
+                                &rsaquo; {{ $t('info.more_about') }}
+                            </Link>
+
+                            <h3 class="text-lg font-semibold text-gray-700 mt-8 mb-3">{{ $t('info.who_title') }}</h3>
+                            <p class="text-sm text-gray-600 leading-relaxed">
+                                {{ $t('info.who_text') }}
+                            </p>
+
+                            <!-- Trust Badges -->
+                            <div class="flex items-start gap-3 mt-6 bg-gray-50 rounded-lg p-4 border border-gray-100">
+                                <div class="text-[#a4332b] flex-shrink-0 mt-0.5">
+                                    <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+                                </div>
+                                <div class="text-xs text-gray-600 leading-relaxed text-left">
+                                    <p>{{ $t('info.trusted_by') }} <strong>380,000+</strong> {{ $t('info.website_owners') }}</p>
+                                    <p>{{ $t('info.provided_sitemaps') }} <strong>23M+</strong> {{ $t('info.websites_worldwide') }}</p>
+                                    <p>{{ $t('info.uptime') }}: <strong>99.9%</strong></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Coluna Direita: Vantagens -->
+                        <div class="text-left">
+                            <h3 class="text-lg font-semibold text-gray-700 mb-4">{{ $t('info.advantages_title') }}</h3>
+                            <ul class="space-y-4 text-sm text-gray-600 text-left">
+                                <li class="flex items-start gap-2">
+                                    <span class="text-[#a4332b] mt-0.5 flex-shrink-0">•</span>
+                                    <span><strong>{{ $t('info.adv1_bold') }}</strong> {{ $t('info.adv1_text') }}</span>
+                                </li>
+                                <li class="flex items-start gap-2">
+                                    <span class="text-[#a4332b] mt-0.5 flex-shrink-0">•</span>
+                                    <span>{{ $t('info.adv2_pre') }} <strong>{{ $t('info.adv2_bold') }}</strong> {{ $t('info.adv2_text') }}</span>
+                                </li>
+                                <li class="flex items-start gap-2">
+                                    <span class="text-[#a4332b] mt-0.5 flex-shrink-0">•</span>
+                                    <span><strong>{{ $t('info.adv3_bold') }}</strong> {{ $t('info.adv3_text') }}</span>
+                                </li>
+                                <li class="flex items-start gap-2">
+                                    <span class="text-[#a4332b] mt-0.5 flex-shrink-0">•</span>
+                                    <span>{{ $t('info.adv4_pre') }} <strong>{{ $t('info.adv4_bold') }}</strong> {{ $t('info.adv4_text') }}</span>
+                                </li>
+                                <li class="flex items-start gap-2">
+                                    <span class="text-[#a4332b] mt-0.5 flex-shrink-0">•</span>
+                                    <span>{{ $t('info.adv5_pre') }} <strong>{{ $t('info.adv5_bold') }}</strong> {{ $t('info.adv5_text') }}</span>
+                                </li>
+                                <li class="flex items-start gap-2">
+                                    <span class="text-[#a4332b] mt-0.5 flex-shrink-0">•</span>
+                                    <span>{{ $t('info.adv6_pre') }} <strong>{{ $t('info.adv6_bold') }}</strong> {{ $t('info.adv6_text') }}</span>
+                                </li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
 
-                <div class="border-t border-gray-200">
-                    <div class="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-gray-200 hover:bg-gray-50 transition">
-                        <div class="p-3 px-6 text-sm font-medium text-gray-700 flex items-center">{{ $t('features.xml_standard') }}</div>
-                        <div class="p-3 flex justify-center items-center"><span class="text-green-500 text-xl">✔</span></div>
-                        <div class="p-3 flex justify-center items-center bg-blue-50/30"><span class="text-green-500 text-xl">✔</span></div>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-gray-200 hover:bg-gray-50 transition">
-                        <div class="p-3 px-6 text-sm font-medium text-gray-700 flex items-center">{{ $t('features.async_crawling') }}</div>
-                        <div class="p-3 flex justify-center items-center"><span class="text-green-500 text-xl">✔</span></div>
-                        <div class="p-3 flex justify-center items-center bg-blue-50/30"><span class="text-green-500 text-xl">✔</span></div>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-gray-200 hover:bg-gray-50 transition">
-                        <div class="p-3 px-6 text-sm font-medium text-gray-700 flex items-center">{{ $t('features.broken_links') }}</div>
-                        <div class="p-3 flex justify-center items-center"><span class="text-green-500 text-xl">✔</span></div>
-                        <div class="p-3 flex justify-center items-center bg-blue-50/30"><span class="text-green-500 text-xl">✔</span></div>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-gray-200 hover:bg-gray-50 transition">
-                        <div class="p-3 px-6 text-sm font-medium text-gray-700 flex items-center">{{ $t('features.image_sitemaps') }}</div>
-                        <div class="p-3 flex justify-center items-center"><span class="text-gray-300 text-sm">✖</span></div>
-                        <div class="p-3 flex justify-center items-center bg-blue-50/30"><span class="text-green-500 text-xl">✔</span></div>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-gray-200 hover:bg-gray-50 transition">
-                        <div class="p-3 px-6 text-sm font-medium text-gray-700 flex items-center">{{ $t('features.video_sitemaps') }}</div>
-                        <div class="p-3 flex justify-center items-center"><span class="text-gray-300 text-sm">✖</span></div>
-                        <div class="p-3 flex justify-center items-center bg-blue-50/30"><span class="text-green-500 text-xl">✔</span></div>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-gray-200 hover:bg-gray-50 transition">
-                        <div class="p-3 px-6 text-sm font-medium text-gray-700 flex items-center">{{ $t('features.news_sitemaps') }}</div>
-                        <div class="p-3 flex justify-center items-center"><span class="text-gray-300 text-sm">✖</span></div>
-                        <div class="p-3 flex justify-center items-center bg-blue-50/30"><span class="text-green-500 text-xl">✔</span></div>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-gray-200 hover:bg-gray-50 transition">
-                        <div class="p-3 px-6 text-sm font-medium text-gray-700 flex items-center">{{ $t('features.api_access') }}</div>
-                        <div class="p-3 flex justify-center items-center"><span class="text-gray-300 text-sm">✖</span></div>
-                        <div class="p-3 flex justify-center items-center bg-blue-50/30"><span class="text-green-500 text-xl">✔</span></div>
-                    </div>
-                </div>
             </div>
         </div>
 
+            <!-- Tabela de Preços Dinâmica -->
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6 text-left border-l-4 border-[#a4332b] pl-3">
+                    {{ $t('pricing.overview_title') || 'Visão geral dos planos' }}
+                </h2>
+                
+                <div class="bg-white shadow-sm border border-gray-200 rounded-lg overflow-x-auto">
+                    <table class="w-full text-sm text-left">
+                        <thead class="bg-gray-800 text-white">
+                            <tr>
+                                <th class="py-4 px-6 font-bold uppercase tracking-wider">{{ $t('pricing.table.plan') }}</th>
+                                <th class="py-4 px-6 font-bold uppercase tracking-wider text-center">{{ $t('pricing.table.monthly') }}</th>
+                                <th class="py-4 px-6 font-bold uppercase tracking-wider text-center">{{ $t('pricing.table.yearly') }}</th>
+                                <th class="py-4 px-6 font-bold uppercase tracking-wider text-center">{{ $t('pricing.table.limit') }}</th>
+                                <th class="py-4 px-6 font-bold uppercase tracking-wider">{{ $t('pricing.table.update') }}</th>
+                                <th class="py-4 px-6 font-bold uppercase tracking-wider">{{ $t('pricing.table.ideal') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            <tr v-for="(plan, index) in plans" :key="plan.id" class="hover:bg-gray-50 transition-colors">
+                                <!-- Nome -->
+                                <td class="py-4 px-6 font-medium text-gray-900">{{ plan.name }}</td>
+                                
+                                <!-- Preço Mensal -->
+                                <td class="py-4 px-6 text-center text-gray-700 font-semibold">
+                                    {{ formatPrice(plan, 'monthly') }}
+                                </td>
+
+                                <!-- Preço Anual (Dividido por 12) -->
+                                <td class="py-4 px-6 text-center text-gray-700">
+                                    <span v-if="getYearlyPrice(plan) > 0" class="font-bold text-[#a4332b]">
+                                        {{ formatPrice(plan, 'yearly_monthly') }}
+                                    </span>
+                                    <span v-else class="text-gray-400">-</span>
+                                </td>
+
+                                <!-- Limite URLs -->
+                                <td class="py-4 px-6 text-center font-medium text-gray-800">
+                                    {{ new Intl.NumberFormat('en-US').format(plan.max_pages) }}
+                                </td>
+
+                                <!-- Frequência -->
+                                <td class="py-4 px-6 text-gray-600">
+                                    {{ $t(`pricing.plans.${plan.slug}.frequency`) }}
+                                </td>
+
+                                <!-- Ideal Para -->
+                                <td class="py-4 px-6 text-gray-600 italic">
+                                    {{ $t(`pricing.plans.${plan.slug}.ideal_for`) }}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        <!-- Footer (igual Footer.vue) -->
         <footer class="border-t border-gray-200 bg-white pt-10 pb-6">
             <div class="max-w-6xl mx-auto px-4 text-center">
                 <nav class="flex flex-wrap justify-center gap-6 mb-6 text-sm text-[#a4332b] font-medium">
-                    <a href="#" class="hover:underline">{{ $t('footer.privacy') }}</a>
-                    <a href="#" class="hover:underline">{{ $t('footer.terms') }}</a>
+                    <Link :href="route('info.article', 'privacy-policy')" class="hover:underline">{{ $t('footer.privacy') }}</Link>
+                    <Link :href="route('info.article', 'terms-of-use')" class="hover:underline">{{ $t('footer.terms') }}</Link>
                     <a href="#" class="hover:underline">{{ $t('footer.api') }}</a>
                     <a href="#" class="hover:underline">{{ $t('footer.contact') }}</a>
                     <a href="#" class="hover:underline">{{ $t('footer.help') }}</a>
                 </nav>
                 <p class="text-xs text-gray-400">
-                    &copy; 2005-{{ anoAtual }} {{ $page.props.appName }}. Todos os direitos reservados.
+                    &copy; 2005-{{ anoAtual }} {{ appName }}. Todos os direitos reservados.
                 </p>
                 <p class="text-xs text-gray-400 mt-2">
                     SyNesis Tecnologia.
