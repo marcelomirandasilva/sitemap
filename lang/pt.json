@@ -59,7 +59,7 @@
     "pricing.small_sites": "Para sites pequenos",
     "pricing.start_now": "INICIAR AGORA",
 
-    "features.xml_standard": "Sitemap XML Padrão & Mobile",
+
     "features.async_crawling": "Crawling Assíncrono Rápido",
     "features.broken_links": "Detecção de Links Quebrados",
     "features.image_sitemaps": "Sitemaps de Imagem (Metadados Reais + EXIF)",
@@ -295,7 +295,7 @@
     "info.provided_sitemaps": "Sitemaps fornecidos para",
     "info.websites_worldwide": "sites no mundo todo",
     "info.uptime": "Uptime dos sitemaps hospedados",
-    "info.advantages_title": "Vantagens Principais do Serviço PRO:",
+    "info.advantages_title": "Vantagens Principais do Serviço :app_name:",
     "info.adv1_bold": "Nenhum software instalado",
     "info.adv1_text": "no seu computador ou servidor.",
     "info.adv2_pre": "Nós criamos o sitemap XML",

@@ -47,7 +47,7 @@ return [
         'section_title' => 'Como criar e usar Sitemaps de Imagens',
         'p1' => 'Através dos Sitemaps de Imagens do Google, o Google recebe metadados sobre as imagens contidas em um site. Os visitantes podem fazer uma pesquisa de imagens no Google. Usando extensões de imagem do Google em Sitemaps, você fornece ao mecanismo de busca informações adicionais sobre as imagens no site. Isso pode ajudar o Google a descobrir imagens que talvez não encontrasse através do rastreamento, como aquelas acessadas via formulários JavaScript.',
         'p2' => 'Para fornecer ao Google informações sobre imagens no site, o proprietário deve adicionar detalhes relevantes ao Sitemap padrão. Isso inclui o tipo de imagem, assunto, legenda, título, localização geográfica e licença. O processo permite que proprietários de sites identifiquem quais imagens em cada página são mais importantes.',
-        'p3' => 'NOTA: O PRO Sitemaps incluirá URLs de imagens únicas no sitemap para evitar duplicar imagens repetidas para todas as páginas. O sitemap de imagens é armazenado em um arquivo XML separado.',
+        'p3' => 'NOTA: O :app_name incluirá URLs de imagens únicas no sitemap para evitar duplicar imagens repetidas para todas as páginas. O sitemap de imagens é armazenado em um arquivo XML separado.',
     ],
 
     // Video Sitemap
@@ -57,7 +57,7 @@ return [
         'section_title' => 'Como criar Sitemaps de Vídeo e como são usados',
         'p1' => 'Os Sitemaps de Vídeo do Google fornecem ao Google metadados sobre o conteúdo de vídeo em um site. Com um Sitemap de Vídeo, os proprietários de sites podem informar ao Google a categoria, título, descrição, duração e público-alvo de cada vídeo contido no site. Isso ajuda o Google a conhecer todo o conteúdo de vídeo rico no site, o que deve melhorar a listagem do site nos resultados de pesquisa de vídeo.',
         'p2' => 'Quando informações de vídeo em formato suportado são enviadas como um Sitemap separado ou incluídas no Sitemap regular, as URLs incluídas para os vídeos se tornam pesquisáveis através do Google Video. Os vídeos também podem ser acessados através de outros produtos de pesquisa oferecidos pelo Google.',
-        'p3' => 'NOTA: O PRO Sitemaps detecta automaticamente vídeos incorporados em suas páginas e cria um sitemap separado com detalhes relacionados. Na versão atual do gerador de sitemaps autônomo, as seguintes fontes de vídeo são suportadas: YouTube, Google Video, Vimeo, Dailymotion, MTV, Blip.tv. Em outros casos, a marcação VideoObject Schema é suportada.',
+        'p3' => 'NOTA: O :app_name detecta automaticamente vídeos incorporados em suas páginas e cria um sitemap separado com detalhes relacionados. Na versão atual do gerador de sitemaps autônomo, as seguintes fontes de vídeo são suportadas: YouTube, Google Video, Vimeo, Dailymotion, MTV, Blip.tv. Em outros casos, a marcação VideoObject Schema é suportada.',
     ],
 
     // News Sitemap
@@ -67,7 +67,7 @@ return [
         'section_title' => 'Como criar e usar Sitemaps de Notícias',
         'p1' => 'Os Sitemaps de Notícias do Google fornecem ao mecanismo de busca Google metadados sobre o conteúdo de notícias específico em um site. Este Sitemap permite que o proprietário do site controle qual conteúdo é enviado ao Google Notícias. Usando o Sitemap de Notícias, o Google Notícias pode encontrar rapidamente os artigos de notícias contidos em um site.',
         'p2' => 'Esses Sitemaps identificam o título e a data de publicação de cada artigo. Usando tags de gênero e acesso, também especificam o tipo de conteúdo contido no artigo. O conteúdo do artigo é ainda identificado usando descrições como cotações de ações ou palavras-chave relevantes.',
-        'p3' => 'NOTA: Para poder usar sitemaps de notícias para seu site, você deve solicitar a inclusão no Google Notícias primeiro, caso contrário o sitemap de notícias não será processado. O PRO Sitemaps rastreia as alterações no seu site automaticamente e cria o sitemap de notícias em um arquivo separado, incluindo apenas novas URLs dos últimos dias.',
+        'p3' => 'NOTA: Para poder usar sitemaps de notícias para seu site, você deve solicitar a inclusão no Google Notícias primeiro, caso contrário o sitemap de notícias não será processado. O :app_name rastreia as alterações no seu site automaticamente e cria o sitemap de notícias em um arquivo separado, incluindo apenas novas URLs dos últimos dias.',
     ],
 
     // HTML Sitemap

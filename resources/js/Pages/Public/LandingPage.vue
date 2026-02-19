@@ -132,7 +132,7 @@ const submitLogin = () => {
                             <span class="text-2xl font-bold leading-none tracking-tight text-gray-800">
                                 {{ appName }}
                             </span>
-                            <span class="text-xs text-gray-500 tracking-wider">{{ $t('hero.subtitle_tag') }}</span>
+                            <span class="text-xs text-gray-500 tracking-wider">{{ $t('hero.subtitle_tag', { app_name: appName }) }}</span>
                         </div>
                     </div>
 
@@ -140,11 +140,11 @@ const submitLogin = () => {
                     <nav class="hidden md:flex items-center gap-3 text-sm font-bold text-[#a4332b] uppercase tracking-wide">
                         <a href="#" class="flex items-center gap-1 hover:opacity-80 transition">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-                            {{ $t('nav.support') }}
+                            {{ $t('nav.support', { app_name: appName }) }}
                         </a>
                         <a href="#" class="flex items-center gap-1 hover:opacity-80 transition">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
-                            {{ $t('nav.help') }}
+                            {{ $t('nav.help', { app_name: appName }) }}
                         </a>
 
                         <!-- Lang Switch (igual Topbar.vue) -->
@@ -169,7 +169,7 @@ const submitLogin = () => {
                     <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z">
                     </path>
                 </svg>
-                {{ $t('hero.main_title') }}
+                {{ $t('hero.main_title', { app_name: appName }) }}
             </h1>
 
             <div class="max-w-3xl mx-auto px-4">
@@ -187,7 +187,7 @@ const submitLogin = () => {
                                     'rounded-full px-8 py-2 text-sm font-semibold leading-5 transition-all duration-200 uppercase tracking-wide'
                                 ]"
                             >
-                                {{ $t('auth.signup_tab') }}
+                                {{ $t('auth.signup_tab', { app_name: appName }) }}
                             </button>
                             <button 
                                 type="button"
@@ -197,7 +197,7 @@ const submitLogin = () => {
                                     'rounded-full px-8 py-2 text-sm font-semibold leading-5 transition-all duration-200 uppercase tracking-wide'
                                 ]"
                             >
-                                {{ $t('auth.login_tab') }}
+                                {{ $t('auth.login_tab', { app_name: appName }) }}
                             </button>
                         </div>
                     </div>
@@ -207,7 +207,7 @@ const submitLogin = () => {
                         
                          <div v-if="activeTab === 'signup'" class="space-y-6">
                             <h2 class="text-xl text-gray-500 font-light mb-8">
-                                {{ $t('hero.subtitle') }}
+                                {{ $t('hero.subtitle', { app_name: appName }) }}
                             </h2>
 
                             <form @submit.prevent="submitRegister" class="space-y-5 text-left max-w-lg mx-auto">
@@ -215,7 +215,7 @@ const submitLogin = () => {
                                 <!-- URL Input -->
                                 <div>
                                     <input v-model="registerForm.url" type="url" required
-                                        :placeholder="'* ' + $t('form.url_placeholder')"
+                                        :placeholder="'* ' + $t('form.url_placeholder', { app_name: appName })"
                                         class="w-full border-0 border-b border-gray-300 px-0 py-2 text-gray-600 placeholder-gray-400 focus:ring-0 focus:border-blue-400 transition bg-transparent text-sm">
                                      <div v-if="registerForm.errors.url" class="text-red-500 text-xs mt-1">{{ registerForm.errors.url }}</div>
                                 </div>
@@ -223,7 +223,7 @@ const submitLogin = () => {
                                 <!-- Email Input -->
                                 <div>
                                     <input v-model="registerForm.email" type="email" required
-                                        :placeholder="$t('form.email_create_account')"
+                                        :placeholder="$t('form.email_create_account', { app_name: appName })"
                                         class="w-full border-0 border-b border-gray-300 px-0 py-2 text-gray-600 placeholder-gray-400 focus:ring-0 focus:border-blue-400 transition bg-transparent text-sm">
                                     <div v-if="registerForm.errors.email" class="text-red-500 text-xs mt-1">{{ registerForm.errors.email }}</div>
                                 </div>
@@ -231,7 +231,7 @@ const submitLogin = () => {
                                 <!-- Name -->
                                  <div>
                                     <input v-model="registerForm.name" type="text" required
-                                        :placeholder="$t('form.name_placeholder')"
+                                        :placeholder="$t('form.name_placeholder', { app_name: appName })"
                                         class="w-full border-0 border-b border-gray-300 px-0 py-2 text-gray-600 placeholder-gray-400 focus:ring-0 focus:border-blue-400 transition bg-transparent text-sm">
                                 </div>
 
@@ -240,8 +240,8 @@ const submitLogin = () => {
                                     <input v-model="registerForm.terms" id="terms" type="checkbox" required
                                         class="mt-1 w-4 h-4 text-[#a4332b] border-gray-300 rounded focus:ring-[#a4332b]">
                                     <label for="terms" class="text-xs text-gray-500 italic">
-                                        * {{ $t('auth.agree_prefix') }} <Link :href="route('info.article', 'privacy-policy')" class="text-[#a4332b] hover:underline" target="_blank">{{ $t('auth.privacy_policy') }}</Link> 
-                                        {{ $t('auth.and') }} <Link :href="route('info.article', 'terms-of-use')" class="text-[#a4332b] hover:underline" target="_blank">{{ $t('auth.terms_of_use') }}</Link> {{ $t('auth.service_suffix') }}
+                                        * {{ $t('auth.agree_prefix', { app_name: appName }) }} <Link :href="route('info.article', 'privacy-policy')" class="text-[#a4332b] hover:underline" target="_blank">{{ $t('auth.privacy_policy', { app_name: appName }) }}</Link> 
+                                        {{ $t('auth.and', { app_name: appName }) }} <Link :href="route('info.article', 'terms-of-use')" class="text-[#a4332b] hover:underline" target="_blank">{{ $t('auth.terms_of_use', { app_name: appName }) }}</Link> {{ $t('auth.service_suffix', { app_name: appName }) }}
                                     </label>
                                 </div>
 
@@ -249,7 +249,7 @@ const submitLogin = () => {
                                 <div class="text-center pt-2">
                                      <button :disabled="registerForm.processing"
                                         class="bg-[#a4332b] hover:bg-[#8f2c25] text-white text-sm font-bold py-3 px-8 rounded shadow uppercase tracking-wide transition disabled:opacity-50">
-                                        {{ registerForm.processing ? 'PROCESING...' : $t('hero.cta') }}
+                                        {{ registerForm.processing ? 'PROCESING...' : $t('hero.cta', { app_name: appName }) }}
                                     </button>
                                 </div>
                             </form>
@@ -259,7 +259,7 @@ const submitLogin = () => {
                                     <div class="w-full border-t border-gray-300"></div>
                                 </div>
                                 <div class="relative flex justify-center">
-                                    <span class="bg-white px-4 text-sm text-gray-500 uppercase">{{ $t('auth.or') }}</span>
+                                    <span class="bg-white px-4 text-sm text-gray-500 uppercase">{{ $t('auth.or', { app_name: appName }) }}</span>
                                 </div>
                             </div>
                             <a :href="route('auth.google')" class="w-full sm:w-auto border border-gray-300 hover:bg-gray-50 text-gray-600 font-medium py-2 px-6 rounded-full flex items-center justify-center gap-3 mx-auto transition bg-white shadow-sm cursor-pointer no-underline">
@@ -269,25 +269,25 @@ const submitLogin = () => {
                                     <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.26.81-.58z" fill="#FBBC05" />
                                     <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
                                 </svg>
-                                {{ $t('auth.google') }}
+                                {{ $t('auth.google', { app_name: appName }) }}
                             </a>
                         </div>
 
                         <div v-if="activeTab === 'login'" class="space-y-6">
                             <h2 class="text-xl text-gray-600 font-light mb-6">
-                                {{ $t('auth.login_subtitle') }}
+                                {{ $t('auth.login_subtitle', { app_name: appName }) }}
                             </h2>
 
                             <form @submit.prevent="submitLogin" class="space-y-4 text-left">
                                 <div>
                                     <input v-model="loginForm.email" type="email" 
-                                        :placeholder="'* ' + $t('auth.email_placeholder')"
+                                        :placeholder="'* ' + $t('auth.email_placeholder', { app_name: appName })"
                                         class="w-full border-0 border-b border-gray-300 px-0 py-2 text-gray-700 placeholder-gray-400 focus:ring-0 focus:border-blue-500 transition">
                                     <div v-if="loginForm.errors.email" class="text-red-500 text-xs mt-1">{{ loginForm.errors.email }}</div>
                                 </div>
                                 <div>
                                     <input v-model="loginForm.password" type="password" 
-                                        :placeholder="'* ' + $t('auth.password_placeholder')"
+                                        :placeholder="'* ' + $t('auth.password_placeholder', { app_name: appName })"
                                         class="w-full border-0 border-b border-gray-300 px-0 py-2 text-gray-700 placeholder-gray-400 focus:ring-0 focus:border-blue-500 transition">
                                     <div v-if="loginForm.errors.password" class="text-red-500 text-xs mt-1">{{ loginForm.errors.password }}</div>
                                 </div>
@@ -295,11 +295,11 @@ const submitLogin = () => {
                                 <div class="text-center mt-6">
                                     <button :disabled="loginForm.processing"
                                         class="w-full sm:w-auto bg-[#a4332b] hover:bg-[#8f2c25] text-white font-bold py-3 px-12 rounded shadow-md uppercase tracking-wide transition disabled:opacity-50">
-                                        {{ loginForm.processing ? '...' : $t('auth.login_tab').toUpperCase() }}
+                                        {{ loginForm.processing ? '...' : $t('auth.login_tab', { app_name: appName }).toUpperCase() }}
                                     </button>
                                     <div class="mt-4">
                                         <a href="#" class="text-[#a4332b] font-bold hover:underline text-sm border-b border-[#a4332b] border-dashed pb-0.5">
-                                            {{ $t('auth.forgot_password') }}
+                                            {{ $t('auth.forgot_password', { app_name: appName }) }}
                                         </a>
                                     </div>
                                 </div>
@@ -309,7 +309,7 @@ const submitLogin = () => {
                                     <div class="w-full border-t border-gray-300"></div>
                                 </div>
                                 <div class="relative flex justify-center">
-                                    <span class="bg-white px-4 text-sm text-gray-500 uppercase">{{ $t('auth.or') }}</span>
+                                    <span class="bg-white px-4 text-sm text-gray-500 uppercase">{{ $t('auth.or', { app_name: appName }) }}</span>
                                 </div>
                             </div>
                             <a :href="route('auth.google')" class="w-full sm:w-auto border border-gray-300 hover:bg-gray-50 text-gray-600 font-medium py-2 px-6 rounded-full flex items-center justify-center gap-3 mx-auto transition bg-white shadow-sm cursor-pointer no-underline">
@@ -319,7 +319,7 @@ const submitLogin = () => {
                                     <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.26.81-.58z" fill="#FBBC05" />
                                     <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
                                 </svg>
-                                {{ $t('auth.google') }}
+                                {{ $t('auth.google', { app_name: appName }) }}
                             </a>
                         </div>
                     </div>
@@ -328,23 +328,23 @@ const submitLogin = () => {
                 <!-- Seção Informativa (Professional Sitemap Solution) -->
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-200 max-w-4xl mx-auto mt-10 p-8 md:p-12">
                     <h2 class="text-2xl font-light text-gray-700 text-center mb-10">
-                        {{ $t('info.title') }}
+                        {{ $t('info.title', { app_name: appName }) }}
                     </h2>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
                         <!-- Coluna Esquerda: O que é um sitemap? -->
                         <div class="text-left">
-                            <h3 class="text-lg font-semibold text-gray-700 mb-3">{{ $t('info.what_title') }}</h3>
+                            <h3 class="text-lg font-semibold text-gray-700 mb-3">{{ $t('info.what_title', { app_name: appName }) }}</h3>
                             <p class="text-sm text-gray-600 leading-relaxed mb-4">
-                                {{ $t('info.what_text') }}
+                                {{ $t('info.what_text', { app_name: appName }) }}
                             </p>
                             <Link :href="route('info.article', 'about-sitemaps')" class="text-sm font-bold text-[#a4332b] uppercase tracking-wide hover:underline">
-                                &rsaquo; {{ $t('info.more_about') }}
+                                &rsaquo; {{ $t('info.more_about', { app_name: appName }) }}
                             </Link>
 
-                            <h3 class="text-lg font-semibold text-gray-700 mt-8 mb-3">{{ $t('info.who_title') }}</h3>
+                            <h3 class="text-lg font-semibold text-gray-700 mt-8 mb-3">{{ $t('info.who_title', { app_name: appName }) }}</h3>
                             <p class="text-sm text-gray-600 leading-relaxed">
-                                {{ $t('info.who_text') }}
+                                {{ $t('info.who_text', { app_name: appName }) }}
                             </p>
 
                             <!-- Trust Badges -->
@@ -353,40 +353,40 @@ const submitLogin = () => {
                                     <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
                                 </div>
                                 <div class="text-xs text-gray-600 leading-relaxed text-left">
-                                    <p>{{ $t('info.trusted_by') }} <strong>380,000+</strong> {{ $t('info.website_owners') }}</p>
-                                    <p>{{ $t('info.provided_sitemaps') }} <strong>23M+</strong> {{ $t('info.websites_worldwide') }}</p>
-                                    <p>{{ $t('info.uptime') }}: <strong>99.9%</strong></p>
+                                    <p>{{ $t('info.trusted_by', { app_name: appName }) }} <strong>380,000+</strong> {{ $t('info.website_owners', { app_name: appName }) }}</p>
+                                    <p>{{ $t('info.provided_sitemaps', { app_name: appName }) }} <strong>23M+</strong> {{ $t('info.websites_worldwide', { app_name: appName }) }}</p>
+                                    <p>{{ $t('info.uptime', { app_name: appName }) }}: <strong>99.9%</strong></p>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Coluna Direita: Vantagens -->
                         <div class="text-left">
-                            <h3 class="text-lg font-semibold text-gray-700 mb-4">{{ $t('info.advantages_title') }}</h3>
+                            <h3 class="text-lg font-semibold text-gray-700 mb-4">{{ $t('info.advantages_title', { app_name: appName }) }}</h3>
                             <ul class="space-y-4 text-sm text-gray-600 text-left">
                                 <li class="flex items-start gap-2">
                                     <span class="text-[#a4332b] mt-0.5 flex-shrink-0">•</span>
-                                    <span><strong>{{ $t('info.adv1_bold') }}</strong> {{ $t('info.adv1_text') }}</span>
+                                    <span><strong>{{ $t('info.adv1_bold', { app_name: appName }) }}</strong> {{ $t('info.adv1_text', { app_name: appName }) }}</span>
                                 </li>
                                 <li class="flex items-start gap-2">
                                     <span class="text-[#a4332b] mt-0.5 flex-shrink-0">•</span>
-                                    <span>{{ $t('info.adv2_pre') }} <strong>{{ $t('info.adv2_bold') }}</strong> {{ $t('info.adv2_text') }}</span>
+                                    <span>{{ $t('info.adv2_pre', { app_name: appName }) }} <strong>{{ $t('info.adv2_bold', { app_name: appName }) }}</strong> {{ $t('info.adv2_text', { app_name: appName }) }}</span>
                                 </li>
                                 <li class="flex items-start gap-2">
                                     <span class="text-[#a4332b] mt-0.5 flex-shrink-0">•</span>
-                                    <span><strong>{{ $t('info.adv3_bold') }}</strong> {{ $t('info.adv3_text') }}</span>
+                                    <span><strong>{{ $t('info.adv3_bold', { app_name: appName }) }}</strong> {{ $t('info.adv3_text', { app_name: appName }) }}</span>
                                 </li>
                                 <li class="flex items-start gap-2">
                                     <span class="text-[#a4332b] mt-0.5 flex-shrink-0">•</span>
-                                    <span>{{ $t('info.adv4_pre') }} <strong>{{ $t('info.adv4_bold') }}</strong> {{ $t('info.adv4_text') }}</span>
+                                    <span>{{ $t('info.adv4_pre', { app_name: appName }) }} <strong>{{ $t('info.adv4_bold', { app_name: appName }) }}</strong> {{ $t('info.adv4_text', { app_name: appName }) }}</span>
                                 </li>
                                 <li class="flex items-start gap-2">
                                     <span class="text-[#a4332b] mt-0.5 flex-shrink-0">•</span>
-                                    <span>{{ $t('info.adv5_pre') }} <strong>{{ $t('info.adv5_bold') }}</strong> {{ $t('info.adv5_text') }}</span>
+                                    <span>{{ $t('info.adv5_pre', { app_name: appName }) }} <strong>{{ $t('info.adv5_bold', { app_name: appName }) }}</strong> {{ $t('info.adv5_text', { app_name: appName }) }}</span>
                                 </li>
                                 <li class="flex items-start gap-2">
                                     <span class="text-[#a4332b] mt-0.5 flex-shrink-0">•</span>
-                                    <span>{{ $t('info.adv6_pre') }} <strong>{{ $t('info.adv6_bold') }}</strong> {{ $t('info.adv6_text') }}</span>
+                                    <span>{{ $t('info.adv6_pre', { app_name: appName }) }} <strong>{{ $t('info.adv6_bold', { app_name: appName }) }}</strong> {{ $t('info.adv6_text', { app_name: appName }) }}</span>
                                 </li>
                             </ul>
                         </div>
@@ -399,19 +399,19 @@ const submitLogin = () => {
             <!-- Tabela de Preços Dinâmica -->
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
                 <h2 class="text-2xl font-bold text-gray-800 mb-6 text-left border-l-4 border-[#a4332b] pl-3">
-                    {{ $t('pricing.overview_title') || 'Visão geral dos planos' }}
+                    {{ $t('pricing.overview_title', { app_name: appName }) || 'Visão geral dos planos' }}
                 </h2>
                 
                 <div class="bg-white shadow-sm border border-gray-200 rounded-lg overflow-x-auto">
                     <table class="w-full text-sm text-left">
                         <thead class="bg-gray-800 text-white">
                             <tr>
-                                <th class="py-4 px-6 font-bold uppercase tracking-wider">{{ $t('pricing.table.plan') }}</th>
-                                <th class="py-4 px-6 font-bold uppercase tracking-wider text-center">{{ $t('pricing.table.monthly') }}</th>
-                                <th class="py-4 px-6 font-bold uppercase tracking-wider text-center">{{ $t('pricing.table.yearly') }}</th>
-                                <th class="py-4 px-6 font-bold uppercase tracking-wider text-center">{{ $t('pricing.table.limit') }}</th>
-                                <th class="py-4 px-6 font-bold uppercase tracking-wider">{{ $t('pricing.table.update') }}</th>
-                                <th class="py-4 px-6 font-bold uppercase tracking-wider">{{ $t('pricing.table.ideal') }}</th>
+                                <th class="py-4 px-6 font-bold uppercase tracking-wider">{{ $t('pricing.table.plan', { app_name: appName }) }}</th>
+                                <th class="py-4 px-6 font-bold uppercase tracking-wider text-center">{{ $t('pricing.table.monthly', { app_name: appName }) }}</th>
+                                <th class="py-4 px-6 font-bold uppercase tracking-wider text-center">{{ $t('pricing.table.yearly', { app_name: appName }) }}</th>
+                                <th class="py-4 px-6 font-bold uppercase tracking-wider text-center">{{ $t('pricing.table.limit', { app_name: appName }) }}</th>
+                                <th class="py-4 px-6 font-bold uppercase tracking-wider">{{ $t('pricing.table.update', { app_name: appName }) }}</th>
+                                <th class="py-4 px-6 font-bold uppercase tracking-wider">{{ $t('pricing.table.ideal', { app_name: appName }) }}</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100">
@@ -439,12 +439,12 @@ const submitLogin = () => {
 
                                 <!-- Frequência -->
                                 <td class="py-4 px-6 text-gray-600">
-                                    {{ $t(`pricing.plans.${plan.slug}.frequency`) }}
+                                    {{ $t(`pricing.plans.${plan.slug}.frequency`, { app_name: appName }) }}
                                 </td>
 
                                 <!-- Ideal Para -->
                                 <td class="py-4 px-6 text-gray-600 italic">
-                                    {{ $t(`pricing.plans.${plan.slug}.ideal_for`) }}
+                                    {{ $t(`pricing.plans.${plan.slug}.ideal_for`, { app_name: appName }) }}
                                 </td>
                             </tr>
                         </tbody>
@@ -456,11 +456,11 @@ const submitLogin = () => {
         <footer class="border-t border-gray-200 bg-white pt-10 pb-6">
             <div class="max-w-6xl mx-auto px-4 text-center">
                 <nav class="flex flex-wrap justify-center gap-6 mb-6 text-sm text-[#a4332b] font-medium">
-                    <Link :href="route('info.article', 'privacy-policy')" class="hover:underline">{{ $t('footer.privacy') }}</Link>
-                    <Link :href="route('info.article', 'terms-of-use')" class="hover:underline">{{ $t('footer.terms') }}</Link>
-                    <a href="#" class="hover:underline">{{ $t('footer.api') }}</a>
-                    <a href="#" class="hover:underline">{{ $t('footer.contact') }}</a>
-                    <a href="#" class="hover:underline">{{ $t('footer.help') }}</a>
+                    <Link :href="route('info.article', 'privacy-policy')" class="hover:underline">{{ $t('footer.privacy', { app_name: appName }) }}</Link>
+                    <Link :href="route('info.article', 'terms-of-use')" class="hover:underline">{{ $t('footer.terms', { app_name: appName }) }}</Link>
+                    <a href="#" class="hover:underline">{{ $t('footer.api', { app_name: appName }) }}</a>
+                    <a href="#" class="hover:underline">{{ $t('footer.contact', { app_name: appName }) }}</a>
+                    <a href="#" class="hover:underline">{{ $t('footer.help', { app_name: appName }) }}</a>
                 </nav>
                 <p class="text-xs text-gray-400">
                     &copy; 2005-{{ anoAtual }} {{ appName }}. Todos os direitos reservados.

@@ -45,7 +45,7 @@ const otherArticles = computed(() => {
 </script>
 
 <template>
-    <Head :title="$t(article.page_title_key)" />
+    <Head :title="$t(article.page_title_key, { app_name: appName })" />
 
     <div class="min-h-screen bg-gradient-to-b from-[#e8f4fc] to-[#f5f5f5] font-sans text-gray-700 flex flex-col">
 
@@ -64,13 +64,13 @@ const otherArticles = computed(() => {
                             <Link href="/" class="text-2xl font-bold leading-none tracking-tight text-gray-800 hover:text-[#a4332b] transition">
                                 {{ appName }}
                             </Link>
-                            <span class="text-xs text-gray-500 tracking-wider">{{ $t('hero.subtitle_tag') }}</span>
+                            <span class="text-xs text-gray-500 tracking-wider">{{ $t('hero.subtitle_tag', { app_name: appName }) }}</span>
                         </div>
                     </div>
 
                     <nav class="hidden md:flex items-center gap-3 text-sm font-bold text-[#a4332b] uppercase tracking-wide">
                         <Link href="/" class="hover:opacity-80 transition">
-                            ← {{ $t('articles.about_sitemaps.back_home') }}
+                            ← {{ $t('articles.about_sitemaps.back_home', { app_name: appName }) }}
                         </Link>
                         <div class="flex items-center gap-2 border-l border-gray-300 pl-4 ml-2">
                             <button @click="mudarIdioma('pt')" class="hover:scale-110 transition-transform cursor-pointer opacity-80 hover:opacity-100" title="Português">
@@ -94,16 +94,16 @@ const otherArticles = computed(() => {
                     <div class="lg:col-span-3">
                         <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 md:p-12">
                             <h1 class="text-3xl font-light text-gray-700 mb-8 border-b border-gray-200 pb-4">
-                                {{ $t(article.title_key) }}
+                                {{ $t(article.title_key, { app_name: appName }) }}
                             </h1>
 
                             <h2 class="text-xl font-semibold text-gray-700 mb-4">
-                                {{ $t(article.section_title_key) }}
+                                {{ $t(article.section_title_key, { app_name: appName }) }}
                             </h2>
 
                             <div class="space-y-4 text-sm text-gray-600 leading-relaxed">
                                 <p v-for="(pKey, idx) in article.paragraphs_keys" :key="idx">
-                                    {{ $t(pKey) }}
+                                    {{ $t(pKey, { app_name: appName }) }}
                                 </p>
                             </div>
                         </div>
@@ -113,7 +113,7 @@ const otherArticles = computed(() => {
                     <div class="lg:col-span-1">
                         <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 sticky top-28">
                             <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wider mb-4 border-b border-gray-200 pb-2">
-                                {{ $t('articles.about_sitemaps.related_title') }}
+                                {{ $t('articles.about_sitemaps.related_title', { app_name: appName }) }}
                             </h3>
                             <nav class="space-y-2">
                                 <Link
@@ -125,7 +125,7 @@ const otherArticles = computed(() => {
                                         ? 'bg-[#a4332b] text-white'
                                         : 'text-[#a4332b] hover:bg-gray-50'"
                                 >
-                                    {{ $t(sidebarLabels[articleSlug] || articleSlug) }}
+                                    {{ $t(sidebarLabels[articleSlug] || articleSlug, { app_name: appName }) }}
                                 </Link>
                             </nav>
                         </div>
@@ -138,11 +138,11 @@ const otherArticles = computed(() => {
         <footer class="border-t border-gray-200 bg-white pt-10 pb-6">
             <div class="max-w-6xl mx-auto px-4 text-center">
                 <nav class="flex flex-wrap justify-center gap-6 mb-6 text-sm text-[#a4332b] font-medium">
-                    <a href="#" class="hover:underline">{{ $t('footer.privacy') }}</a>
-                    <a href="#" class="hover:underline">{{ $t('footer.terms') }}</a>
-                    <a href="#" class="hover:underline">{{ $t('footer.api') }}</a>
-                    <a href="#" class="hover:underline">{{ $t('footer.contact') }}</a>
-                    <a href="#" class="hover:underline">{{ $t('footer.help') }}</a>
+                    <a href="#" class="hover:underline">{{ $t('footer.privacy', { app_name: appName }) }}</a>
+                    <a href="#" class="hover:underline">{{ $t('footer.terms', { app_name: appName }) }}</a>
+                    <a href="#" class="hover:underline">{{ $t('footer.api', { app_name: appName }) }}</a>
+                    <a href="#" class="hover:underline">{{ $t('footer.contact', { app_name: appName }) }}</a>
+                    <a href="#" class="hover:underline">{{ $t('footer.help', { app_name: appName }) }}</a>
                 </nav>
                 <p class="text-xs text-gray-400">
                     &copy; 2005-{{ anoAtual }} {{ appName }}. Todos os direitos reservados.

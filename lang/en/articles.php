@@ -47,7 +47,7 @@ return [
         'section_title' => 'How to create and use Image Sitemaps',
         'p1' => 'Through Google Image Sitemaps, Google receives metadata regarding the images contained on a website. Visitors can do an image search on Google. Using Google image extensions in Sitemaps provides the search engine with additional information regarding the images on the website. This can help Google discover images it may not find through crawling, such as those accessed via JavaScript forms.',
         'p2' => 'To provide Google with information regarding images on the website, the site owner must add relevant details to the standard Sitemap. This includes the type of image, subject matter, caption, title, geographic location, and license. The process enables site owners to identify which images on each page are most important.',
-        'p3' => 'NOTE: PRO Sitemaps will include unique images URLs in sitemap to avoid duplicating repeating images for all pages. Image sitemap is stored in a separate xml file.',
+        'p3' => 'NOTE: :app_name will include unique images URLs in sitemap to avoid duplicating repeating images for all pages. Image sitemap is stored in a separate xml file.',
     ],
 
     // Video Sitemap
@@ -57,7 +57,7 @@ return [
         'section_title' => 'How to create Video Sitemaps and how are they used',
         'p1' => 'Google Video Sitemaps provide Google with metadata about video content on a website. With a Video Sitemap, site owners can inform Google of the category, title, description, running time, and intended audience for each video contained on the site. This helps Google know about all the rich video content on the site, which should improve the listing of the site on video search results.',
         'p2' => 'When supported format video information is either submitted as a separate Sitemap or included in the regular Sitemap, the included URLs for the videos are made searchable through Google Video. The videos may also be accessed through other search products offered by Google.',
-        'p3' => 'NOTE: PRO Sitemaps automatically detects embedded videos on your pages and creates a separate sitemap with related details. In the current version of the standalone sitemap generator the following video sources are supported: YouTube, Google Video, Vimeo, Dailymotion, MTV, Blip.tv. In other cases, VideoObject Schema markup is supported.',
+        'p3' => 'NOTE: :app_name automatically detects embedded videos on your pages and creates a separate sitemap with related details. In the current version of the standalone sitemap generator the following video sources are supported: YouTube, Google Video, Vimeo, Dailymotion, MTV, Blip.tv. In other cases, VideoObject Schema markup is supported.',
     ],
 
     // News Sitemap
@@ -67,7 +67,7 @@ return [
         'section_title' => 'How to create and use News Sitemaps',
         'p1' => 'Google News Sitemaps provide the search engine Google with metadata regarding the specific news content on a website. This Sitemap allows the site owner to control which content is submitted to Google News. Using the News Sitemap, Google News can quickly find the news articles contained on a site.',
         'p2' => 'These Sitemaps identify the title and publication date of every article. Using genres and access tags, they also specify the type of content contained in the article. Article content is further identified using descriptions like stock tickers or relevant keywords.',
-        'p3' => 'NOTE: To be able to use news sitemaps for your website you must request inclusion in Google News first, otherwise news sitemap will not be processed. PRO Sitemaps tracks the changes on your site automatically and creates news sitemap in a separate file, including only new URLs for the last days.',
+        'p3' => 'NOTE: To be able to use news sitemaps for your website you must request inclusion in Google News first, otherwise news sitemap will not be processed. :app_name tracks the changes on your site automatically and creates news sitemap in a separate file, including only new URLs for the last days.',
     ],
 
     // HTML Sitemap
