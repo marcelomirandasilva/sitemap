@@ -333,7 +333,7 @@ const submitLogin = () => {
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
                         <!-- Coluna Esquerda: O que é um sitemap? -->
-                        <div>
+                        <div class="text-left">
                             <h3 class="text-lg font-semibold text-gray-700 mb-3">{{ $t('info.what_title') }}</h3>
                             <p class="text-sm text-gray-600 leading-relaxed mb-4">
                                 {{ $t('info.what_text') }}
@@ -352,7 +352,7 @@ const submitLogin = () => {
                                 <div class="text-[#a4332b] flex-shrink-0 mt-0.5">
                                     <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
                                 </div>
-                                <div class="text-xs text-gray-600 leading-relaxed">
+                                <div class="text-xs text-gray-600 leading-relaxed text-left">
                                     <p>{{ $t('info.trusted_by') }} <strong>380,000+</strong> {{ $t('info.website_owners') }}</p>
                                     <p>{{ $t('info.provided_sitemaps') }} <strong>23M+</strong> {{ $t('info.websites_worldwide') }}</p>
                                     <p>{{ $t('info.uptime') }}: <strong>99.9%</strong></p>
@@ -361,9 +361,9 @@ const submitLogin = () => {
                         </div>
 
                         <!-- Coluna Direita: Vantagens -->
-                        <div>
+                        <div class="text-left">
                             <h3 class="text-lg font-semibold text-gray-700 mb-4">{{ $t('info.advantages_title') }}</h3>
-                            <ul class="space-y-4 text-sm text-gray-600">
+                            <ul class="space-y-4 text-sm text-gray-600 text-left">
                                 <li class="flex items-start gap-2">
                                     <span class="text-[#a4332b] mt-0.5 flex-shrink-0">•</span>
                                     <span><strong>{{ $t('info.adv1_bold') }}</strong> {{ $t('info.adv1_text') }}</span>
