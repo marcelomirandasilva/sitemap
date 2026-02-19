@@ -22,9 +22,8 @@ Route::get('/', function () {
     ]);
 });
 
-Route::get('/about-sitemaps', function () {
-    return Inertia::render('Public/AboutSitemaps');
-})->name('about-sitemaps');
+Route::get('/about-sitemaps', fn() => redirect()->route('info.article', 'about-sitemaps'));
+Route::get('/info/{slug}', [\App\Http\Controllers\InfoArticleController::class, 'show'])->name('info.article');
 
 Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])
