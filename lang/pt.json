@@ -311,5 +311,26 @@
     "info.adv5_text": "no seu site e resolva-os com a ajuda do nosso Suporte.",
     "info.adv6_pre": "Você terá acesso a",
     "info.adv6_bold": "relatórios detalhados",
-    "info.adv6_text": "como Histórico do Site, Links Quebrados, Links Internos e Externos, Estrutura do Site, além de Sitemaps de Imagens, Vídeo, Notícias e RSS Feed."
+    "info.adv6_text": "como Histórico do Site, Links Quebrados, Links Internos e Externos, Estrutura do Site, além de Sitemaps de Imagens, Vídeo, Notícias e RSS Feed.",
+
+    "about_sitemaps.page_title": "Sobre Sitemaps",
+    "about_sitemaps.title": "Sobre Sitemaps",
+    "about_sitemaps.back_home": "INÍCIO",
+    "about_sitemaps.section1_title": "Gigantes dos Motores de Busca Adotam o Protocolo XML",
+    "about_sitemaps.p1": "Se você possui ou mantém um site, ou pretende ter um, não seria ótimo receber visitantes frequentes que encontram exatamente a informação que precisam na sua página?",
+    "about_sitemaps.p2": "Em 2005, o Google lançou o Protocolo Sitemap 0.84, projetado para usar o formato XML. Um sitemap é uma forma de organizar um site, identificando as URLs e os dados de cada seção. Anteriormente, os sitemaps eram voltados principalmente para os usuários do site. No entanto, o formato XML do Google foi projetado para os motores de busca, permitindo que encontrem os dados de forma mais rápida e eficiente.",
+    "about_sitemaps.p3": "O novo protocolo de sitemap do Google foi desenvolvido em resposta ao crescente tamanho e complexidade dos sites. Sites empresariais frequentemente contêm centenas de produtos em seus catálogos; enquanto a popularidade dos blogs levou os webmasters a atualizar seu material pelo menos uma vez por dia, sem mencionar ferramentas populares de construção de comunidade como fóruns e painéis de mensagens. À medida que os sites cresciam, era difícil para os motores de busca acompanhar todo esse material, às vezes 'pulando' informações enquanto rastreavam essas páginas em rápida mudança.",
+    "about_sitemaps.p4": "Através do protocolo XML, os motores de busca podem rastrear as URLs de forma mais eficiente, otimizando sua busca ao colocar todas as informações em uma página. O XML também resume a frequência com que um site é atualizado e registra a última vez que alterações foram feitas.",
+    "about_sitemaps.p5": "Sitemaps XML não são, como algumas pessoas pensam, uma ferramenta de otimização para motores de busca. Não afeta o ranking, mas permite que os motores de busca façam rankings e buscas mais precisos. Faz isso fornecendo os dados que um motor de busca precisa, colocando-os em um único lugar — bastante prático, dado que há milhões de sites para percorrer.",
+    "about_sitemaps.p6": "Para incentivar outros motores de busca a adotar o protocolo XML, o Google o publicou sob a licença Creative Commons Attribution/Share Alike. O esforço valeu a pena. Recentemente, o Google anunciou com satisfação que Yahoo e Microsoft concordaram em 'apoiar oficialmente' o protocolo XML, que agora foi atualizado para o Protocolo Sitemap 0.9, e patrocinam conjuntamente o www.sitemaps.org, um site criado para explicar o protocolo.",
+    "about_sitemaps.p7": "O reconhecimento compartilhado do protocolo XML significa que desenvolvedores web não precisam mais criar diferentes tipos de sitemaps para diferentes motores de busca. Podem criar um único arquivo para envio e atualizá-lo quando fizerem alterações no site. Isso simplifica todo o processo de aprimoramento e expansão de um site. Por meio dessa mudança, o formato XML logo se tornará uma característica padrão de toda criação e desenvolvimento web.",
+    "about_sitemaps.related_title": "Artigos Relacionados",
+    "about_sitemaps.related_broken_links": "Links Quebrados",
+    "about_sitemaps.related_image": "Sitemap de Imagens Explicado",
+    "about_sitemaps.related_video": "Sitemap de Vídeo Explicado",
+    "about_sitemaps.related_news": "Sitemap de Notícias Explicado",
+    "about_sitemaps.related_html": "Sitemap HTML Explicado",
+    "about_sitemaps.related_rss": "RSS Feed Explicado",
+    "about_sitemaps.related_text": "Sitemap de Texto Explicado",
+    "about_sitemaps.related_mobile": "Sitemap Mobile Explicado"
 }

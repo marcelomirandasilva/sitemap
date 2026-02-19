@@ -338,9 +338,9 @@ const submitLogin = () => {
                             <p class="text-sm text-gray-600 leading-relaxed mb-4">
                                 {{ $t('info.what_text') }}
                             </p>
-                            <a href="#" class="text-sm font-bold text-[#a4332b] uppercase tracking-wide hover:underline">
+                            <Link :href="route('about-sitemaps')" class="text-sm font-bold text-[#a4332b] uppercase tracking-wide hover:underline">
                                 &rsaquo; {{ $t('info.more_about') }}
-                            </a>
+                            </Link>
 
                             <h3 class="text-lg font-semibold text-gray-700 mt-8 mb-3">{{ $t('info.who_title') }}</h3>
                             <p class="text-sm text-gray-600 leading-relaxed">

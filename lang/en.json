@@ -323,5 +323,26 @@
     "info.adv5_text": "on your website and resolve them with the help of our top-rated Support.",
     "info.adv6_pre": "You will gain access to",
     "info.adv6_bold": "in-depth reports",
-    "info.adv6_text": "such as the Site history, Broken links, Internal and External links, Site Structure and more, we will also create and maintain Images, Video, News sitemaps and RSS feed for you."
+    "info.adv6_text": "such as the Site history, Broken links, Internal and External links, Site Structure and more, we will also create and maintain Images, Video, News sitemaps and RSS feed for you.",
+
+    "about_sitemaps.page_title": "About Sitemaps",
+    "about_sitemaps.title": "About Sitemaps",
+    "about_sitemaps.back_home": "HOME",
+    "about_sitemaps.section1_title": "Search Engine Giants Adopting the XML Protocol",
+    "about_sitemaps.p1": "If you own or maintain a website or intend to own one, wouldn't it be great if you get frequent visitors who find satisfaction in getting exactly the information they need from your page?",
+    "about_sitemaps.p2": "Back in 2005, the search engine Google launched the Sitemap 0.84 Protocol, designed to use the XML format. A sitemap is a way of organizing a website, identifying the URLs and the data under each section. Previously, the sitemaps were primarily geared for the users of the website. However, Google's XML format was designed for the search engines, allowing them to find the data faster and more efficiently.",
+    "about_sitemaps.p3": "Google's new sitemap protocol was developed in response to the increasing size and complexity of websites. Business websites often contained hundreds of products in their catalogues; while the popularity of blogging led to webmasters updating their material at least once a day, not to mention popular community-building tools like forums and message boards. As websites got bigger and bigger, it was difficult for search engines to keep track of all this material, sometimes 'skipping' information as it crawled through these rapidly changing pages.",
+    "about_sitemaps.p4": "Through the XML protocol, search engines could track the URLs more efficiently, optimizing their search by placing all the information in one page. XML also summarizes how frequently a particular website is updated, and records the last time any changes were made.",
+    "about_sitemaps.p5": "XML sitemaps were not, as some people thought, a tool for search engine optimization. It does not affect ranking, but it does allow search engines to make more accurate rankings and searches. It does this by providing the data that a search engine needs, and putting it one place — quite handy, given that there are millions of websites to plough through.",
+    "about_sitemaps.p6": "To encourage other search engines to adopt the XML protocol, Google published it under the Attribution/Share Alike Creative Commons license. Its efforts paid off. Recently, Google happily announced that Yahoo and Microsoft had agreed to 'officially support' the XML protocol which has now been updated to the Sitemap 0.9 protocol and jointly sponsored www.sitemaps.org, a site setup to explain the protocol.",
+    "about_sitemaps.p7": "The shared recognition of the XML protocol means that website developers no longer need to create different types of sitemaps for the different search engines. They can create one file for submission, and then update it when they have made changes on the site. This simplifies the whole process of fine-tuning and expanding a website. Through this move, the XML format will soon become a standard feature of all website creation and development.",
+    "about_sitemaps.related_title": "Related Articles",
+    "about_sitemaps.related_broken_links": "Broken Links",
+    "about_sitemaps.related_image": "Image Sitemap Explained",
+    "about_sitemaps.related_video": "Video Sitemap Explained",
+    "about_sitemaps.related_news": "News Sitemap Explained",
+    "about_sitemaps.related_html": "HTML Sitemap Explained",
+    "about_sitemaps.related_rss": "RSS Feed Explained",
+    "about_sitemaps.related_text": "Text Sitemap Explained",
+    "about_sitemaps.related_mobile": "Mobile Sitemap Explained"
 }
