@@ -18,6 +18,7 @@ Route::get('/', function () {
         'canRegister' => Route::has('register'),
         'laravelVersion' => Application::VERSION,
         'phpVersion' => PHP_VERSION,
+        'plans' => \App\Models\Plan::all(), // Planos injetados
     ]);
 });
 

@@ -51,7 +51,7 @@ const targetStripePriceId = computed(() => {
     >
         <div class="mb-5">
             <h3 class="text-lg font-semibold leading-8 text-gray-900">{{ plan.name }}</h3>
-            <p class="mt-4 text-base leading-6 text-gray-600">{{ $t('subscription.ideal_for_scaling') }}</p>
+            <p class="mt-4 text-base leading-6 text-gray-600">{{ plan.ideal_for || $t('subscription.ideal_for_scaling') }}</p>
             
             <p class="mt-6 flex items-baseline gap-x-1">
                 <span class="text-4xl font-bold tracking-tight text-gray-900">
@@ -68,6 +68,10 @@ const targetStripePriceId = computed(() => {
         </div>
         
         <ul role="list" class="mt-8 space-y-3 text-sm leading-6 text-gray-600 flex-1">
+            <li class="flex gap-x-3">
+                <CheckIcon class="h-6 w-5 flex-none text-blue-600" aria-hidden="true" />
+                Atualização: {{ plan.update_frequency || 'Manual' }}
+            </li>
             <li class="flex gap-x-3">
                 <CheckIcon class="h-6 w-5 flex-none text-blue-600" aria-hidden="true" />
                 {{ $t('subscription.features.max_pages', { count: plan.max_pages }) }}

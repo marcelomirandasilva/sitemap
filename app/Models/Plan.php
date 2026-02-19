@@ -21,6 +21,8 @@ class Plan extends Model
         'price_yearly_usd',
         'max_projects',
         'has_advanced_features',
+        'update_frequency',
+        'ideal_for',
     ];
 
     protected $casts = [
