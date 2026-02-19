@@ -22,12 +22,16 @@ class DatabaseSeeder extends Seeder
             PlanSeeder::class,
         ]);
 
-        User::factory()->create([
-            'name' => 'Marcelo Miranda',
-            'email' => 'marcelo.miranda.pp@gmail.com',
-            'plan_id' => 1,
-            'role' => 'user',
-            'password' => Hash::make('teste123'),
-        ]);
+        $user = User::where('email', 'marcelo.miranda.pp@gmail.com')->first();
+
+        if (!$user) {
+            User::factory()->create([
+                'name' => 'Marcelo Miranda',
+                'email' => 'marcelo.miranda.pp@gmail.com',
+                'plan_id' => 1,
+                'role' => 'user',
+                'password' => Hash::make('teste123'),
+            ]);
+        }
     }
 }
