@@ -26,15 +26,17 @@ onMounted(() => {
 
 // Mapa de slugs para chaves de tradução dos labels do sidebar
 const sidebarLabels = {
-    'about-sitemaps': 'about_sitemaps.related_about',
-    'broken-links': 'about_sitemaps.related_broken_links',
-    'images-sitemap': 'about_sitemaps.related_image',
-    'video-sitemap': 'about_sitemaps.related_video',
-    'news-sitemap': 'about_sitemaps.related_news',
-    'html-sitemap': 'about_sitemaps.related_html',
-    'rss-feed': 'about_sitemaps.related_rss',
-    'text-sitemap': 'about_sitemaps.related_text',
-    'mobile-sitemap': 'about_sitemaps.related_mobile',
+    'about-sitemaps': 'articles.about_sitemaps.related_about',
+    'broken-links': 'articles.about_sitemaps.related_broken_links',
+    'images-sitemap': 'articles.about_sitemaps.related_image',
+    'video-sitemap': 'articles.about_sitemaps.related_video',
+    'news-sitemap': 'articles.about_sitemaps.related_news',
+    'html-sitemap': 'articles.about_sitemaps.related_html',
+    'rss-feed': 'articles.about_sitemaps.related_rss',
+    'text-sitemap': 'articles.about_sitemaps.related_text',
+    'mobile-sitemap': 'articles.about_sitemaps.related_mobile',
+    'privacy-policy': 'legal.privacy.sidebar_label',
+    'terms-of-use': 'legal.terms.sidebar_label',
 };
 
 const otherArticles = computed(() => {
