@@ -70,7 +70,7 @@ const otherArticles = computed(() => {
 
                     <nav class="hidden md:flex items-center gap-3 text-sm font-bold text-[#a4332b] uppercase tracking-wide">
                         <Link href="/" class="hover:opacity-80 transition">
-                            ← {{ $t('about_sitemaps.back_home') }}
+                            ← {{ $t('articles.about_sitemaps.back_home') }}
                         </Link>
                         <div class="flex items-center gap-2 border-l border-gray-300 pl-4 ml-2">
                             <button @click="mudarIdioma('pt')" class="hover:scale-110 transition-transform cursor-pointer opacity-80 hover:opacity-100" title="Português">
@@ -113,7 +113,7 @@ const otherArticles = computed(() => {
                     <div class="lg:col-span-1">
                         <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 sticky top-28">
                             <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wider mb-4 border-b border-gray-200 pb-2">
-                                {{ $t('about_sitemaps.related_title') }}
+                                {{ $t('articles.about_sitemaps.related_title') }}
                             </h3>
                             <nav class="space-y-2">
                                 <Link
