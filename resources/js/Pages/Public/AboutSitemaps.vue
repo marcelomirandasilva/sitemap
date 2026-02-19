@@ -20,7 +20,7 @@ onMounted(() => {
 </script>
 
 <template>
-    <Head :title="$t('about_sitemaps.page_title')" />
+    <Head :title="$t('articles.about_sitemaps.page_title')" />
 
     <div class="min-h-screen bg-gradient-to-b from-[#e8f4fc] to-[#f5f5f5] font-sans text-gray-700 flex flex-col">
 
@@ -45,7 +45,7 @@ onMounted(() => {
 
                     <nav class="hidden md:flex items-center gap-3 text-sm font-bold text-[#a4332b] uppercase tracking-wide">
                         <Link href="/" class="hover:opacity-80 transition">
-                            ← {{ $t('about_sitemaps.back_home') }}
+                            ← {{ $t('articles.about_sitemaps.back_home') }}
                         </Link>
                         <div class="flex items-center gap-2 border-l border-gray-300 pl-4 ml-2">
                             <button @click="mudarIdioma('pt')" class="hover:scale-110 transition-transform cursor-pointer opacity-80 hover:opacity-100" title="Português">
@@ -66,35 +66,35 @@ onMounted(() => {
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 md:p-12">
                     
                     <h1 class="text-3xl font-light text-gray-700 mb-8 border-b border-gray-200 pb-4">
-                        {{ $t('about_sitemaps.title') }}
+                        {{ $t('articles.about_sitemaps.title') }}
                     </h1>
 
                     <h2 class="text-xl font-semibold text-gray-700 mb-4">
-                        {{ $t('about_sitemaps.section1_title') }}
+                        {{ $t('articles.about_sitemaps.section1_title') }}
                     </h2>
 
                     <div class="space-y-4 text-sm text-gray-600 leading-relaxed">
-                        <p>{{ $t('about_sitemaps.p1') }}</p>
-                        <p>{{ $t('about_sitemaps.p2') }}</p>
-                        <p>{{ $t('about_sitemaps.p3') }}</p>
-                        <p>{{ $t('about_sitemaps.p4') }}</p>
-                        <p>{{ $t('about_sitemaps.p5') }}</p>
-                        <p>{{ $t('about_sitemaps.p6') }}</p>
-                        <p>{{ $t('about_sitemaps.p7') }}</p>
+                        <p>{{ $t('articles.about_sitemaps.p1') }}</p>
+                        <p>{{ $t('articles.about_sitemaps.p2') }}</p>
+                        <p>{{ $t('articles.about_sitemaps.p3') }}</p>
+                        <p>{{ $t('articles.about_sitemaps.p4') }}</p>
+                        <p>{{ $t('articles.about_sitemaps.p5') }}</p>
+                        <p>{{ $t('articles.about_sitemaps.p6') }}</p>
+                        <p>{{ $t('articles.about_sitemaps.p7') }}</p>
                     </div>
 
                     <!-- Related Articles -->
                     <div class="mt-10 pt-6 border-t border-gray-200">
-                        <h3 class="text-lg font-semibold text-gray-700 mb-4">{{ $t('about_sitemaps.related_title') }}</h3>
+                        <h3 class="text-lg font-semibold text-gray-700 mb-4">{{ $t('articles.about_sitemaps.related_title') }}</h3>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <a href="#" class="text-sm text-[#a4332b] hover:underline font-medium">{{ $t('about_sitemaps.related_broken_links') }}</a>
-                            <a href="#" class="text-sm text-[#a4332b] hover:underline font-medium">{{ $t('about_sitemaps.related_image') }}</a>
-                            <a href="#" class="text-sm text-[#a4332b] hover:underline font-medium">{{ $t('about_sitemaps.related_video') }}</a>
-                            <a href="#" class="text-sm text-[#a4332b] hover:underline font-medium">{{ $t('about_sitemaps.related_news') }}</a>
-                            <a href="#" class="text-sm text-[#a4332b] hover:underline font-medium">{{ $t('about_sitemaps.related_html') }}</a>
-                            <a href="#" class="text-sm text-[#a4332b] hover:underline font-medium">{{ $t('about_sitemaps.related_rss') }}</a>
-                            <a href="#" class="text-sm text-[#a4332b] hover:underline font-medium">{{ $t('about_sitemaps.related_text') }}</a>
-                            <a href="#" class="text-sm text-[#a4332b] hover:underline font-medium">{{ $t('about_sitemaps.related_mobile') }}</a>
+                            <a href="#" class="text-sm text-[#a4332b] hover:underline font-medium">{{ $t('articles.about_sitemaps.related_broken_links') }}</a>
+                            <a href="#" class="text-sm text-[#a4332b] hover:underline font-medium">{{ $t('articles.about_sitemaps.related_image') }}</a>
+                            <a href="#" class="text-sm text-[#a4332b] hover:underline font-medium">{{ $t('articles.about_sitemaps.related_video') }}</a>
+                            <a href="#" class="text-sm text-[#a4332b] hover:underline font-medium">{{ $t('articles.about_sitemaps.related_news') }}</a>
+                            <a href="#" class="text-sm text-[#a4332b] hover:underline font-medium">{{ $t('articles.about_sitemaps.related_html') }}</a>
+                            <a href="#" class="text-sm text-[#a4332b] hover:underline font-medium">{{ $t('articles.about_sitemaps.related_rss') }}</a>
+                            <a href="#" class="text-sm text-[#a4332b] hover:underline font-medium">{{ $t('articles.about_sitemaps.related_text') }}</a>
+                            <a href="#" class="text-sm text-[#a4332b] hover:underline font-medium">{{ $t('articles.about_sitemaps.related_mobile') }}</a>
                         </div>
                     </div>
                 </div>

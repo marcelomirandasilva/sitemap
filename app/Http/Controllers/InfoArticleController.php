@@ -14,17 +14,17 @@ class InfoArticleController extends Controller
     {
         return [
             'about-sitemaps' => [
-                'title_key' => 'about_sitemaps.title',
-                'page_title_key' => 'about_sitemaps.page_title',
-                'section_title_key' => 'about_sitemaps.section1_title',
+                'title_key' => 'articles.about_sitemaps.title',
+                'page_title_key' => 'articles.about_sitemaps.page_title',
+                'section_title_key' => 'articles.about_sitemaps.section1_title',
                 'paragraphs_keys' => [
-                    'about_sitemaps.p1',
-                    'about_sitemaps.p2',
-                    'about_sitemaps.p3',
-                    'about_sitemaps.p4',
-                    'about_sitemaps.p5',
-                    'about_sitemaps.p6',
-                    'about_sitemaps.p7',
+                    'articles.about_sitemaps.p1',
+                    'articles.about_sitemaps.p2',
+                    'articles.about_sitemaps.p3',
+                    'articles.about_sitemaps.p4',
+                    'articles.about_sitemaps.p5',
+                    'articles.about_sitemaps.p6',
+                    'articles.about_sitemaps.p7',
                 ],
             ],
             'broken-links' => [
@@ -117,44 +117,11 @@ class InfoArticleController extends Controller
                     'legal.privacy.intro_p3',
                 ],
                 'sections' => [
-                    [
-                        'subtitle_key' => 'legal.privacy.collect_title',
-                        'paragraphs_keys' => [
-                            'legal.privacy.collect_p1',
-                            'legal.privacy.collect_p2',
-                            'legal.privacy.collect_p3',
-                            'legal.privacy.collect_p4',
-                            'legal.privacy.collect_p5',
-                        ],
-                    ],
-                    [
-                        'subtitle_key' => 'legal.privacy.security_title',
-                        'paragraphs_keys' => [
-                            'legal.privacy.security_p1',
-                        ],
-                    ],
-                    [
-                        'subtitle_key' => 'legal.privacy.cookies_title',
-                        'paragraphs_keys' => [
-                            'legal.privacy.cookies_p1',
-                            'legal.privacy.cookies_p2',
-                        ],
-                    ],
-                    [
-                        'subtitle_key' => 'legal.privacy.external_title',
-                        'paragraphs_keys' => [
-                            'legal.privacy.external_p1',
-                        ],
-                    ],
-                    [
-                        'subtitle_key' => 'legal.privacy.control_title',
-                        'paragraphs_keys' => [
-                            'legal.privacy.control_p1',
-                            'legal.privacy.control_p2',
-                            'legal.privacy.control_p3',
-                            'legal.privacy.control_p4',
-                        ],
-                    ],
+                    ['title_key' => 'legal.privacy.collect_title', 'paragraphs_keys' => ['legal.privacy.collect_p1', 'legal.privacy.collect_p2', 'legal.privacy.collect_p3', 'legal.privacy.collect_p4', 'legal.privacy.collect_p5']],
+                    ['title_key' => 'legal.privacy.security_title', 'paragraphs_keys' => ['legal.privacy.security_p1']],
+                    ['title_key' => 'legal.privacy.cookies_title', 'paragraphs_keys' => ['legal.privacy.cookies_p1', 'legal.privacy.cookies_p2']],
+                    ['title_key' => 'legal.privacy.external_title', 'paragraphs_keys' => ['legal.privacy.external_p1']],
+                    ['title_key' => 'legal.privacy.control_title', 'paragraphs_keys' => ['legal.privacy.control_p1', 'legal.privacy.control_p2', 'legal.privacy.control_p3', 'legal.privacy.control_p4']],
                 ],
             ],
             'terms-of-use' => [
@@ -167,82 +134,17 @@ class InfoArticleController extends Controller
                     'legal.terms.intro_p3',
                 ],
                 'sections' => [
-                    [
-                        'subtitle_key' => 'legal.terms.website_title',
-                        'paragraphs_keys' => [
-                            'legal.terms.website_p1',
-                            'legal.terms.website_p2',
-                        ],
-                    ],
-                    [
-                        'subtitle_key' => 'legal.terms.links_title',
-                        'paragraphs_keys' => [
-                            'legal.terms.links_p1',
-                        ],
-                    ],
-                    [
-                        'subtitle_key' => 'legal.terms.content_title',
-                        'paragraphs_keys' => [
-                            'legal.terms.content_p1',
-                            'legal.terms.content_p2',
-                        ],
-                    ],
-                    [
-                        'subtitle_key' => 'legal.terms.liability_title',
-                        'paragraphs_keys' => [
-                            'legal.terms.liability_p1',
-                        ],
-                    ],
-                    [
-                        'subtitle_key' => 'legal.terms.ip_title',
-                        'paragraphs_keys' => [
-                            'legal.terms.ip_p1',
-                            'legal.terms.ip_p2',
-                        ],
-                    ],
-                    [
-                        'subtitle_key' => 'legal.terms.modification_title',
-                        'paragraphs_keys' => [
-                            'legal.terms.modification_p1',
-                        ],
-                    ],
-                    [
-                        'subtitle_key' => 'legal.terms.subscription_title',
-                        'paragraphs_keys' => [
-                            'legal.terms.subscription_p1',
-                            'legal.terms.subscription_p2',
-                            'legal.terms.subscription_p3',
-                        ],
-                    ],
-                    [
-                        'subtitle_key' => 'legal.terms.refunds_title',
-                        'paragraphs_keys' => [
-                            'legal.terms.refunds_p1',
-                            'legal.terms.refunds_p2',
-                            'legal.terms.refunds_p3',
-                        ],
-                    ],
-                    [
-                        'subtitle_key' => 'legal.terms.upgrades_title',
-                        'paragraphs_keys' => [
-                            'legal.terms.upgrades_p1',
-                        ],
-                    ],
-                    [
-                        'subtitle_key' => 'legal.terms.external_title',
-                        'paragraphs_keys' => [
-                            'legal.terms.external_p1',
-                        ],
-                    ],
-                    [
-                        'subtitle_key' => 'legal.terms.general_title',
-                        'paragraphs_keys' => [
-                            'legal.terms.general_p1',
-                            'legal.terms.general_p2',
-                            'legal.terms.general_p3',
-                            'legal.terms.general_p4',
-                        ],
-                    ],
+                    ['title_key' => 'legal.terms.website_title', 'paragraphs_keys' => ['legal.terms.website_p1', 'legal.terms.website_p2']],
+                    ['title_key' => 'legal.terms.links_title', 'paragraphs_keys' => ['legal.terms.links_p1']],
+                    ['title_key' => 'legal.terms.content_title', 'paragraphs_keys' => ['legal.terms.content_p1', 'legal.terms.content_p2']],
+                    ['title_key' => 'legal.terms.liability_title', 'paragraphs_keys' => ['legal.terms.liability_p1']],
+                    ['title_key' => 'legal.terms.ip_title', 'paragraphs_keys' => ['legal.terms.ip_p1', 'legal.terms.ip_p2']],
+                    ['title_key' => 'legal.terms.modification_title', 'paragraphs_keys' => ['legal.terms.modification_p1']],
+                    ['title_key' => 'legal.terms.subscription_title', 'paragraphs_keys' => ['legal.terms.subscription_p1', 'legal.terms.subscription_p2', 'legal.terms.subscription_p3']],
+                    ['title_key' => 'legal.terms.refunds_title', 'paragraphs_keys' => ['legal.terms.refunds_p1', 'legal.terms.refunds_p2', 'legal.terms.refunds_p3']],
+                    ['title_key' => 'legal.terms.upgrades_title', 'paragraphs_keys' => ['legal.terms.upgrades_p1']],
+                    ['title_key' => 'legal.terms.external_title', 'paragraphs_keys' => ['legal.terms.external_p1']],
+                    ['title_key' => 'legal.terms.general_title', 'paragraphs_keys' => ['legal.terms.general_p1', 'legal.terms.general_p2', 'legal.terms.general_p3', 'legal.terms.general_p4']],
                 ],
             ],
         ];
