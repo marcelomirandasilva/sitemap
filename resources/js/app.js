@@ -23,7 +23,13 @@ createInertiaApp({
                 lang: 'pt',
                 resolve: async lang => {
                     const langs = import.meta.glob('../../lang/*.json');
-                    return await langs[`../../lang/${lang}.json`]();
+                    const main = await langs[`../../lang/${lang}.json`]();
+                    const phpKey = `../../lang/php_${lang}.json`;
+                    if (langs[phpKey]) {
+                        const php = await langs[phpKey]();
+                        return { ...main.default || main, ...php.default || php };
+                    }
+                    return main;
                 }
             })
             .use(ZiggyVue)
