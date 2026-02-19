@@ -324,6 +324,75 @@ const submitLogin = () => {
                         </div>
                     </div>
                 </div>
+
+                <!-- Seção Informativa (Professional Sitemap Solution) -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-200 max-w-4xl mx-auto mt-10 p-8 md:p-12">
+                    <h2 class="text-2xl font-light text-gray-700 text-center mb-10">
+                        {{ $t('info.title') }}
+                    </h2>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+                        <!-- Coluna Esquerda: O que é um sitemap? -->
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-700 mb-3">{{ $t('info.what_title') }}</h3>
+                            <p class="text-sm text-gray-600 leading-relaxed mb-4">
+                                {{ $t('info.what_text') }}
+                            </p>
+                            <a href="#" class="text-sm font-bold text-[#a4332b] uppercase tracking-wide hover:underline">
+                                &rsaquo; {{ $t('info.more_about') }}
+                            </a>
+
+                            <h3 class="text-lg font-semibold text-gray-700 mt-8 mb-3">{{ $t('info.who_title') }}</h3>
+                            <p class="text-sm text-gray-600 leading-relaxed">
+                                {{ $t('info.who_text') }}
+                            </p>
+
+                            <!-- Trust Badges -->
+                            <div class="flex items-start gap-3 mt-6 bg-gray-50 rounded-lg p-4 border border-gray-100">
+                                <div class="text-[#a4332b] flex-shrink-0 mt-0.5">
+                                    <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+                                </div>
+                                <div class="text-xs text-gray-600 leading-relaxed">
+                                    <p>{{ $t('info.trusted_by') }} <strong>380,000+</strong> {{ $t('info.website_owners') }}</p>
+                                    <p>{{ $t('info.provided_sitemaps') }} <strong>23M+</strong> {{ $t('info.websites_worldwide') }}</p>
+                                    <p>{{ $t('info.uptime') }}: <strong>99.9%</strong></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Coluna Direita: Vantagens -->
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-700 mb-4">{{ $t('info.advantages_title') }}</h3>
+                            <ul class="space-y-4 text-sm text-gray-600">
+                                <li class="flex items-start gap-2">
+                                    <span class="text-[#a4332b] mt-0.5 flex-shrink-0">•</span>
+                                    <span><strong>{{ $t('info.adv1_bold') }}</strong> {{ $t('info.adv1_text') }}</span>
+                                </li>
+                                <li class="flex items-start gap-2">
+                                    <span class="text-[#a4332b] mt-0.5 flex-shrink-0">•</span>
+                                    <span>{{ $t('info.adv2_pre') }} <strong>{{ $t('info.adv2_bold') }}</strong> {{ $t('info.adv2_text') }}</span>
+                                </li>
+                                <li class="flex items-start gap-2">
+                                    <span class="text-[#a4332b] mt-0.5 flex-shrink-0">•</span>
+                                    <span><strong>{{ $t('info.adv3_bold') }}</strong> {{ $t('info.adv3_text') }}</span>
+                                </li>
+                                <li class="flex items-start gap-2">
+                                    <span class="text-[#a4332b] mt-0.5 flex-shrink-0">•</span>
+                                    <span>{{ $t('info.adv4_pre') }} <strong>{{ $t('info.adv4_bold') }}</strong> {{ $t('info.adv4_text') }}</span>
+                                </li>
+                                <li class="flex items-start gap-2">
+                                    <span class="text-[#a4332b] mt-0.5 flex-shrink-0">•</span>
+                                    <span>{{ $t('info.adv5_pre') }} <strong>{{ $t('info.adv5_bold') }}</strong> {{ $t('info.adv5_text') }}</span>
+                                </li>
+                                <li class="flex items-start gap-2">
+                                    <span class="text-[#a4332b] mt-0.5 flex-shrink-0">•</span>
+                                    <span>{{ $t('info.adv6_pre') }} <strong>{{ $t('info.adv6_bold') }}</strong> {{ $t('info.adv6_text') }}</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
 
