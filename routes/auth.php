@@ -10,7 +10,17 @@ use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\VerifyEmailController;
+use App\Http\Controllers\Auth\AccountActivationController;
 use Illuminate\Support\Facades\Route;
+
+// Rotas de Ativação (acessíveis a guest ou usuários já logados que aguardam ativação)
+Route::middleware(['web'])->group(function () {
+    Route::get('activate/{token}', [AccountActivationController::class, 'show'])
+        ->name('activate.show');
+
+    Route::post('activate', [AccountActivationController::class, 'store'])
+        ->name('activate.store');
+});
 
 Route::middleware('guest')->group(function () {
     Route::get('auth/google', [GoogleAuthController::class, 'redirect'])->name('auth.google');

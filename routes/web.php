@@ -29,17 +29,24 @@ Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'inde
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
 
-Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-
+// Rotas exclusivas para usuários verificados (Core do App)
+Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/projects', [ProjectController::class, 'store'])->name('projects.store');
     Route::get('/projects/{project}', [ProjectController::class, 'show'])->name('projects.show');
     Route::delete('/projects/{project}', [ProjectController::class, 'destroy'])->name('projects.destroy');
 
+    Route::post('/projects/{project}/crawler', [App\Http\Controllers\CrawlerController::class, 'store'])->name('crawler.store');
+    Route::get('/projects/{project}/crawler-status', [App\Http\Controllers\CrawlerController::class, 'show'])->name('crawler.show');
+    Route::get('/projects/{project}/urls', [App\Http\Controllers\CrawlerController::class, 'getUrls'])->name('crawler.urls');
+
     // Rota de Download via Proxy
     Route::get('/downloads/{jobId}/{filename}', [\App\Http\Controllers\DownloadController::class, 'sitemap'])->name('downloads.sitemap');
+});
+
+Route::middleware('auth')->group(function () {
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
 Route::get('auth/google', [App\Http\Controllers\Auth\SocialAuthController::class, 'redirectToGoogle'])->name('auth.google');
@@ -53,11 +60,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/subscription/checkout/{priceId}', [App\Http\Controllers\SubscriptionController::class, 'checkout'])->name('subscription.checkout');
     Route::get('/portal', [App\Http\Controllers\SubscriptionController::class, 'portal'])->name('portal');
 
-    Route::post('/projects/{project}/crawler', [App\Http\Controllers\CrawlerController::class, 'store'])->name('crawler.store');
-    Route::get('/projects/{project}/crawler-status', [App\Http\Controllers\CrawlerController::class, 'show'])->name('crawler.show');
-    Route::get('/projects/{project}/urls', [App\Http\Controllers\CrawlerController::class, 'getUrls'])->name('crawler.urls');
-
-
+    // Rotas de Crawler movidas para o grupo verified acima
     // Assinaturas (Cashier)
     Route::get('/subscription', [App\Http\Controllers\SubscriptionController::class, 'index'])->name('subscription.index');
     Route::get('/subscription/checkout/{priceId}', [App\Http\Controllers\SubscriptionController::class, 'checkout'])->name('subscription.checkout');

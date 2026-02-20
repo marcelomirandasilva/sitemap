@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Password;
 use Laravel\Cashier\Billable;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, Billable;
@@ -81,6 +82,17 @@ class User extends Authenticatable
     public function isAdmin(): bool
     {
         return $this->role === 'admin';
+    }
+
+    /**
+     * Send the email verification notification.
+     * We override this to send our custom WelcomeAndVerifyUser notification
+     * with the password reset token, since we combined activation and password creation.
+     */
+    public function sendEmailVerificationNotification()
+    {
+        $token = Password::broker()->createToken($this);
+        $this->notify(new \App\Notifications\WelcomeAndVerifyUser($token));
     }
 }
 

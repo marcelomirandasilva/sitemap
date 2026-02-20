@@ -1,7 +1,7 @@
 <script setup>
 import AppLayout from "@/Layouts/AppLayout.vue";
 import { Head, Link, router } from "@inertiajs/vue3";
-import { computed, ref, onMounted } from "vue";
+import { computed, ref, onMounted, onUnmounted } from "vue";
 import Swal from 'sweetalert2';
 import { trans as t } from "laravel-vue-i18n";
 import axios from 'axios';
@@ -84,6 +84,8 @@ const statusColor = computed(() => {
     }
 });
 
+let pollingInterval = null;
+
 // Busca dados atualizados (Async Lazy Load)
 const buscarDetalhesJob = async () => {
     if (!props.project.id) return;
@@ -99,6 +101,11 @@ const buscarDetalhesJob = async () => {
         if (data.preview_urls) {
             listaUrls.value = data.preview_urls;
         }
+
+        // Se finalizou o crawler durante o polling, para o interval e recarrega página opcionalmente
+        if (['completed', 'failed', 'cancelled'].includes(tarefa.value.status)) {
+            if (pollingInterval) clearInterval(pollingInterval);
+        }
     } catch (error) {
         console.error("Erro ao buscar detalhes atualizados:", error);
     } finally {
@@ -106,12 +113,26 @@ const buscarDetalhesJob = async () => {
     }
 };
 
+const iniciarPolling = () => {
+    pollingInterval = setInterval(() => {
+        buscarDetalhesJob();
+    }, 5000); // Poll a cada 5s
+};
+
 onMounted(() => {
     // Se não tiver urls de preview ou se o status for inconclusivo, busca atualização
     if (listaUrls.value.length === 0 || ['queued', 'running'].includes(tarefa.value.status)) {
         buscarDetalhesJob();
     }
+    
+    // Inicia polling se necessário
+    if (['queued', 'running'].includes(tarefa.value.status)) {
+        iniciarPolling();
+    }
+});
 
+onUnmounted(() => {
+    if (pollingInterval) clearInterval(pollingInterval);
 });
 
 const confirmarExclusao = () => {
@@ -309,17 +330,54 @@ const downloadUrl = computed(() => {
 
                         <!-- ABA DETAILS -->
                         <div v-if="abaAtiva === 'details'">
-                            <div class="flex justify-between items-center mb-6">
-                                <h3 class="text-lg font-bold text-gray-700">{{ $t('project.recent_urls') }}</h3>
-                                <div class="text-sm text-gray-500">
-                                     <a v-if="downloadUrl" :href="downloadUrl" target="_blank" class="text-blue-500 hover:underline">
-                                        {{ $t('project.download_full_list') }}
-                                    </a>
+                            
+                            <!-- Boco "PLEASE WAIT" (Animado/Polling) -->
+                            <div v-if="['queued', 'running'].includes(tarefa.status)" class="text-center py-12 px-4 border border-blue-100 bg-blue-50/20 rounded-lg">
+                                <h2 class="text-[#3b82f6] text-xl font-bold uppercase tracking-wider mb-4">Please Wait</h2>
+                                <p class="text-gray-700 font-medium mb-1" style="font-size: 15px;">
+                                    {{ appName }} has started working with your website <strong>{{ project.name || project.url }}</strong>,
+                                </p>
+                                <p class="text-gray-600 mb-8" style="font-size: 15px;">
+                                    but your sitemap is not ready yet.<br>
+                                    You will find the progress details below.
+                                </p>
+                                
+                                <div class="max-w-xl mx-auto border-t border-b border-gray-200 py-6">
+                                    <div class="flex items-center justify-center gap-3 mb-4">
+                                        <span class="text-gray-700">Update in progress</span>
+                                        <button class="bg-[#f39c12] hover:bg-[#e67e22] text-white text-xs font-bold uppercase px-3 py-1 rounded flex items-center gap-1 transition-colors">
+                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                            Pause
+                                        </button>
+                                    </div>
+                                    
+                                    <div class="text-sm text-gray-700 leading-relaxed mb-4">
+                                        <p>Pages processed: <strong>{{ tarefa.pages_count || 0 }}</strong> (<span class="text-[#c0392b]">{{ tarefa.pages_count || 0 }} added in sitemap</span>)</p>
+                                        <p>Links found: <strong>--</strong>, Next level: <strong>--</strong></p>
+                                    </div>
+                                    
+                                    <!-- Progress Bar Container -->
+                                    <div class="w-full h-3 bg-blue-100 rounded-full overflow-hidden flex">
+                                        <div class="h-full bg-[#008cba] transition-all duration-500 rounded-l-full" :style="{ width: Math.max(10, Math.min(100, Math.floor(tarefa.progress || 0))) + '%' }"></div>
+                                        <div class="h-full bg-[#f39c12] transition-all duration-500 rounded-r-full flex-grow animate-pulse opacity-50"></div>
+                                    </div>
                                 </div>
                             </div>
-
-                            <!-- Tabela Paginada via API -->
-                            <UrlDataTable :project-id="project.id" />
+                            
+                            <!-- Boco Normal -->
+                            <div v-else>
+                                <div class="flex justify-between items-center mb-6">
+                                    <h3 class="text-lg font-bold text-gray-700">{{ $t('project.recent_urls') }}</h3>
+                                    <div class="text-sm text-gray-500">
+                                         <a v-if="downloadUrl" :href="downloadUrl" target="_blank" class="text-blue-500 hover:underline">
+                                            {{ $t('project.download_full_list') }}
+                                        </a>
+                                    </div>
+                                </div>
+    
+                                <!-- Tabela Paginada via API -->
+                                <UrlDataTable :project-id="project.id" />
+                            </div>
                         </div>
                         
 
