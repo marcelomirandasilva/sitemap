@@ -321,5 +321,12 @@
     "info.adv5_text": "no seu site e resolva-os com a ajuda do nosso Suporte.",
     "info.adv6_pre": "Você terá acesso a",
     "info.adv6_bold": "relatórios detalhados",
-    "info.adv6_text": "como Histórico do Site, Links Quebrados, Links Internos e Externos, Estrutura do Site, além de Sitemaps de Imagens, Vídeo, Notícias e RSS Feed."
+    "info.adv6_text": "como Histórico do Site, Links Quebrados, Links Internos e Externos, Estrutura do Site, além de Sitemaps de Imagens, Vídeo, Notícias e RSS Feed.",
+    "The email has already been taken.": "Este e-mail já está sendo utilizado.",
+    "The email field is required.": "O campo de e-mail é obrigatório.",
+    "The password field is required.": "O campo de senha é obrigatório.",
+    "The url field is required.": "O campo de URL é obrigatório.",
+    "The selected email is invalid.": "O e-mail selecionado é inválido.",
+    "These credentials do not match our records.": "Estas credenciais não correspondem aos nossos registros.",
+    "The url field must be a valid URL.": "O campo URL deve ser um endereço válido."
 }

@@ -217,7 +217,7 @@ const submitLogin = () => {
                                     <input v-model="registerForm.url" type="url" required
                                         :placeholder="'* ' + $t('form.url_placeholder', { app_name: appName })"
                                         class="w-full border-0 border-b border-gray-300 px-0 py-2 text-gray-600 placeholder-gray-400 focus:ring-0 focus:border-blue-400 transition bg-transparent text-sm">
-                                     <div v-if="registerForm.errors.url" class="text-red-500 text-xs mt-1">{{ registerForm.errors.url }}</div>
+                                     <div v-if="registerForm.errors.url" class="text-red-500 text-xs mt-1">{{ $t(registerForm.errors.url) }}</div>
                                 </div>
 
                                 <!-- Email Input -->
@@ -225,7 +225,7 @@ const submitLogin = () => {
                                     <input v-model="registerForm.email" type="email" required
                                         :placeholder="$t('form.email_create_account', { app_name: appName })"
                                         class="w-full border-0 border-b border-gray-300 px-0 py-2 text-gray-600 placeholder-gray-400 focus:ring-0 focus:border-blue-400 transition bg-transparent text-sm">
-                                    <div v-if="registerForm.errors.email" class="text-red-500 text-xs mt-1">{{ registerForm.errors.email }}</div>
+                                    <div v-if="registerForm.errors.email" class="text-red-500 text-xs mt-1">{{ $t(registerForm.errors.email) }}</div>
                                 </div>
 
                                 <!-- Name -->
@@ -283,13 +283,13 @@ const submitLogin = () => {
                                     <input v-model="loginForm.email" type="email" 
                                         :placeholder="'* ' + $t('auth.email_placeholder', { app_name: appName })"
                                         class="w-full border-0 border-b border-gray-300 px-0 py-2 text-gray-700 placeholder-gray-400 focus:ring-0 focus:border-blue-500 transition">
-                                    <div v-if="loginForm.errors.email" class="text-red-500 text-xs mt-1">{{ loginForm.errors.email }}</div>
+                                    <div v-if="loginForm.errors.email" class="text-red-500 text-xs mt-1">{{ $t(loginForm.errors.email) }}</div>
                                 </div>
                                 <div>
                                     <input v-model="loginForm.password" type="password" 
                                         :placeholder="'* ' + $t('auth.password_placeholder', { app_name: appName })"
                                         class="w-full border-0 border-b border-gray-300 px-0 py-2 text-gray-700 placeholder-gray-400 focus:ring-0 focus:border-blue-500 transition">
-                                    <div v-if="loginForm.errors.password" class="text-red-500 text-xs mt-1">{{ loginForm.errors.password }}</div>
+                                    <div v-if="loginForm.errors.password" class="text-red-500 text-xs mt-1">{{ $t(loginForm.errors.password) }}</div>
                                 </div>
 
                                 <div class="text-center mt-6">
