@@ -82,6 +82,13 @@ const registerForm = useForm({
     terms: false,
 });
 
+const formatarUrl = () => {
+    let url = registerForm.url.trim();
+    if (url && !/^https?:\/\//i.test(url)) {
+        registerForm.url = 'https://' + url;
+    }
+};
+
 const submitRegister = () => {
     registerForm.post(route('register'), {
         onFinish: () => registerForm.reset(),
@@ -214,7 +221,7 @@ const submitLogin = () => {
                                 
                                 <!-- URL Input -->
                                 <div>
-                                    <input v-model="registerForm.url" type="url" required
+                                    <input v-model="registerForm.url" @blur="formatarUrl" type="url" required
                                         :placeholder="'* ' + $t('form.url_placeholder', { app_name: appName })"
                                         class="w-full border-0 border-b border-gray-300 px-0 py-2 text-gray-600 placeholder-gray-400 focus:ring-0 focus:border-blue-400 transition bg-transparent text-sm">
                                      <div v-if="registerForm.errors.url" class="text-red-500 text-xs mt-1">{{ $t(registerForm.errors.url) }}</div>
