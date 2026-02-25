@@ -43,6 +43,13 @@ export default {
                     100: '#eeeeee',
                     200: '#d2d6de',
                 },
+
+                // Novas Modalidades Semânticas
+                premium: colors.amber, // Ou colors.amber para dourado
+                success: colors.emerald,
+                danger: colors.red,
+                warning: colors.orange,
+                info: colors.sky,
             }
         },
     },
