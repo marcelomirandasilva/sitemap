@@ -206,6 +206,31 @@ onUnmounted(() => {
                 {{ Math.round(tarefa.progress || 0) }}%
             </p>
 
+            <!-- Mensagem de Progresso Detalhada -->
+            <p v-if="['running', 'queued'].includes(tarefa.status) && tarefa.message" 
+               class="text-[11px] text-gray-500 mt-1 truncate">
+                {{ tarefa.message }}
+            </p>
+
+            <!-- Páginas Recentes Encontradas -->
+            <div v-if="['running'].includes(tarefa.status) && tarefa.recent_pages && tarefa.recent_pages.length" 
+                 class="mt-2 border border-gray-100 rounded-md bg-gray-50/50 overflow-hidden">
+                <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-2 py-1 border-b border-gray-100">
+                    {{ $t('crawler.recent_pages') || 'Páginas encontradas' }}
+                </p>
+                <ul class="max-h-32 overflow-y-auto divide-y divide-gray-100">
+                    <li v-for="(pagina, idx) in tarefa.recent_pages" 
+                        :key="idx" 
+                        class="px-2 py-1.5 text-[11px] text-gray-600 hover:bg-gray-100/70 transition-colors flex items-start gap-1.5">
+                        <span class="text-primary-400 mt-0.5 shrink-0">•</span>
+                        <div class="min-w-0">
+                            <p class="font-medium text-gray-700 truncate">{{ pagina.title }}</p>
+                            <p class="text-[10px] text-gray-400 truncate">{{ pagina.url }}</p>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
             <!-- Links de Download -->
             <div v-if="tarefa.status === 'completed' && tarefa.artifacts" class="mt-3 grid grid-cols-2 gap-2">
                 <div v-for="(artefato, index) in tarefa.artifacts" :key="index">

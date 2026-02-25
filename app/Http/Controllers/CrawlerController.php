@@ -76,6 +76,8 @@ class CrawlerController extends Controller
         // (Podemos otimizar futuramente para não chamar API se acabou de completar)
         $shouldCheckApi = !in_array($latestJob->status, ['completed', 'failed', 'cancelled']) || empty($latestJob->artifacts);
 
+        $statusData = [];
+
         if ($shouldCheckApi) {
             Log::info("CrawlerController: Consultando API para Job {$latestJob->external_job_id}");
             $statusData = $this->sitemapService->checkStatus($latestJob->external_job_id);
@@ -133,11 +135,15 @@ class CrawlerController extends Controller
         return response()->json([
             'status' => $latestJob->status,
             'progress' => $latestJob->progress,
+            'message' => $latestJob->message ?? null,
             'pages_count' => $latestJob->pages_count,
+            'urls_crawled' => $statusData['urls_crawled'] ?? $latestJob->pages_count ?? 0,
+            'urls_found' => $statusData['urls_found'] ?? $latestJob->pages_count ?? 0,
             'images_count' => $latestJob->images_count ?? 0,
             'videos_count' => $latestJob->videos_count ?? 0,
             'artifacts' => $latestJob->artifacts,
             'preview_urls' => $previewUrls,
+            'recent_pages' => $statusData['recent_pages'] ?? [],
         ]);
     }
 
