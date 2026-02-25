@@ -67,14 +67,14 @@ const formatCurrency = (val) => {
                     </div>
 
                     <form @submit.prevent="submit" class="flex justify-center flex-col gap-4">
-                        <button 
+                        <PrimaryButton 
                             type="submit" 
-                            :disabled="form.processing"
-                            class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg shadow-lg transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                            :processing="form.processing"
+                            class="w-full !py-3 shadow-lg hover:scale-105"
                         >
                             <span v-if="form.processing">Processando...</span>
                             <span v-else>Confirmar e Alterar Plano</span>
-                        </button>
+                        </PrimaryButton>
                         
                         <a :href="route('subscription.index')" class="text-center text-sm text-gray-500 hover:text-gray-800 underline">
                             Cancelar e Voltar

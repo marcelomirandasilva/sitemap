@@ -105,7 +105,7 @@ onMounted(() => {
         <div class="p-4 border-b border-gray-200 bg-gray-50 flex flex-col md:flex-row justify-between items-center gap-4">
              <div class="flex items-center gap-2 text-sm text-gray-600">
                 <span>{{ $t('table.show') }}</span>
-                <select v-model="perPage" class="border-gray-300 focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 rounded shadow-sm text-sm py-1">
+                <select v-model="perPage" class="border-gray-300 focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50 rounded shadow-sm text-sm py-1">
                     <option :value="10">10</option>
                     <option :value="25">25</option>
                     <option :value="50">50</option>
@@ -120,7 +120,7 @@ onMounted(() => {
                     @input="onSearch"
                     type="text" 
                     :placeholder="$t('table.search_placeholder')" 
-                    class="w-full pl-9 pr-3 py-1.5 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-400 focus:border-blue-400"
+                    class="w-full pl-9 pr-3 py-1.5 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-400 focus:border-primary-400"
                 >
                 <svg class="w-4 h-4 text-gray-400 absolute left-3 top-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
             </div>
@@ -129,7 +129,7 @@ onMounted(() => {
         <!-- Table -->
         <div class="overflow-x-auto relative min-h-[200px]">
             <div v-if="loading" class="absolute inset-0 bg-white/80 z-10 flex items-center justify-center">
-                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
             </div>
 
             <table class="w-full text-left text-sm text-gray-500">
@@ -144,7 +144,7 @@ onMounted(() => {
                     <tr v-for="(item, i) in urls" :key="i" class="hover:bg-gray-50 transition-colors">
                         <td class="px-6 py-3 font-medium text-accent-600 break-all max-w-md">
                             {{ item.url }}
-                            <a :href="item.url" target="_blank" class="ml-2 text-gray-300 hover:text-blue-500">↗</a>
+                            <a :href="item.url" target="_blank" class="ml-2 text-gray-300 hover:text-primary-500">↗</a>
                         </td>
                         <td class="px-6 py-3 text-right text-gray-400">{{ formatDate(item.lastMod) }}</td>
                         <td class="px-6 py-3 text-right text-gray-600 font-mono">{{ item.priority || '-' }}</td>

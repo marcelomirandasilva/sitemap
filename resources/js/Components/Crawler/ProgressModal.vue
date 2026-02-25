@@ -188,7 +188,7 @@ onUnmounted(() => {
                             <span v-if="['running', 'queued'].includes(tarefa?.status)" class="animate-spin">🔁</span>
                             <span v-else>✔</span>
                              {{ $t('modal.update_sitemap') }} 
-                             <span v-if="['running', 'queued'].includes(tarefa?.status)" class="text-red-500 text-[8px]">●</span>
+                             <span v-if="['running', 'queued'].includes(tarefa?.status)" class="text-danger-500 text-[8px]">●</span>
                         </span>
                         <span class="cursor-pointer hover:text-gray-900 border-b-2 border-transparent hover:border-accent-600 pb-2">{{ $t('modal.submit') }}</span>
                         <span class="cursor-pointer hover:text-gray-900 border-b-2 border-transparent hover:border-accent-600 pb-2">{{ $t('modal.reports') }}</span>
@@ -282,7 +282,7 @@ onUnmounted(() => {
                                 </div>
                                 <div class="text-right text-xs text-gray-600 space-y-1">
                                     <div><span class="font-bold">{{ tarefa?.pages_count + 130 }}</span> {{ $t('crawler.discovered') }}</div>
-                                    <div class="text-red-400"><span class="font-bold">130</span> {{ $t('crawler.skipped') }} »</div>
+                                    <div class="text-danger-400"><span class="font-bold">130</span> {{ $t('crawler.skipped') }} »</div>
                                     <div class="text-green-600"><span class="font-bold">{{ tarefa?.pages_count }}</span> {{ $t('crawler.added') }} »</div>
                                 </div>
                             </div>
@@ -401,12 +401,12 @@ onUnmounted(() => {
                 <!-- 5. ESTADO: INICIALIZANDO / ERRO -->
                 <div v-else class="flex flex-col items-center justify-center py-20">
                      <div v-if="!tarefa" class="text-center">
-                        <svg class="animate-spin w-10 h-10 text-blue-500 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <svg class="animate-spin w-10 h-10 text-primary-500 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
                         <p class="text-gray-500 font-semibold mb-2">{{ $t('crawler.starting') }}</p>
-                        <p class="text-xs text-red-400 max-w-xs mx-auto">
+                        <p class="text-xs text-danger-400 max-w-xs mx-auto">
                             {{ $t('crawler.check_api') }} <br>
                             {{ $t('crawler.reload_page') }}
                         </p>

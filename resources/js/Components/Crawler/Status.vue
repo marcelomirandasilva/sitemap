@@ -29,8 +29,8 @@ const jobIdMonitorado = ref(null); // ID do job que iniciamos manualmente
 const corStatusPonto = computed(() => {
     switch (tarefa.value?.status) {
         case 'completed': return 'bg-green-500';
-        case 'failed': return 'bg-red-500';
-        case 'running': return 'bg-blue-500 animate-pulse';
+        case 'failed': return 'bg-danger-500';
+        case 'running': return 'bg-primary-500 animate-pulse';
         case 'queued': return 'bg-yellow-500';
         default: return 'bg-gray-300';
     }
@@ -196,7 +196,7 @@ onUnmounted(() => {
             <!-- Barra de Progresso Cleaner -->
             <div v-if="['running', 'queued'].includes(tarefa.status)" class="w-full bg-gray-100 rounded-full h-1.5 mt-2 mb-1 overflow-hidden">
                 <div 
-                    class="bg-blue-500 h-1.5 rounded-full transition-all duration-500 relative" 
+                    class="bg-primary-500 h-1.5 rounded-full transition-all duration-500 relative" 
                     :style="{ width: (tarefa.progress || 0) + '%' }"
                 >
                     <div class="absolute inset-0 bg-white/20 animate-pulse"></div>
@@ -212,7 +212,7 @@ onUnmounted(() => {
                     <a 
                         :href="artefato.download_url" 
                         target="_blank"
-                        class="block w-full text-center px-3 py-2 bg-white border border-gray-300 rounded text-xs text-blue-600 hover:bg-blue-50 transition"
+                        class="block w-full text-center px-3 py-2 bg-white border border-gray-300 rounded text-xs text-primary-600 hover:bg-primary-50 transition"
                     >
                         ⬇️ {{ artefato.name }}
                         <span v-if="artefato.size_bytes > 0" class="block text-[10px] text-gray-400">
@@ -226,7 +226,7 @@ onUnmounted(() => {
             </div>
 
             <!-- Mensagem de Erro (Sanitizada no Frontend também) -->
-            <div v-if="tarefa.status === 'failed'" class="mt-2 text-xs text-red-600 bg-red-50 p-2 rounded border border-red-100">
+            <div v-if="tarefa.status === 'failed'" class="mt-2 text-xs text-danger-600 bg-danger-50 p-2 rounded border border-danger-100">
                 {{ mensagemErroSanitizada }}
             </div>
         </div>
