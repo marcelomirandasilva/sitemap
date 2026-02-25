@@ -127,7 +127,7 @@ const projetosFiltrados = computed(() => {
                 <div
                     class="flex flex-col md:flex-row justify-between items-center bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-6 gap-4">
                     <button @click="mostrarModalAdicionar = !mostrarModalAdicionar"
-                        class="bg-[#007da0] hover:bg-[#006480] text-white font-bold py-2.5 px-6 rounded text-sm uppercase tracking-wide transition shadow-sm flex items-center gap-2">
+                        class="bg-primary-600 hover:bg-primary-700 text-white font-bold py-2.5 px-6 rounded text-sm uppercase tracking-wide transition shadow-sm flex items-center gap-2">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4">
                             </path>
@@ -173,7 +173,7 @@ const projetosFiltrados = computed(() => {
 
                     <!-- View Toggle -->
                     <button @click="modoVisualizacao = modoVisualizacao === 'grid' ? 'list' : 'grid'"
-                        class="text-xs font-bold uppercase text-[#c0392b] flex items-center gap-1 hover:underline">
+                        class="text-xs font-bold uppercase text-accent-600 flex items-center gap-1 hover:underline">
                         <svg v-if="modoVisualizacao === 'list'" class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                             <path
                                 d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z">

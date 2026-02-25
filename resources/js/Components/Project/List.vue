@@ -168,7 +168,7 @@ const onSearch = () => {
 
                         <!-- Domain -->
                         <td class="px-6 py-4 align-top font-medium">
-                            <Link :href="route('projects.show', projeto.id)" class="text-[#c0392b] hover:underline block truncate">
+                            <Link :href="route('projects.show', projeto.id)" class="text-accent-600 hover:underline block truncate">
                                 {{ projeto.url.replace(/^https?:\/\//, '').replace(/\/$/, '') }}
                             </Link>
                         </td>

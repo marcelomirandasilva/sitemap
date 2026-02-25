@@ -47,28 +47,28 @@ const otherArticles = computed(() => {
 <template>
     <Head :title="$t(article.page_title_key, { app_name: appName })" />
 
-    <div class="min-h-screen bg-gradient-to-b from-[#e8f4fc] to-[#f5f5f5] font-sans text-gray-700 flex flex-col">
+    <div class="min-h-screen bg-gradient-to-b from-primary-50 to-[#f5f5f5] font-sans text-gray-700 flex flex-col">
 
         <!-- Header Sticky -->
         <div class="sticky top-0 z-40 bg-white/95 backdrop-blur-sm border-b border-gray-200">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
                 <div class="flex justify-between items-center h-20">
                     <div class="flex items-center gap-2">
-                        <Link href="/" class="text-[#a4332b] hover:opacity-90 transition">
+                        <Link href="/" class="text-accent-800 hover:opacity-90 transition">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M4 16h4v4H4v-4zm0-6h4v4H4v-4zm0-6h4v4H4v-4zm6 12h4v4h-4v-4zm0-6h4v4h-4v-4zm0-6h4v4h-4v-4zm6 12h4v4h-4v-4zm0-6h4v4h-4v-4zm0-6h4v4h-4v-4z" />
                                 <path d="M2 2h20v20H2V2zm2 2v16h16V4H4z" fill="none" stroke="currentColor" stroke-width="2" />
                             </svg>
                         </Link>
                         <div class="flex flex-col">
-                            <Link href="/" class="text-2xl font-bold leading-none tracking-tight text-gray-800 hover:text-[#a4332b] transition">
+                            <Link href="/" class="text-2xl font-bold leading-none tracking-tight text-gray-800 hover:text-accent-800 transition">
                                 {{ appName }}
                             </Link>
                             <span class="text-xs text-gray-500 tracking-wider">{{ $t('hero.subtitle_tag', { app_name: appName }) }}</span>
                         </div>
                     </div>
 
-                    <nav class="hidden md:flex items-center gap-3 text-sm font-bold text-[#a4332b] uppercase tracking-wide">
+                    <nav class="hidden md:flex items-center gap-3 text-sm font-bold text-accent-800 uppercase tracking-wide">
                         <Link href="/" class="hover:opacity-80 transition">
                             ← {{ $t('articles.about_sitemaps.back_home', { app_name: appName }) }}
                         </Link>
@@ -122,8 +122,8 @@ const otherArticles = computed(() => {
                                     :href="route('info.article', articleSlug)"
                                     class="block text-sm font-medium transition-colors px-3 py-2 rounded-lg"
                                     :class="articleSlug === slug
-                                        ? 'bg-[#a4332b] text-white'
-                                        : 'text-[#a4332b] hover:bg-gray-50'"
+                                        ? 'bg-accent-800 text-white'
+                                        : 'text-accent-800 hover:bg-gray-50'"
                                 >
                                     {{ $t(sidebarLabels[articleSlug] || articleSlug, { app_name: appName }) }}
                                 </Link>
@@ -137,7 +137,7 @@ const otherArticles = computed(() => {
         <!-- Footer -->
         <footer class="border-t border-gray-200 bg-white pt-10 pb-6">
             <div class="max-w-6xl mx-auto px-4 text-center">
-                <nav class="flex flex-wrap justify-center gap-6 mb-6 text-sm text-[#a4332b] font-medium">
+                <nav class="flex flex-wrap justify-center gap-6 mb-6 text-sm text-accent-800 font-medium">
                     <a href="#" class="hover:underline">{{ $t('footer.privacy', { app_name: appName }) }}</a>
                     <a href="#" class="hover:underline">{{ $t('footer.terms', { app_name: appName }) }}</a>
                     <a href="#" class="hover:underline">{{ $t('footer.api', { app_name: appName }) }}</a>

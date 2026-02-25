@@ -142,7 +142,7 @@ onMounted(() => {
                 </thead>
                 <tbody class="divide-y divide-gray-100">
                     <tr v-for="(item, i) in urls" :key="i" class="hover:bg-gray-50 transition-colors">
-                        <td class="px-6 py-3 font-medium text-[#c0392b] break-all max-w-md">
+                        <td class="px-6 py-3 font-medium text-accent-600 break-all max-w-md">
                             {{ item.url }}
                             <a :href="item.url" target="_blank" class="ml-2 text-gray-300 hover:text-blue-500">↗</a>
                         </td>

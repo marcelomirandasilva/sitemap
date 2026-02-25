@@ -213,7 +213,7 @@ const downloadUrl = computed(() => {
                             </button>
                             
                             <button
-                                class="bg-[#007da0] hover:bg-[#006480] text-white font-bold py-2 px-4 rounded text-sm uppercase shadow-sm flex items-center gap-2">
+                                class="bg-primary-600 hover:bg-primary-700 text-white font-bold py-2 px-4 rounded text-sm uppercase shadow-sm flex items-center gap-2">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
@@ -251,11 +251,11 @@ const downloadUrl = computed(() => {
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                     <!-- Pages Card -->
                     <div class="bg-white border rounded-lg shadow-sm overflow-hidden">
-                        <div class="bg-[#5bc0de] text-white text-center py-2 font-bold uppercase tracking-wider">{{
+                        <div class="bg-primary-400 text-white text-center py-2 font-bold uppercase tracking-wider">{{
                             $t('project.pages_discovered') }}</div>
                         <div class="p-6 flex justify-between items-center">
                             <div>
-                                <span class="text-4xl font-bold text-[#31708f]">{{ tarefa.pages_count || 0 }}</span>
+                                <span class="text-4xl font-bold text-primary-800">{{ tarefa.pages_count || 0 }}</span>
                                 <div class="text-xs font-bold text-gray-400 uppercase mt-1">{{
                                     $t('project.total_indexed') }}</div>
                             </div>
@@ -270,11 +270,11 @@ const downloadUrl = computed(() => {
 
                     <!-- Images Card -->
                     <div class="bg-white border rounded-lg shadow-sm overflow-hidden opacity-75">
-                        <div class="bg-[#d2d6de] text-gray-600 text-center py-2 font-bold uppercase tracking-wider">{{
+                        <div class="bg-surface-200 text-gray-600 text-center py-2 font-bold uppercase tracking-wider">{{
                             $t('project.images') }}</div>
                         <div class="p-6 text-center">
                             <div v-if="features.images_videos">
-                                <span class="text-4xl font-bold text-[#31708f]">{{ tarefa.images_count || 0 }}</span>
+                                <span class="text-4xl font-bold text-primary-800">{{ tarefa.images_count || 0 }}</span>
                                 <div class="text-xs font-bold text-gray-400 uppercase mt-1">{{ $t('project.stat_indexed') }}
                                 </div>
                             </div>
@@ -291,11 +291,11 @@ const downloadUrl = computed(() => {
 
                     <!-- Videos Card -->
                     <div class="bg-white border rounded-lg shadow-sm overflow-hidden opacity-75">
-                        <div class="bg-[#d2d6de] text-gray-600 text-center py-2 font-bold uppercase tracking-wider">{{
+                        <div class="bg-surface-200 text-gray-600 text-center py-2 font-bold uppercase tracking-wider">{{
                             $t('project.videos') }}</div>
                         <div class="p-6 text-center">
                             <div v-if="features.images_videos">
-                                <span class="text-4xl font-bold text-[#31708f]">{{ tarefa.videos_count || 0 }}</span>
+                                <span class="text-4xl font-bold text-primary-800">{{ tarefa.videos_count || 0 }}</span>
                                 <div class="text-xs font-bold text-gray-400 uppercase mt-1">{{ $t('project.stat_indexed') }}
                                 </div>
                             </div>
@@ -316,11 +316,11 @@ const downloadUrl = computed(() => {
                     <!-- Headers das Abas -->
                     <div class="flex border-b border-gray-200 bg-gray-50 px-6 pt-4">
                         <button @click="abaAtiva = 'details'"
-                            :class="['px-6 py-3 text-sm font-bold uppercase border-t border-l border-r rounded-t-lg transition-all mr-1 translate-y-[1px]', abaAtiva === 'details' ? 'bg-white text-[#c0392b] border-gray-200 border-b-white shadow-sm' : 'bg-gray-100 text-gray-500 border-transparent hover:bg-white/50']">
+                            :class="['px-6 py-3 text-sm font-bold uppercase border-t border-l border-r rounded-t-lg transition-all mr-1 translate-y-[1px]', abaAtiva === 'details' ? 'bg-white text-accent-600 border-gray-200 border-b-white shadow-sm' : 'bg-gray-100 text-gray-500 border-transparent hover:bg-white/50']">
                             <span class="mr-2">⁕</span> {{ $t('project.sitemap_overview') }}
                         </button>
                         <button @click="abaAtiva = 'files'"
-                            :class="['px-6 py-3 text-sm font-bold uppercase border-t border-l border-r rounded-t-lg transition-all translate-y-[1px]', abaAtiva === 'files' ? 'bg-white text-[#c0392b] border-gray-200 border-b-white shadow-sm' : 'bg-gray-100 text-gray-500 border-transparent hover:bg-white/50']">
+                            :class="['px-6 py-3 text-sm font-bold uppercase border-t border-l border-r rounded-t-lg transition-all translate-y-[1px]', abaAtiva === 'files' ? 'bg-white text-accent-600 border-gray-200 border-b-white shadow-sm' : 'bg-gray-100 text-gray-500 border-transparent hover:bg-white/50']">
                             <span class="mr-2">☁</span> {{ $t('project.download_files') }}
                         </button>
                     </div>
@@ -352,13 +352,13 @@ const downloadUrl = computed(() => {
                                     </div>
                                     
                                     <div class="text-sm text-gray-700 leading-relaxed mb-4">
-                                        <p>Pages processed: <strong>{{ tarefa.pages_count || 0 }}</strong> (<span class="text-[#c0392b]">{{ tarefa.pages_count || 0 }} added in sitemap</span>)</p>
+                                        <p>Pages processed: <strong>{{ tarefa.pages_count || 0 }}</strong> (<span class="text-accent-600">{{ tarefa.pages_count || 0 }} added in sitemap</span>)</p>
                                         <p>Links found: <strong>--</strong>, Next level: <strong>--</strong></p>
                                     </div>
                                     
                                     <!-- Progress Bar Container -->
                                     <div class="w-full h-3 bg-blue-100 rounded-full overflow-hidden flex">
-                                        <div class="h-full bg-[#008cba] transition-all duration-500 rounded-l-full" :style="{ width: Math.max(10, Math.min(100, Math.floor(tarefa.progress || 0))) + '%' }"></div>
+                                        <div class="h-full bg-primary-500 transition-all duration-500 rounded-l-full" :style="{ width: Math.max(10, Math.min(100, Math.floor(tarefa.progress || 0))) + '%' }"></div>
                                         <div class="h-full bg-[#f39c12] transition-all duration-500 rounded-r-full flex-grow animate-pulse opacity-50"></div>
                                     </div>
                                 </div>
@@ -425,7 +425,7 @@ const downloadUrl = computed(() => {
                                             </svg>
                                         </a>
                                         <a :href="arq.url" download
-                                            class="bg-[#c0392b] hover:bg-[#a93226] text-white font-bold py-2 px-4 rounded text-sm shadow flex items-center gap-2">
+                                            class="bg-accent-600 hover:bg-accent-700 text-white font-bold py-2 px-4 rounded text-sm shadow flex items-center gap-2">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                     d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4">
