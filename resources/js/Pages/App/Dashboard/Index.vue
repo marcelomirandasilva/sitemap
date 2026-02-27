@@ -107,7 +107,7 @@ const projetosFiltrados = computed(() => {
     <AppLayout>
         <template #hero>
             <!-- Hero "Pro" -->
-            <div class="bg-blue-50 border-b border-blue-100 py-10">
+            <div class="bg-primary-50 border-b border-primary-100 py-10">
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
                     <h1 class="text-3xl font-light text-gray-700 flex items-center justify-center gap-3">
                         <svg class="w-8 h-8 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
@@ -126,18 +126,17 @@ const projetosFiltrados = computed(() => {
                 <!-- Action Bar -->
                 <div
                     class="flex flex-col md:flex-row justify-between items-center bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-6 gap-4">
-                    <button @click="mostrarModalAdicionar = !mostrarModalAdicionar"
-                        class="bg-[#007da0] hover:bg-[#006480] text-white font-bold py-2.5 px-6 rounded text-sm uppercase tracking-wide transition shadow-sm flex items-center gap-2">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <PrimaryButton @click="mostrarModalAdicionar = !mostrarModalAdicionar">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4">
                             </path>
                         </svg>
                         {{ $t('dashboard.add_another') }}
-                    </button>
+                    </PrimaryButton>
 
                     <div class="relative w-full md:w-96" v-if="modoVisualizacao === 'grid'">
                         <input v-model="termoBusca" type="text" :placeholder="$t('dashboard.search_placeholder')"
-                            class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded text-gray-600 focus:ring-1 focus:ring-blue-400 focus:border-blue-400 bg-gray-50 shadow-inner">
+                            class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded text-gray-600 focus:ring-1 focus:ring-primary-400 focus:border-primary-400 bg-gray-50 shadow-inner">
                         <svg class="w-5 h-5 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor"
                             viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -173,7 +172,7 @@ const projetosFiltrados = computed(() => {
 
                     <!-- View Toggle -->
                     <button @click="modoVisualizacao = modoVisualizacao === 'grid' ? 'list' : 'grid'"
-                        class="text-xs font-bold uppercase text-[#c0392b] flex items-center gap-1 hover:underline">
+                        class="text-xs font-bold uppercase text-accent-600 flex items-center gap-1 hover:underline">
                         <svg v-if="modoVisualizacao === 'list'" class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                             <path
                                 d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z">
@@ -190,16 +189,15 @@ const projetosFiltrados = computed(() => {
 
                 <!-- Add Form Toggle (Simple) -->
                 <div v-if="mostrarModalAdicionar"
-                    class="mb-8 p-6 bg-gray-50 border border-blue-100 rounded-lg animate-fade-in-down">
+                    class="mb-8 p-6 bg-gray-50 border border-primary-100 rounded-lg animate-fade-in-down">
                     <h3 class="text-lg font-light text-gray-600 mb-4 text-center">{{ $t('dashboard.add_new_title') }}
                     </h3>
                     <form @submit.prevent="salvarProjeto" class="max-w-md mx-auto flex gap-2">
                         <input v-model="formulario.url" type="url" required placeholder="https://example.com"
-                            class="flex-1 border border-gray-300 shadow-inner px-4 py-3 text-gray-600 focus:ring-1 focus:ring-blue-400 focus:border-blue-400 rounded-md">
-                        <button :disabled="formulario.processing" type="submit"
-                            class="bg-green-600 hover:bg-green-700 text-white font-bold px-6 rounded shadow-sm disabled:opacity-50">
+                            class="flex-1 border border-gray-300 shadow-inner px-4 py-3 text-gray-600 focus:ring-1 focus:ring-primary-400 focus:border-primary-400 rounded-md">
+                        <PrimaryButton :processing="formulario.processing" type="submit">
                             {{ $t('dashboard.add_submit') }}
-                        </button>
+                        </PrimaryButton>
                     </form>
                 </div>
 

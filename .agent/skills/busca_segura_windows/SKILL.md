@@ -1,23 +1,40 @@
 ---
 name: busca_segura_windows
-description: "Regras obrigatórias para buscas de texto (grep/findstr) no Windows 11 para evitar travamentos de terminal e erros de escape."
-version: 1.0.0
+description: "Regras para buscas no Windows 11 priorizando MCP e evitando travamentos de PTY."
+version: 1.1.0
 ---
 
-# Skill: Busca Segura no Windows 11
+# Skill: Busca Segura Windows (Anti-Freeze)
 
-Esta skill define as diretrizes de execução de comandos de busca para garantir a estabilidade do ambiente Windows 11.
+## Contexto
+Esta skill deve ser utilizada SEMPRE que houver necessidade de localizar arquivos, trechos de código ou listar diretórios no Windows 11, substituindo comandos de shell perigosos.
 
-## 1. Tratamento de Comandos de Terminal
-- **Proibição de Escapes:** É terminantemente proibido o uso de barras invertidas para escapar aspas (`\"`). No terminal do Windows 11, isso gera um loop de processo.
-- **Uso de Aspas Simples:** Sempre envolva o padrão de busca em aspas simples ao procurar termos que contenham aspas duplas.
-    - **Exemplo:** `grep -n 'v-model="form.n_documento"' arquivo.vue`
+## Regras de Execução
 
-## 2. Protocolo de Timeout e Fallback
-- **Monitoramento:** Se o comando de busca retornar o status "Running..." por mais de 5 segundos, interrompa o processo (SIGINT/Cancel).
-- **Recuperação:** Caso o `grep` ou `findstr` falhe ou trave, utilize a função de leitura direta (`read_file`) e realize o parsing do texto em memória.
+### 1. Localização de Arquivos (Substitui `find` e `ls -R`)
+- **Ação:** NUNCA execute `find` ou `ls` no terminal.
+- **Ferramenta:** Utilize `find_by_name`.
+- **Parâmetros:** Passe apenas o nome ou parte do nome e o diretório base relativo.
 
-## 3. Idioma de Operação
-- **Pensamentos (Thoughts):** Devem ser gerados em português.
-- **Saídas:** Mensagens de erro e logs devem ser apresentados em português.
-- **Scripts Temporários:** Devem seguir o padrão nominal em português (ex: `busca_termo.ps1`).
+### 2. Busca de Conteúdo/Texto (Substitui `grep` e `findstr`)
+- **Ação:** Proibido o uso de `grep` via `run_command`.
+- **Ferramenta:** Utilize `grep_search`.
+- **Configuração:**
+    - `include`: Use para filtrar extensões (ex: `*.php`, `*.vue`).
+    - `pattern`: O termo de busca.
+
+### 3. Listagem de Estrutura (Substitui `ls` e `dir`)
+- **Ação:** Evite despejar listagens gigantescas no terminal.
+- **Ferramenta:** - Use `list_dir` para uma visão rápida do nível atual.
+    - Para projetos Laravel, use `mcp_laravel-files_list_directory` para manter a compatibilidade com a estrutura do framework.
+
+### 4. Leitura de Arquivos (Substitui `cat` e `type`)
+- **Ação:** Nunca use `cat` para arquivos grandes.
+- **Ferramenta:** `view_file`.
+- **Segurança:** Se o arquivo for muito extenso, use a leitura por blocos (offset/limit) se disponível na ferramenta, ou peça para o usuário confirmar antes de ler arquivos > 500 linhas.
+
+## Fluxo de Recuperação
+Se por algum motivo um comando de busca "congelar":
+1. Identifique o processo órfão (provavelmente o binário da ferramenta MCP).
+2. Não tente repetir o comando imediatamente.
+3. Utilize o protocolo de limpeza definido no GEMINI.md (Item 6.e).

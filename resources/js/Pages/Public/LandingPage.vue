@@ -82,6 +82,13 @@ const registerForm = useForm({
     terms: false,
 });
 
+const formatarUrl = () => {
+    let url = registerForm.url.trim();
+    if (url && !/^https?:\/\//i.test(url)) {
+        registerForm.url = 'https://' + url;
+    }
+};
+
 const submitRegister = () => {
     registerForm.post(route('register'), {
         onFinish: () => registerForm.reset(),
@@ -105,7 +112,7 @@ const submitLogin = () => {
 <template>
     <Head title="Gerador de Sitemap XML" />
 
-    <div class="min-h-screen bg-gradient-to-b from-[#e8f4fc] to-[#f5f5f5] font-sans text-gray-700 flex flex-col">
+    <div class="min-h-screen bg-gradient-to-b from-primary-50 to-[#f5f5f5] font-sans text-gray-700 flex flex-col">
         <!-- Flash Message -->
         <div v-if="$page.props.flash.success" class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 fixed top-0 right-0 m-4 z-50 shadow-md rounded" role="alert">
             <p class="font-bold">Sucesso!</p>
@@ -122,7 +129,7 @@ const submitLogin = () => {
                 <div class="flex justify-between items-center h-20">
                     <!-- Logo / Brand (igual AppHeader.vue) -->
                     <div class="flex items-center gap-2">
-                        <div class="text-[#a4332b]">
+                        <div class="text-accent-800">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M4 16h4v4H4v-4zm0-6h4v4H4v-4zm0-6h4v4H4v-4zm6 12h4v4h-4v-4zm0-6h4v4h-4v-4zm0-6h4v4h-4v-4zm6 12h4v4h-4v-4zm0-6h4v4h-4v-4zm0-6h4v4h-4v-4z" />
                                 <path d="M2 2h20v20H2V2zm2 2v16h16V4H4z" fill="none" stroke="currentColor" stroke-width="2" />
@@ -137,7 +144,7 @@ const submitLogin = () => {
                     </div>
 
                     <!-- Nav Links (igual Topbar.vue) -->
-                    <nav class="hidden md:flex items-center gap-3 text-sm font-bold text-[#a4332b] uppercase tracking-wide">
+                    <nav class="hidden md:flex items-center gap-3 text-sm font-bold text-accent-800 uppercase tracking-wide">
                         <a href="#" class="flex items-center gap-1 hover:opacity-80 transition">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                             {{ $t('nav.support', { app_name: appName }) }}
@@ -214,41 +221,41 @@ const submitLogin = () => {
                                 
                                 <!-- URL Input -->
                                 <div>
-                                    <input v-model="registerForm.url" type="url" required
+                                    <input v-model="registerForm.url" @blur="formatarUrl" type="url" required
                                         :placeholder="'* ' + $t('form.url_placeholder', { app_name: appName })"
-                                        class="w-full border-0 border-b border-gray-300 px-0 py-2 text-gray-600 placeholder-gray-400 focus:ring-0 focus:border-blue-400 transition bg-transparent text-sm">
-                                     <div v-if="registerForm.errors.url" class="text-red-500 text-xs mt-1">{{ registerForm.errors.url }}</div>
+                                        class="w-full border-0 border-b border-gray-300 px-0 py-2 text-gray-600 placeholder-gray-400 focus:ring-0 focus:border-primary-400 transition bg-transparent text-sm">
+                                     <div v-if="registerForm.errors.url" class="text-red-500 text-xs mt-1">{{ $t(registerForm.errors.url) }}</div>
                                 </div>
 
                                 <!-- Email Input -->
                                 <div>
                                     <input v-model="registerForm.email" type="email" required
                                         :placeholder="$t('form.email_create_account', { app_name: appName })"
-                                        class="w-full border-0 border-b border-gray-300 px-0 py-2 text-gray-600 placeholder-gray-400 focus:ring-0 focus:border-blue-400 transition bg-transparent text-sm">
-                                    <div v-if="registerForm.errors.email" class="text-red-500 text-xs mt-1">{{ registerForm.errors.email }}</div>
+                                        class="w-full border-0 border-b border-gray-300 px-0 py-2 text-gray-600 placeholder-gray-400 focus:ring-0 focus:border-primary-400 transition bg-transparent text-sm">
+                                    <div v-if="registerForm.errors.email" class="text-red-500 text-xs mt-1">{{ $t(registerForm.errors.email) }}</div>
                                 </div>
 
                                 <!-- Name -->
                                  <div>
                                     <input v-model="registerForm.name" type="text" required
                                         :placeholder="$t('form.name_placeholder', { app_name: appName })"
-                                        class="w-full border-0 border-b border-gray-300 px-0 py-2 text-gray-600 placeholder-gray-400 focus:ring-0 focus:border-blue-400 transition bg-transparent text-sm">
+                                        class="w-full border-0 border-b border-gray-300 px-0 py-2 text-gray-600 placeholder-gray-400 focus:ring-0 focus:border-primary-400 transition bg-transparent text-sm">
                                 </div>
 
                                 <!-- Checkbox -->
                                 <div class="flex items-start gap-2 mt-4">
                                     <input v-model="registerForm.terms" id="terms" type="checkbox" required
-                                        class="mt-1 w-4 h-4 text-[#a4332b] border-gray-300 rounded focus:ring-[#a4332b]">
+                                        class="mt-1 w-4 h-4 text-accent-800 border-gray-300 rounded focus:ring-accent-800">
                                     <label for="terms" class="text-xs text-gray-500 italic">
-                                        * {{ $t('auth.agree_prefix', { app_name: appName }) }} <Link :href="route('info.article', 'privacy-policy')" class="text-[#a4332b] hover:underline" target="_blank">{{ $t('auth.privacy_policy', { app_name: appName }) }}</Link> 
-                                        {{ $t('auth.and', { app_name: appName }) }} <Link :href="route('info.article', 'terms-of-use')" class="text-[#a4332b] hover:underline" target="_blank">{{ $t('auth.terms_of_use', { app_name: appName }) }}</Link> {{ $t('auth.service_suffix', { app_name: appName }) }}
+                                        * {{ $t('auth.agree_prefix', { app_name: appName }) }} <Link :href="route('info.article', 'privacy-policy')" class="text-accent-800 hover:underline" target="_blank">{{ $t('auth.privacy_policy', { app_name: appName }) }}</Link> 
+                                        {{ $t('auth.and', { app_name: appName }) }} <Link :href="route('info.article', 'terms-of-use')" class="text-accent-800 hover:underline" target="_blank">{{ $t('auth.terms_of_use', { app_name: appName }) }}</Link> {{ $t('auth.service_suffix', { app_name: appName }) }}
                                     </label>
                                 </div>
 
                                 <!-- Button -->
                                 <div class="text-center pt-2">
                                      <button :disabled="registerForm.processing"
-                                        class="bg-[#a4332b] hover:bg-[#8f2c25] text-white text-sm font-bold py-3 px-8 rounded shadow uppercase tracking-wide transition disabled:opacity-50">
+                                        class="bg-accent-800 hover:bg-[#8f2c25] text-white text-sm font-bold py-3 px-8 rounded shadow uppercase tracking-wide transition disabled:opacity-50">
                                         {{ registerForm.processing ? 'PROCESING...' : $t('hero.cta', { app_name: appName }) }}
                                     </button>
                                 </div>
@@ -282,23 +289,23 @@ const submitLogin = () => {
                                 <div>
                                     <input v-model="loginForm.email" type="email" 
                                         :placeholder="'* ' + $t('auth.email_placeholder', { app_name: appName })"
-                                        class="w-full border-0 border-b border-gray-300 px-0 py-2 text-gray-700 placeholder-gray-400 focus:ring-0 focus:border-blue-500 transition">
-                                    <div v-if="loginForm.errors.email" class="text-red-500 text-xs mt-1">{{ loginForm.errors.email }}</div>
+                                        class="w-full border-0 border-b border-gray-300 px-0 py-2 text-gray-700 placeholder-gray-400 focus:ring-0 focus:border-primary-500 transition">
+                                    <div v-if="loginForm.errors.email" class="text-red-500 text-xs mt-1">{{ $t(loginForm.errors.email) }}</div>
                                 </div>
                                 <div>
                                     <input v-model="loginForm.password" type="password" 
                                         :placeholder="'* ' + $t('auth.password_placeholder', { app_name: appName })"
-                                        class="w-full border-0 border-b border-gray-300 px-0 py-2 text-gray-700 placeholder-gray-400 focus:ring-0 focus:border-blue-500 transition">
-                                    <div v-if="loginForm.errors.password" class="text-red-500 text-xs mt-1">{{ loginForm.errors.password }}</div>
+                                        class="w-full border-0 border-b border-gray-300 px-0 py-2 text-gray-700 placeholder-gray-400 focus:ring-0 focus:border-primary-500 transition">
+                                    <div v-if="loginForm.errors.password" class="text-red-500 text-xs mt-1">{{ $t(loginForm.errors.password) }}</div>
                                 </div>
 
                                 <div class="text-center mt-6">
                                     <button :disabled="loginForm.processing"
-                                        class="w-full sm:w-auto bg-[#a4332b] hover:bg-[#8f2c25] text-white font-bold py-3 px-12 rounded shadow-md uppercase tracking-wide transition disabled:opacity-50">
+                                        class="w-full sm:w-auto bg-accent-800 hover:bg-[#8f2c25] text-white font-bold py-3 px-12 rounded shadow-md uppercase tracking-wide transition disabled:opacity-50">
                                         {{ loginForm.processing ? '...' : $t('auth.login_tab', { app_name: appName }).toUpperCase() }}
                                     </button>
                                     <div class="mt-4">
-                                        <a href="#" class="text-[#a4332b] font-bold hover:underline text-sm border-b border-[#a4332b] border-dashed pb-0.5">
+                                        <a href="#" class="text-accent-800 font-bold hover:underline text-sm border-b border-accent-800 border-dashed pb-0.5">
                                             {{ $t('auth.forgot_password', { app_name: appName }) }}
                                         </a>
                                     </div>
@@ -338,7 +345,7 @@ const submitLogin = () => {
                             <p class="text-sm text-gray-600 leading-relaxed mb-4">
                                 {{ $t('info.what_text', { app_name: appName }) }}
                             </p>
-                            <Link :href="route('info.article', 'about-sitemaps')" class="text-sm font-bold text-[#a4332b] uppercase tracking-wide hover:underline">
+                            <Link :href="route('info.article', 'about-sitemaps')" class="text-sm font-bold text-accent-800 uppercase tracking-wide hover:underline">
                                 &rsaquo; {{ $t('info.more_about', { app_name: appName }) }}
                             </Link>
 
@@ -349,7 +356,7 @@ const submitLogin = () => {
 
                             <!-- Trust Badges -->
                             <div class="flex items-start gap-3 mt-6 bg-gray-50 rounded-lg p-4 border border-gray-100">
-                                <div class="text-[#a4332b] flex-shrink-0 mt-0.5">
+                                <div class="text-accent-800 flex-shrink-0 mt-0.5">
                                     <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
                                 </div>
                                 <div class="text-xs text-gray-600 leading-relaxed text-left">
@@ -365,27 +372,27 @@ const submitLogin = () => {
                             <h3 class="text-lg font-semibold text-gray-700 mb-4">{{ $t('info.advantages_title', { app_name: appName }) }}</h3>
                             <ul class="space-y-4 text-sm text-gray-600 text-left">
                                 <li class="flex items-start gap-2">
-                                    <span class="text-[#a4332b] mt-0.5 flex-shrink-0">•</span>
+                                    <span class="text-accent-800 mt-0.5 flex-shrink-0">•</span>
                                     <span><strong>{{ $t('info.adv1_bold', { app_name: appName }) }}</strong> {{ $t('info.adv1_text', { app_name: appName }) }}</span>
                                 </li>
                                 <li class="flex items-start gap-2">
-                                    <span class="text-[#a4332b] mt-0.5 flex-shrink-0">•</span>
+                                    <span class="text-accent-800 mt-0.5 flex-shrink-0">•</span>
                                     <span>{{ $t('info.adv2_pre', { app_name: appName }) }} <strong>{{ $t('info.adv2_bold', { app_name: appName }) }}</strong> {{ $t('info.adv2_text', { app_name: appName }) }}</span>
                                 </li>
                                 <li class="flex items-start gap-2">
-                                    <span class="text-[#a4332b] mt-0.5 flex-shrink-0">•</span>
+                                    <span class="text-accent-800 mt-0.5 flex-shrink-0">•</span>
                                     <span><strong>{{ $t('info.adv3_bold', { app_name: appName }) }}</strong> {{ $t('info.adv3_text', { app_name: appName }) }}</span>
                                 </li>
                                 <li class="flex items-start gap-2">
-                                    <span class="text-[#a4332b] mt-0.5 flex-shrink-0">•</span>
+                                    <span class="text-accent-800 mt-0.5 flex-shrink-0">•</span>
                                     <span>{{ $t('info.adv4_pre', { app_name: appName }) }} <strong>{{ $t('info.adv4_bold', { app_name: appName }) }}</strong> {{ $t('info.adv4_text', { app_name: appName }) }}</span>
                                 </li>
                                 <li class="flex items-start gap-2">
-                                    <span class="text-[#a4332b] mt-0.5 flex-shrink-0">•</span>
+                                    <span class="text-accent-800 mt-0.5 flex-shrink-0">•</span>
                                     <span>{{ $t('info.adv5_pre', { app_name: appName }) }} <strong>{{ $t('info.adv5_bold', { app_name: appName }) }}</strong> {{ $t('info.adv5_text', { app_name: appName }) }}</span>
                                 </li>
                                 <li class="flex items-start gap-2">
-                                    <span class="text-[#a4332b] mt-0.5 flex-shrink-0">•</span>
+                                    <span class="text-accent-800 mt-0.5 flex-shrink-0">•</span>
                                     <span>{{ $t('info.adv6_pre', { app_name: appName }) }} <strong>{{ $t('info.adv6_bold', { app_name: appName }) }}</strong> {{ $t('info.adv6_text', { app_name: appName }) }}</span>
                                 </li>
                             </ul>
@@ -398,7 +405,7 @@ const submitLogin = () => {
 
             <!-- Tabela de Preços Dinâmica -->
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
-                <h2 class="text-2xl font-bold text-gray-800 mb-6 text-left border-l-4 border-[#a4332b] pl-3">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6 text-left border-l-4 border-accent-800 pl-3">
                     {{ $t('pricing.overview_title', { app_name: appName }) || 'Visão geral dos planos' }}
                 </h2>
                 
@@ -426,7 +433,7 @@ const submitLogin = () => {
 
                                 <!-- Preço Anual (Dividido por 12) -->
                                 <td class="py-4 px-6 text-center text-gray-700">
-                                    <span v-if="getYearlyPrice(plan) > 0" class="font-bold text-[#a4332b]">
+                                    <span v-if="getYearlyPrice(plan) > 0" class="font-bold text-accent-800">
                                         {{ formatPrice(plan, 'yearly_monthly') }}
                                     </span>
                                     <span v-else class="text-gray-400">-</span>
@@ -455,7 +462,7 @@ const submitLogin = () => {
         <!-- Footer (igual Footer.vue) -->
         <footer class="border-t border-gray-200 bg-white pt-10 pb-6">
             <div class="max-w-6xl mx-auto px-4 text-center">
-                <nav class="flex flex-wrap justify-center gap-6 mb-6 text-sm text-[#a4332b] font-medium">
+                <nav class="flex flex-wrap justify-center gap-6 mb-6 text-sm text-accent-800 font-medium">
                     <Link :href="route('info.article', 'privacy-policy')" class="hover:underline">{{ $t('footer.privacy', { app_name: appName }) }}</Link>
                     <Link :href="route('info.article', 'terms-of-use')" class="hover:underline">{{ $t('footer.terms', { app_name: appName }) }}</Link>
                     <a href="#" class="hover:underline">{{ $t('footer.api', { app_name: appName }) }}</a>

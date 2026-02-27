@@ -7,6 +7,12 @@ import { createApp, h } from 'vue';
 import { i18nVue } from 'laravel-vue-i18n';
 import { ZiggyVue } from '../../vendor/tightenco/ziggy';
 
+// 1. Importe seus botões do Design System aqui
+import PrimaryButton from './Components/PrimaryButton.vue';
+import SecondaryButton from './Components/SecondaryButton.vue';
+import DangerButton from './Components/DangerButton.vue';
+
+
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
 createInertiaApp({
@@ -27,6 +33,10 @@ createInertiaApp({
                 }
             })
             .use(ZiggyVue)
+            // 2. Registre eles globalmente aqui!
+            .component('PrimaryButton', PrimaryButton)
+            .component('SecondaryButton', SecondaryButton)
+            .component('DangerButton', DangerButton)
             .mount(el);
     },
     progress: {

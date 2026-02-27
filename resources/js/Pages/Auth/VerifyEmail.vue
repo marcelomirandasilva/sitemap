@@ -43,7 +43,7 @@ const verificationLinkSent = computed(
                         {{ $t('auth.verify.click_button') }}
                     </p>
                     
-                    <PrimaryButton @click="submit" :class="{ 'opacity-25': form.processing }" :disabled="form.processing" class="!bg-[#008cba] hover:!bg-[#007ba6] !rounded-sm font-bold uppercase py-3 px-6 shadow border border-[#007ba6]">
+                    <PrimaryButton @click="submit" :class="{ 'opacity-25': form.processing }" :disabled="form.processing" class="!bg-primary-500 hover:!bg-[#007ba6] !rounded-sm font-bold uppercase py-3 px-6 shadow border border-[#007ba6]">
                         {{ $t('auth.verify.send_link') }}
                     </PrimaryButton>
 

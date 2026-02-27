@@ -39,11 +39,11 @@ const badgePlano = computed(() => {
         <div class="p-5 border-b border-gray-100 bg-gray-50/50 flex justify-between items-start">
             <div class="overflow-hidden">
                 <h3 class="text-xl font-bold text-gray-800 truncate" :title="projeto.name || projeto.url">
-                    <Link :href="route('projects.show', projeto.id)" class="hover:underline hover:text-blue-600 transition-colors">
+                    <Link :href="route('projects.show', projeto.id)" class="hover:underline hover:text-primary-600 transition-colors">
                         {{ projeto.url.replace(/^https?:\/\//, '').replace(/\/$/, '') }}
                     </Link>
                 </h3>
-                <a :href="projeto.url" target="_blank" class="text-xs text-blue-500 hover:underline flex items-center gap-1 mt-1">
+                <a :href="projeto.url" target="_blank" class="text-xs text-primary-500 hover:underline flex items-center gap-1 mt-1">
                     {{ projeto.url }}
                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
                 </a>
@@ -53,7 +53,10 @@ const badgePlano = computed(() => {
                 <span class="px-2 py-1 bg-gray-200 text-gray-600 text-[10px] font-bold uppercase tracking-wider rounded-sm border border-gray-300">
                     {{ badgePlano }}
                 </span>
-                <Link :href="route('subscription.index')" class="text-[10px] text-green-600 font-bold uppercase hover:underline">
+                <Link :href="route('subscription.index')" class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-premium-100 text-premium-700 border border-premium-200 hover:bg-premium-200 hover:text-premium-800 transition-colors">
+                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"></path>
+                    </svg>
                     {{ $t('project.upgrade') }}
                 </Link>
             </div>

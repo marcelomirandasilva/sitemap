@@ -57,7 +57,7 @@ defineProps({
                                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
                                                 :class="{
                                                     'bg-green-100 text-green-800': invoice.status === 'paid',
-                                                    'bg-red-100 text-red-800': invoice.status === 'uncollectible' || invoice.status === 'void',
+                                                    'bg-danger-100 text-danger-800': invoice.status === 'uncollectible' || invoice.status === 'void',
                                                     'bg-yellow-100 text-yellow-800': invoice.status === 'open',
                                                 }"
                                             >
@@ -65,7 +65,7 @@ defineProps({
                                             </span>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <a :href="invoice.invoice_pdf" target="_blank" class="text-indigo-600 hover:text-indigo-900 flex items-center justify-end gap-1">
+                                            <a :href="invoice.invoice_pdf" target="_blank" class="text-primary-600 hover:text-primary-900 flex items-center justify-end gap-1">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                                                 {{ $t('billing.history.download') }}
                                             </a>

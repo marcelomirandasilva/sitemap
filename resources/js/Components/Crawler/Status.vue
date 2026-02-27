@@ -2,6 +2,7 @@
 import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
 import axios from 'axios';
 import { trans as t } from 'laravel-vue-i18n';
+import PrimaryButton from '@/Components/PrimaryButton.vue';
 
 const props = defineProps({
     projeto: {
@@ -28,8 +29,8 @@ const jobIdMonitorado = ref(null); // ID do job que iniciamos manualmente
 const corStatusPonto = computed(() => {
     switch (tarefa.value?.status) {
         case 'completed': return 'bg-green-500';
-        case 'failed': return 'bg-red-500';
-        case 'running': return 'bg-blue-500 animate-pulse';
+        case 'failed': return 'bg-danger-500';
+        case 'running': return 'bg-primary-500 animate-pulse';
         case 'queued': return 'bg-yellow-500';
         default: return 'bg-gray-300';
     }
@@ -179,24 +180,23 @@ onUnmounted(() => {
                     {{ rotuloStatus }}
                 </span>
             </div>
-            
-            <button 
+           <PrimaryButton 
                 @click="iniciarRastreador"
-                :disabled="iniciando || (tarefa && ['queued', 'running'].includes(tarefa.status))"
-                class="px-3 py-1.5 bg-[#007da0] hover:bg-[#006480] text-white text-[11px] font-bold uppercase rounded shadow-sm disabled:opacity-50 transition flex items-center gap-1"
+                :processing="iniciando"
+                :disabled="tarefa && ['queued', 'running'].includes(tarefa.status)"
+                class="!px-3 !py-1.5 !text-[11px]" 
             >
-                <svg v-if="iniciando" class="animate-spin h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                 <span v-if="iniciando">{{ $t('crawler.starting') }}</span>
                 <span v-else-if="tarefa && ['queued', 'running'].includes(tarefa.status)">{{ $t('crawler.processing') }}</span>
                 <span v-else>{{ $t('crawler.resume_button') }}</span>
-            </button>
+            </PrimaryButton>
         </div>
 
         <div v-if="tarefa">
             <!-- Barra de Progresso Cleaner -->
             <div v-if="['running', 'queued'].includes(tarefa.status)" class="w-full bg-gray-100 rounded-full h-1.5 mt-2 mb-1 overflow-hidden">
                 <div 
-                    class="bg-blue-500 h-1.5 rounded-full transition-all duration-500 relative" 
+                    class="bg-primary-500 h-1.5 rounded-full transition-all duration-500 relative" 
                     :style="{ width: (tarefa.progress || 0) + '%' }"
                 >
                     <div class="absolute inset-0 bg-white/20 animate-pulse"></div>
@@ -206,13 +206,38 @@ onUnmounted(() => {
                 {{ Math.round(tarefa.progress || 0) }}%
             </p>
 
+            <!-- Mensagem de Progresso Detalhada -->
+            <p v-if="['running', 'queued'].includes(tarefa.status) && tarefa.message" 
+               class="text-[11px] text-gray-500 mt-1 truncate">
+                {{ tarefa.message }}
+            </p>
+
+            <!-- Páginas Recentes Encontradas -->
+            <div v-if="['running'].includes(tarefa.status) && tarefa.recent_pages && tarefa.recent_pages.length" 
+                 class="mt-2 border border-gray-100 rounded-md bg-gray-50/50 overflow-hidden">
+                <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-2 py-1 border-b border-gray-100">
+                    {{ $t('crawler.recent_pages') || 'Páginas encontradas' }}
+                </p>
+                <ul class="max-h-32 overflow-y-auto divide-y divide-gray-100">
+                    <li v-for="(pagina, idx) in tarefa.recent_pages" 
+                        :key="idx" 
+                        class="px-2 py-1.5 text-[11px] text-gray-600 hover:bg-gray-100/70 transition-colors flex items-start gap-1.5">
+                        <span class="text-primary-400 mt-0.5 shrink-0">•</span>
+                        <div class="min-w-0">
+                            <p class="font-medium text-gray-700 truncate">{{ pagina.title }}</p>
+                            <p class="text-[10px] text-gray-400 truncate">{{ pagina.url }}</p>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
             <!-- Links de Download -->
             <div v-if="tarefa.status === 'completed' && tarefa.artifacts" class="mt-3 grid grid-cols-2 gap-2">
                 <div v-for="(artefato, index) in tarefa.artifacts" :key="index">
                     <a 
                         :href="artefato.download_url" 
                         target="_blank"
-                        class="block w-full text-center px-3 py-2 bg-white border border-gray-300 rounded text-xs text-blue-600 hover:bg-blue-50 transition"
+                        class="block w-full text-center px-3 py-2 bg-white border border-gray-300 rounded text-xs text-primary-600 hover:bg-primary-50 transition"
                     >
                         ⬇️ {{ artefato.name }}
                         <span v-if="artefato.size_bytes > 0" class="block text-[10px] text-gray-400">
@@ -226,7 +251,7 @@ onUnmounted(() => {
             </div>
 
             <!-- Mensagem de Erro (Sanitizada no Frontend também) -->
-            <div v-if="tarefa.status === 'failed'" class="mt-2 text-xs text-red-600 bg-red-50 p-2 rounded border border-red-100">
+            <div v-if="tarefa.status === 'failed'" class="mt-2 text-xs text-danger-600 bg-danger-50 p-2 rounded border border-danger-100">
                 {{ mensagemErroSanitizada }}
             </div>
         </div>

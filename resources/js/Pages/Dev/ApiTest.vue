@@ -45,14 +45,14 @@ const runTest = async () => {
                         <button 
                             @click="runTest" 
                             :disabled="loading"
-                            class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 transition"
+                            class="px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700 disabled:opacity-50 transition"
                         >
                             {{ loading ? 'Testando...' : 'Testar Conexão' }}
                         </button>
                     </div>
 
-                    <div v-if="result" :class="['p-4 rounded border', result.success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200']">
-                        <h3 :class="['font-bold text-lg', result.success ? 'text-green-800' : 'text-red-800']">
+                    <div v-if="result" :class="['p-4 rounded border', result.success ? 'bg-green-50 border-green-200' : 'bg-danger-50 border-danger-200']">
+                        <h3 :class="['font-bold text-lg', result.success ? 'text-green-800' : 'text-danger-800']">
                             {{ result.success ? 'Sucesso!' : 'Falha' }}
                         </h3>
                         <p class="mt-2 text-sm text-gray-700">
@@ -67,7 +67,7 @@ const runTest = async () => {
                         <p v-if="result.status" class="text-sm text-gray-700">
                             <strong>Status Code:</strong> {{ result.status }}
                         </p>
-                        <p v-if="result.response_body" class="text-xs text-red-600 mt-2 font-mono bg-red-50 p-2 rounded whitespace-pre-wrap">
+                        <p v-if="result.response_body" class="text-xs text-danger-600 mt-2 font-mono bg-danger-50 p-2 rounded whitespace-pre-wrap">
                             Erro: {{ JSON.stringify(result.response_body, null, 2) }}
                         </p>
                         <p v-if="result.debug_creds" class="text-xs text-gray-400 mt-1">
@@ -78,7 +78,7 @@ const runTest = async () => {
                         </div>
                     </div>
 
-                    <div v-if="error" class="p-4 rounded bg-red-100 border border-red-300 text-red-800">
+                    <div v-if="error" class="p-4 rounded bg-danger-100 border border-danger-300 text-danger-800">
                         <strong>Erro Crítico:</strong> {{ error }}
                     </div>
                 </div>
