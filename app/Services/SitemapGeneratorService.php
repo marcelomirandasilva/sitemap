@@ -70,8 +70,8 @@ class SitemapGeneratorService
             'max_pages' => $project->max_pages ?? 1000,
             'include_images' => (bool) $project->check_images,
             'include_videos' => (bool) $project->check_videos,
-            'delay' => $project->delay_between_requests ?? 1.0,
-            'concurrency' => $project->max_concurrent_requests ?? 2,
+            'delay_between_requests' => (float) ($project->delay_between_requests ?? 1.0),
+            'max_concurrent_requests' => (int) ($project->max_concurrent_requests ?? 2),
 
             // Ativa o modo de processamento massivo e define diretório fixo por projeto
             // Isso permite que o sistema crie checkpoints e retome o processamento em caso de falha

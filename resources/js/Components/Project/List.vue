@@ -26,6 +26,7 @@ const columns = [
     { key: 'url', label: 'table.domain', sortable: true },
     { key: 'name', label: 'table.title', sortable: true },
     { key: 'updated_at', label: 'table.updated', sortable: true },
+    { key: 'actions', label: 'Ações', sortable: false },
 ];
 
 // --- Métodos Auxiliares ---
@@ -179,24 +180,34 @@ const onSearch = () => {
                         </td>
 
                         <!-- Updated / Crawler Status -->
-                        <td class="px-6 py-4 align-top w-1/3">
+                        <td class="px-6 py-4 align-top w-1/4">
                             <div class="flex flex-col gap-1">
                                 <div class="text-xs text-gray-500 mb-1" v-if="projeto.latest_job">
-                                   {{ projeto.latest_job.status === 'completed' ? formataData(projeto.latest_job.updated_at) : '' }}
-                                   <span v-if="projeto.latest_job.status === 'completed'">, {{ projeto.latest_job.pages_count }} {{ $t('project.pages_count') }}</span>
+                                   <span v-if="projeto.latest_job.status === 'completed'">
+                                        {{ formataData(projeto.latest_job.updated_at) }}<br>
+                                        <span class="text-primary-600 font-medium">{{ projeto.latest_job.pages_count }} {{ $t('project.pages_count') || 'Páginas' }}</span>
+                                   </span>
                                    <span v-else>
                                        Sitemap processing...
                                    </span>
                                 </div>
-                                
-                                <StatusRastreador :projeto="projeto" :ultima-tarefa="projeto.latest_job" />
+                            </div>
+                        </td>
+
+                        <!-- Actions -->
+                        <td class="px-6 py-4 align-top w-48 text-right bg-gray-50/50">
+                            <div class="flex flex-col gap-2 items-end">
+                                <Link :href="route('projects.show', projeto.id)" class="inline-flex items-center justify-center px-3 py-1.5 bg-white border border-gray-300 rounded text-[11px] font-semibold text-gray-700 uppercase tracking-widest hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-25 transition w-full text-center shadow-sm">
+                                    {{ $t('project.view_action') || 'Visualizar' }}
+                                </Link>
+                                <StatusRastreador :projeto="projeto" :ultima-tarefa="projeto.latest_job" :action-only="true" />
                             </div>
                         </td>
                     </tr>
                     
                     <!-- Empty State -->
                     <tr v-if="paginatedProjects.length === 0">
-                        <td colspan="4" class="px-6 py-8 text-center text-gray-500 text-sm">
+                        <td colspan="5" class="px-6 py-8 text-center text-gray-500 text-sm">
                             {{ $t('table.no_records') || 'No matching records found' }}
                         </td>
                     </tr>

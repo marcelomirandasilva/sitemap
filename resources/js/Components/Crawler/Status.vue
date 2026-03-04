@@ -16,6 +16,10 @@ const props = defineProps({
     simple: {
         type: Boolean,
         default: false
+    },
+    actionOnly: {
+        type: Boolean,
+        default: false
     }
 });
 
@@ -174,12 +178,13 @@ onUnmounted(() => {
 
     <div v-else class="w-full">
         <div class="flex items-center justify-between mb-3">
-            <div class="flex items-center gap-2">
+            <div v-if="!actionOnly" class="flex items-center gap-2">
                 <span v-if="tarefa" :class="['w-2 h-2 rounded-full', corStatusPonto]"></span>
                 <span class="text-xs font-semibold uppercase tracking-wide text-gray-600">
                     {{ rotuloStatus }}
                 </span>
             </div>
+            <div v-else></div> <!-- Placeholder para flex spread -->
            <PrimaryButton 
                 @click="iniciarRastreador"
                 :processing="iniciando"
@@ -192,7 +197,7 @@ onUnmounted(() => {
             </PrimaryButton>
         </div>
 
-        <div v-if="tarefa">
+        <div v-if="tarefa && !actionOnly">
             <!-- Barra de Progresso Cleaner -->
             <div v-if="['running', 'queued'].includes(tarefa.status)" class="w-full bg-gray-100 rounded-full h-1.5 mt-2 mb-1 overflow-hidden">
                 <div 
