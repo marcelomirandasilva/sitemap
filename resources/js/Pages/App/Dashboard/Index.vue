@@ -1,7 +1,7 @@
 <script setup>
 import AppLayout from '@/Layouts/AppLayout.vue';
 import { Head, useForm } from '@inertiajs/vue3';
-import { ref, computed } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import CartaoProjeto from '@/Components/Project/Card.vue';
 import ProjectList from '@/Components/Project/List.vue';
 import ModalProgressoRastreador from '@/Components/Crawler/ProgressModal.vue';
@@ -29,6 +29,19 @@ const projetoSelecionado = ref(null);
 const termoBusca = ref('');
 const modoVisualizacao = ref('grid'); // 'grid' | 'list'
 const filtroAtivo = ref('todos'); // 'todos' | 'gratis' | 'progresso'
+
+onMounted(() => {
+    const saved = localStorage.getItem('sitemap_viewMode');
+    if (saved) {
+        modoVisualizacao.value = saved;
+    }
+});
+
+watch(modoVisualizacao, (novoModo) => {
+    if (typeof window !== 'undefined') {
+        localStorage.setItem('sitemap_viewMode', novoModo);
+    }
+});
 
 const salvarProjeto = () => {
     formulario.post(route('projects.store'), {
