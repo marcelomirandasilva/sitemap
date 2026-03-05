@@ -28,7 +28,7 @@ const projetoSelecionado = ref(null);
 
 const termoBusca = ref('');
 const modoVisualizacao = ref('grid'); // 'grid' | 'list'
-const filtroAtivo = ref('todos'); // 'todos' | 'gratis' | 'progresso'
+const filtroAtivo = ref('todos'); // 'todos' | 'progresso'
 
 onMounted(() => {
     const saved = localStorage.getItem('sitemap_viewMode');
@@ -85,7 +85,6 @@ const atualizarJobProjeto = (job) => {
 const contagens = computed(() => {
     return {
         todos: props.projetos.length,
-        gratis: props.projetos.filter(p => !p.has_advanced_features || p.max_pages <= 500).length,
         progresso: props.projetos.filter(p => p.latest_job && ['running', 'queued'].includes(p.latest_job.status)).length
     };
 });
@@ -94,9 +93,7 @@ const projetosFiltrados = computed(() => {
     let resultado = props.projetos;
 
     // 1. Filtro de Status/Tipo
-    if (filtroAtivo.value === 'gratis') {
-        resultado = resultado.filter(p => !p.has_advanced_features || p.max_pages <= 500);
-    } else if (filtroAtivo.value === 'progresso') {
+    if (filtroAtivo.value === 'progresso') {
         resultado = resultado.filter(p => p.latest_job && ['running', 'queued'].includes(p.latest_job.status));
     }
 
@@ -168,12 +165,6 @@ const projetosFiltrados = computed(() => {
                             {{ $t('dashboard.show_all') }} <span
                                 class="bg-gray-100 border border-gray-200 px-1.5 rounded-md text-xs ml-1">{{
                                 contagens.todos }}</span>
-                        </button>
-                        <button @click="filtroAtivo = 'gratis'"
-                            :class="['px-3 py-1 rounded transition border', filtroAtivo === 'gratis' ? 'bg-white border-gray-300 shadow-sm font-bold text-gray-800' : 'border-transparent hover:bg-gray-100']">
-                            {{ $t('dashboard.filters.free_sites') }} <span
-                                class="bg-gray-100 border border-gray-200 px-1.5 rounded-md text-xs ml-1">{{
-                                contagens.gratis }}</span>
                         </button>
                         <button @click="filtroAtivo = 'progresso'"
                             :class="['px-3 py-1 rounded transition border', filtroAtivo === 'progresso' ? 'bg-white border-gray-300 shadow-sm font-bold text-gray-800' : 'border-transparent hover:bg-gray-100']">
