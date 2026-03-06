@@ -21,6 +21,7 @@ services:
             - '.:/var/www/html'
         networks:
             - sail
+            - sitemap-network
         depends_on:
             - mysql
             - redis
@@ -75,6 +76,8 @@ services:
 networks:
     sail:
         driver: bridge
+    sitemap-network:
+        external: true
 volumes:
     sail-mysql:
         driver: local

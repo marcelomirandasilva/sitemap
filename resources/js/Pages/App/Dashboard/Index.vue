@@ -61,7 +61,6 @@ const salvarProjeto = () => {
 };
 
 const abrirProgresso = (projeto) => {
-    lara
     projetoSelecionado.value = projeto;
     mostrarModalProgresso.value = true;
 };
