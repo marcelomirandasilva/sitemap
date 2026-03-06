@@ -29,3 +29,4 @@ Esta skill define as regras para criar mensagens de commit claras, em português
 
 ## 4. Gatilho de Execução
 - Sempre que eu solicitar "crie um commit" ou "descreva o que fizemos", analise o `git diff` atual e aplique estas regras.
+- **HARD STOP - Proibição de Auto-Commit:** NUNCA utilize ferramentas como `run_command` com `git commit...` por conta própria. Sua função é PREPARAR comandos, atualizar formulários `.md` com hash `pending` caso a regra Global 5 seja ativa, e SEMPRE PERGUNTAR expressamente ao usuário via chat se ele autoriza o acionamento mecânico do comando `git commit`.
