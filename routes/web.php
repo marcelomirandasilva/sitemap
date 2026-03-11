@@ -63,6 +63,12 @@ Route::get('auth/google/callback', [App\Http\Controllers\Auth\SocialAuthControll
 // Webhook do Stripe (Explicitamente definido para evitar 404)
 Route::post('/stripe/webhook', [\Laravel\Cashier\Http\Controllers\WebhookController::class, 'handleWebhook'])->name('cashier.webhook');
 
+// Webhook interno da API Python (notificação de conclusão de job)
+// Sem CSRF nem auth de sessão — autenticação via X-Internal-Token no controller
+Route::post('/api/internal/webhook/job-completed', [\App\Http\Controllers\SitemapWebhookController::class, 'jobCompleted'])
+    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
+    ->name('webhook.job-completed');
+
 Route::middleware(['auth'])->group(function () {
     Route::get('/subscription', [App\Http\Controllers\SubscriptionController::class, 'index'])->name('subscription.index');
     Route::get('/subscription/checkout/{priceId}', [App\Http\Controllers\SubscriptionController::class, 'checkout'])->name('subscription.checkout');

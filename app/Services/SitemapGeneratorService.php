@@ -3,54 +3,41 @@
 namespace App\Services;
 
 use App\Models\Project;
+use App\Models\User;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 class SitemapGeneratorService
 {
     protected string $baseUrl;
-    protected string $username;
-    protected string $password;
+    protected string $internalSecret;
     protected int $timeout;
 
     public function __construct()
     {
         $this->baseUrl = config('services.sitemap_generator.base_url');
-        $this->username = config('services.sitemap_generator.username');
-        $this->password = config('services.sitemap_generator.password');
-        // Timeout reduzido para evitar travamento da sessão PHP em polling
+        $this->internalSecret = config('services.sitemap_generator.internal_secret', '');
         $this->timeout = config('services.sitemap_generator.timeout', 3);
+
         Log::info("SitemapGeneratorService initialized with BaseURL: {$this->baseUrl}");
     }
 
     /**
-     * Obtém o token JWT de autenticação, usando cache.
+     * Retorna os headers de autenticação interna para todas as requisições
+     * server-to-server (Laravel → API Python).
      */
-    protected function getToken(): ?string
+    protected function internalHeaders(int $userId, ?int $projectId = null): array
     {
-        return Cache::remember('sitemap_api_token', 1500, function () {
-            try {
-                $response = Http::timeout($this->timeout)
-                    ->post("{$this->baseUrl}/api/auth/token", [
-                        'username' => $this->username,
-                        'password' => $this->password,
-                    ]);
+        $headers = [
+            'X-Internal-Token' => $this->internalSecret,
+            'X-User-Id' => (string) $userId,
+        ];
 
-                if ($response->successful()) {
-                    return $response->json('access_token');
-                }
+        if ($projectId !== null) {
+            $headers['X-Project-Id'] = (string) $projectId;
+        }
 
-                Log::error('Falha na autenticação Sitemaps API', [
-                    'status' => $response->status(),
-                    'body' => $response->body()
-                ]);
-                return null;
-            } catch (\Exception $e) {
-                Log::error('Erro de conexão: ' . $e->getMessage());
-                return null;
-            }
-        });
+        return $headers;
     }
 
     /**
@@ -58,11 +45,7 @@ class SitemapGeneratorService
      */
     public function startJob(Project $project): ?string
     {
-        $token = $this->getToken();
-
-        if (!$token) {
-            throw new \Exception("Não foi possível autenticar na API de Sitemaps.");
-        }
+        $userId = $project->user_id;
 
         $payload = [
             'start_urls' => [$project->url],
@@ -72,30 +55,28 @@ class SitemapGeneratorService
             'include_videos' => (bool) $project->check_videos,
             'delay_between_requests' => (float) ($project->delay_between_requests ?? 1.0),
             'max_concurrent_requests' => (int) ($project->max_concurrent_requests ?? 2),
-
-            // Ativa o modo de processamento massivo e define diretório fixo por projeto
-            // Isso permite que o sistema crie checkpoints e retome o processamento em caso de falha
             'massive_processing' => true,
             'output_directory' => 'sitemaps/projects/' . $project->id,
         ];
 
         try {
-            $response = Http::withToken($token)
+            $response = Http::withHeaders($this->internalHeaders($userId, $project->id))
                 ->timeout($this->timeout)
                 ->post("{$this->baseUrl}/api/v1/sitemaps", $payload);
 
             if ($response->created() || $response->ok()) {
                 $jobId = $response->json('job_id');
 
-                // Salva o Rastreio (Vital!)
-                $project->update([
-                    'current_crawler_job_id' => $jobId
-                ]);
+                $project->update(['current_crawler_job_id' => $jobId]);
 
                 return $jobId;
             }
 
-            Log::error('Falha ao criar job de sitemap', ['project_id' => $project->id, 'response' => $response->body()]);
+            Log::error('Falha ao criar job de sitemap', [
+                'project_id' => $project->id,
+                'response' => $response->body(),
+            ]);
+
             return null;
 
         } catch (\Exception $e) {
@@ -107,27 +88,19 @@ class SitemapGeneratorService
     /**
      * Verifica o status de um Job existente.
      */
-    public function checkStatus(string $jobId): ?array
+    public function checkStatus(string $jobId, int $userId): ?array
     {
-        $token = $this->getToken();
-
-        if (!$token) {
-            return null;
-        }
-
         try {
-            $response = Http::withToken($token)
+            $response = Http::withHeaders($this->internalHeaders($userId))
                 ->timeout($this->timeout)
                 ->get("{$this->baseUrl}/api/v1/sitemaps/{$jobId}");
 
             if ($response->successful()) {
                 $data = $response->json();
 
-                // Tratamento de Artifacts
                 if (($data['status'] ?? '') === 'completed') {
                     $finalArtifacts = [];
 
-                    // Se a API retornou artifacts nativos, vamos processá-los primeiro para converter as URLs para nosso proxy
                     if (!empty($data['artifacts'])) {
                         foreach ($data['artifacts'] as $art) {
                             $finalArtifacts[] = [
@@ -135,14 +108,12 @@ class SitemapGeneratorService
                                 'path' => $art['path'] ?? '',
                                 'download_url' => route('downloads.sitemap', [
                                     'jobId' => $jobId,
-                                    'filename' => $art['name'] ?? basename($art['path'] ?? 'artifact')
+                                    'filename' => $art['name'] ?? basename($art['path'] ?? 'artifact'),
                                 ]),
                                 'size_bytes' => $art['size_bytes'] ?? ($art['size'] ?? 0),
                             ];
                         }
-                    }
-                    // Se não retornou nativos mas tem o objeto result, fazemos o Polyfill
-                    elseif (isset($data['result'])) {
+                    } elseif (isset($data['result'])) {
                         $result = $data['result'];
                         $map = [
                             'main_sitemap_path' => ['name' => 'sitemap.xml', 'type' => 'main'],
@@ -171,24 +142,22 @@ class SitemapGeneratorService
                 return $data;
             }
 
-            // Se for 404, o job não existe mais -> Falha definitiva
             if ($response->status() === 404) {
                 return [
                     'status' => 'failed',
                     'progress' => 0,
-                    'message' => 'Job removido ou não encontrado no servidor remoto.'
+                    'message' => 'Job removido ou não encontrado no servidor remoto.',
                 ];
             }
 
             return null;
 
         } catch (\Exception $e) {
-            Log::error("Erro no checkStatus para job {$jobId}. URL: {$this->baseUrl}/api/v1/sitemaps/{$jobId}. Erro: " . $e->getMessage());
-            // Retorna falha para que o Controller possa atualizar o status e parar o polling
+            Log::error("Erro no checkStatus para job {$jobId}: " . $e->getMessage());
             return [
                 'status' => 'failed',
                 'progress' => 0,
-                'message' => 'Falha na comunicação com o serviço de rastreamento. Os detalhes foram registrados no log.'
+                'message' => 'Falha na comunicação com o serviço de rastreamento.',
             ];
         }
     }
@@ -196,16 +165,10 @@ class SitemapGeneratorService
     /**
      * Recupera a lista de artefatos (arquivos) gerados pelo job.
      */
-    public function getArtifacts(string $jobId): array
+    public function getArtifacts(string $jobId, int $userId): array
     {
-        $token = $this->getToken();
-
-        if (!$token) {
-            return [];
-        }
-
         try {
-            $response = Http::withToken($token)
+            $response = Http::withHeaders($this->internalHeaders($userId))
                 ->timeout($this->timeout)
                 ->get("{$this->baseUrl}/api/v1/sitemaps/{$jobId}/artifacts");
 
@@ -222,18 +185,13 @@ class SitemapGeneratorService
     }
 
     /**
-     * Tenta obter o conteúdo de um arquivo (do disco ou via API).
+     * Obtém o conteúdo de um arquivo (do disco ou via API Proxy).
      */
     public function getFileContent(string $jobId, string $filename): ?string
     {
-        // 1. Tentar disco direto (Mais rápido e confiável localmente)
-        // Lógica Híbrida: Tenta primeiro no diretório antigo (pelo Job ID),
-        // Se falhar, tenta descobrir o diretório do projeto via DB.
-
         $basePath = base_path('../api-sitemap/sitemaps/' . $jobId . '/');
         $filePath = $basePath . $filename;
 
-        // Se não existir, tenta procurar no diretório do projeto (novo modelo de resume)
         if (!file_exists($filePath) && !file_exists($filePath . '.zip')) {
             try {
                 $job = \App\Models\SitemapJob::where('external_job_id', $jobId)->first();
@@ -248,7 +206,6 @@ class SitemapGeneratorService
             }
         }
 
-        // Fallback para .zip se o arquivo solicitado sem .zip não existir
         if (!file_exists($filePath) && !str_ends_with($filename, '.zip')) {
             if (file_exists($filePath . '.zip')) {
                 $filePath .= '.zip';
@@ -258,10 +215,8 @@ class SitemapGeneratorService
         if (file_exists($filePath)) {
             $content = file_get_contents($filePath);
 
-            // Se for ZIP, precisamos descompactar o conteúdo real
             if (str_ends_with($filePath, '.zip')) {
-                // Tenta ZipArchive nativo primeiro
-                if (class_exists('\\ZipArchive')) {
+                if (class_exists('\ZipArchive')) {
                     $zip = new \ZipArchive();
                     if ($zip->open($filePath) === TRUE) {
                         $content = $zip->getFromIndex(0);
@@ -270,15 +225,11 @@ class SitemapGeneratorService
                     }
                 }
 
-                // Fallback para Windows (Windows 10/11 possuem o comando 'tar' nativo que extrai zip)
                 try {
                     $tempDir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'sitemap_zip_' . uniqid();
                     mkdir($tempDir);
-
-                    // A flag --force-local impede que o tar interprete ":" como um host remoto (ex: D:\...)
                     $cmd = sprintf('tar --force-local -xf %s -C %s', escapeshellarg($filePath), escapeshellarg($tempDir));
                     @shell_exec($cmd);
-
                     $files = glob($tempDir . DIRECTORY_SEPARATOR . '*');
                     if (!empty($files) && is_file($files[0])) {
                         $extracted = file_get_contents($files[0]);
@@ -286,25 +237,21 @@ class SitemapGeneratorService
                             $content = $extracted;
                         }
                     }
-
                     foreach ($files as $f)
                         if (is_file($f))
                             unlink($f);
                     rmdir($tempDir);
-
                     if ($content && !str_starts_with($content, "PK\x03\x04"))
                         return $content;
                 } catch (\Exception $e) {
-                    Log::error("Erro no fallback de extração ZIP via tar: " . $e->getMessage());
+                    Log::error("Erro no fallback ZIP via tar: " . $e->getMessage());
                 }
 
-                // Fallback 2: PowerShell (Altamente confiável no Windows 11)
                 try {
                     $tempDir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'sitemap_ps_' . uniqid();
                     mkdir($tempDir);
                     $psCmd = sprintf('powershell -NoProfile -Command "Expand-Archive -Path \'%s\' -DestinationPath \'%s\' -Force"', $filePath, $tempDir);
                     @shell_exec($psCmd);
-
                     $files = glob($tempDir . DIRECTORY_SEPARATOR . '*');
                     if (!empty($files) && is_file($files[0])) {
                         $extracted = file_get_contents($files[0]);
@@ -312,24 +259,22 @@ class SitemapGeneratorService
                             $content = $extracted;
                         }
                     }
-
                     foreach ($files as $f)
                         if (is_file($f))
                             unlink($f);
                     rmdir($tempDir);
-
                     if ($content && !str_starts_with($content, "PK\x03\x04"))
                         return $content;
                 } catch (\Exception $e) {
-                    Log::error("Erro no fallback de extração ZIP via PS: " . $e->getMessage());
+                    Log::error("Erro no fallback ZIP via PowerShell: " . $e->getMessage());
                 }
             }
 
             return $content;
         }
 
-        // 2. Fallback via API HTTP (Proxy/Remoto)
-        $response = $this->getArtifactFile($jobId, $filename);
+        // Fallback via HTTP (sem userId no arquivo de conteúdo — usuário do contexto não disponível aqui)
+        $response = $this->getArtifactFile($jobId, $filename, 0);
         if ($response && $response->successful()) {
             return $response->body();
         }
@@ -338,19 +283,14 @@ class SitemapGeneratorService
     }
 
     /**
-     * Obtém o conteúdo de um artefato da API Python (Proxy).
+     * Obtém o conteúdo de um artefato via HTTP Proxy.
      */
-    public function getArtifactFile(string $jobId, string $filename)
+    public function getArtifactFile(string $jobId, string $filename, int $userId = 0)
     {
-        $token = $this->getToken();
-        if (!$token)
-            return null;
-
-        // Na v1 a rota é /api/v1/sitemaps/{job_id}/artifacts/{name}
         $url = "{$this->baseUrl}/api/v1/sitemaps/{$jobId}/artifacts/{$filename}";
 
         try {
-            return Http::withToken($token)
+            return Http::withHeaders($this->internalHeaders($userId))
                 ->timeout($this->timeout)
                 ->get($url);
         } catch (\Exception $e) {
@@ -360,58 +300,22 @@ class SitemapGeneratorService
     }
 
     /**
-     * Baixa o conteúdo de um artefato específico (Método legado/helper).
-     */
-    public function fetchArtifactContent(string $url): ?string
-    {
-        // Se a URL for do próprio domínio (ex: em dev local), pode ter problemas de DNS interno
-        // Mas assumindo que a API está em outra porta/serviço.
-
-        // Pequena validação para garantir que estamos baixando da API confiável
-        if (!str_starts_with($url, $this->baseUrl)) {
-            // Log::warning("Tentativa de baixar artefato de URL externa: $url");
-            // return null; 
-            // Comentado pois o s3/minio pode ter outra URL. Vamos confiar na URL salva no banco por enquanto.
-        }
-
-        try {
-            $response = Http::timeout($this->timeout)
-                ->get($url);
-
-            if ($response->successful()) {
-                return $response->body();
-            }
-
-            Log::error("Falha ao baixar conteúdo do artefato: $url", ['status' => $response->status()]);
-            return null;
-        } catch (\Exception $e) {
-            Log::error("Erro ao baixar artefato $url: " . $e->getMessage());
-            return null;
-        }
-    }
-
-    /**
-     * Testa user/pass e connectivity com a API.
+     * Testa a conectividade com a API usando o Token de Sistema.
      */
     public function testConnection(): array
     {
         $start = microtime(true);
         try {
-            // Realiza a requisição explicitamente para capturar detalhes
-            $response = Http::timeout($this->timeout)
-                ->post("{$this->baseUrl}/api/auth/token", [
-                    'username' => $this->username,
-                    'password' => $this->password,
-                ]);
+            $response = Http::withHeaders($this->internalHeaders(0))
+                ->timeout($this->timeout)
+                ->get("{$this->baseUrl}/api/v1/health");
 
             $duration = round((microtime(true) - $start) * 1000, 2);
-            $data = $response->json();
 
-            if ($response->successful() && isset($data['access_token'])) {
+            if ($response->successful()) {
                 return [
                     'success' => true,
-                    'message' => 'Autenticação bem-sucedida! Token recebido.',
-                    'token_preview' => substr($data['access_token'], 0, 15) . '...',
+                    'message' => 'Conexão com a API estabelecida via Token de Sistema.',
                     'duration_ms' => $duration,
                     'base_url' => $this->baseUrl,
                     'status' => $response->status(),
@@ -420,15 +324,11 @@ class SitemapGeneratorService
 
             return [
                 'success' => false,
-                'message' => 'Falha ao autenticar.',
+                'message' => 'API respondeu com erro.',
                 'duration_ms' => $duration,
                 'base_url' => $this->baseUrl,
                 'status' => $response->status(),
-                'response_body' => $data ?? $response->body(),
-                'debug_creds' => [
-                    'user' => $this->username,
-                    'pass_len' => strlen($this->password),
-                ]
+                'response_body' => $response->body(),
             ];
 
         } catch (\Exception $e) {
@@ -440,18 +340,17 @@ class SitemapGeneratorService
             ];
         }
     }
+
     /**
-     * Busca o conteúdo do urllist.txt ou sitemap.xml e retorna um array formatado para o preview.
+     * Busca URLs para preview a partir dos artefatos gerados.
      */
     public function getPreviewUrls(array $artifacts, ?string $jobId = null): array
     {
-        // 1. Tentar urllist.txt (preferencial)
-        $txtArtifact = collect($artifacts)->firstWhere(function ($a) {
+        $txtArtifact = collect($artifacts)->first(function ($a) {
             return str_ends_with($a['name'], '.txt') || str_ends_with($a['name'], '.txt.zip');
         });
 
-        // 2. Tentar sitemap.xml (fallback)
-        $xmlArtifact = collect($artifacts)->firstWhere(function ($a) {
+        $xmlArtifact = collect($artifacts)->first(function ($a) {
             return str_ends_with($a['name'], 'sitemap.xml') || str_ends_with($a['name'], 'sitemap.xml.zip');
         });
 
@@ -464,14 +363,18 @@ class SitemapGeneratorService
         try {
             $content = null;
 
-            // Se tivermos jobId, tentamos via sistema de arquivos direto primeiro
             if ($jobId) {
                 $content = $this->getFileContent($jobId, $previewArtifact['name']);
             }
 
-            // Fallback para URL se falhou o disco ou não temos jobId
             if (!$content && isset($previewArtifact['download_url'])) {
-                $content = $this->fetchArtifactContent($previewArtifact['download_url']);
+                try {
+                    $r = Http::timeout($this->timeout)->get($previewArtifact['download_url']);
+                    if ($r->successful())
+                        $content = $r->body();
+                } catch (\Exception $e) {
+                    Log::warning("Preview fallback HTTP falhou: " . $e->getMessage());
+                }
             }
 
             if (!$content) {
@@ -480,9 +383,7 @@ class SitemapGeneratorService
 
             $urls = [];
 
-            // Identificar se o conteúdo é XML ou TXT
             if (str_contains($content, '<?xml') || str_contains($content, '<urlset')) {
-                // Parse XML para extrair <loc>
                 try {
                     $xml = simplexml_load_string($content);
                     if ($xml && isset($xml->url)) {
@@ -496,7 +397,6 @@ class SitemapGeneratorService
                     Log::warning("Erro ao parsear XML para preview: " . $e->getMessage());
                 }
             } else {
-                // Tratamento padrão TXT
                 $lines = preg_split("/\r\n|\n|\r/", $content);
                 $urls = collect($lines)->filter()->take(10)->map(fn($l) => trim($l))->values()->all();
             }
@@ -504,17 +404,15 @@ class SitemapGeneratorService
             if (empty($urls))
                 return [];
 
-            return collect($urls)
-                ->map(function ($url) {
-                    return [
-                        'url' => $url,
-                        'lastMod' => now()->toISOString(),
-                        'priority' => '0.8000',
-                        'freq' => 'daily'
-                    ];
-                })
-                ->values()
-                ->all();
+            return collect($urls)->map(function ($url) {
+                return [
+                    'url' => $url,
+                    'lastMod' => now()->toISOString(),
+                    'priority' => '0.8000',
+                    'freq' => 'daily',
+                ];
+            })->values()->all();
+
         } catch (\Exception $e) {
             Log::error("Erro ao gerar preview de URLs: " . $e->getMessage());
             return [];
