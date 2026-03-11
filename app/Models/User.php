@@ -74,6 +74,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(Project::class);
     }
 
+    public function apiKeys()
+    {
+        return $this->hasMany(ApiKey::class);
+    }
+
     /**
      * Helper para saber se é Admin (útil para o futuro)
      */

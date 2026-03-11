@@ -41,6 +41,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Rota de Download via Proxy
     Route::get('/downloads/{jobId}/{filename}', [\App\Http\Controllers\DownloadController::class, 'sitemap'])->name('downloads.sitemap');
+
+    // Gestão de API Keys (acesso externo à API)
+    Route::prefix('settings/api-keys')->name('api-keys.')->controller(\App\Http\Controllers\ApiKeyController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/', 'store')->name('store');
+        Route::patch('/{apiKey}/revoke', 'revoke')->name('revoke');
+        Route::delete('/{apiKey}', 'destroy')->name('destroy');
+    });
 });
 
 Route::middleware('auth')->group(function () {
