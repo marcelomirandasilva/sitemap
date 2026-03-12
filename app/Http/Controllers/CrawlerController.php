@@ -80,7 +80,7 @@ class CrawlerController extends Controller
 
         if ($shouldCheckApi) {
             Log::info("CrawlerController: Consultando API para Job {$latestJob->external_job_id}");
-            $statusData = $this->sitemapService->checkStatus($latestJob->external_job_id);
+            $statusData = $this->sitemapService->checkStatus($latestJob->external_job_id, auth()->id());
 
             if ($statusData) {
                 Log::info("CrawlerController: Resposta recebida da API", [
@@ -107,7 +107,7 @@ class CrawlerController extends Controller
                 if ($latestJob->status === 'completed') {
                     if (empty($latestJob->artifacts)) {
                         Log::info("CrawlerController: Buscando artefatos explicitamente...");
-                        $artifacts = $this->sitemapService->getArtifacts($latestJob->external_job_id);
+                        $artifacts = $this->sitemapService->getArtifacts($latestJob->external_job_id, auth()->id());
                         $latestJob->update([
                             'artifacts' => $artifacts,
                         ]);

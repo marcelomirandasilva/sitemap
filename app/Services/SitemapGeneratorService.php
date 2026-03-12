@@ -49,12 +49,12 @@ class SitemapGeneratorService
 
         $payload = [
             'start_urls' => [$project->url],
-            'max_depth' => $project->max_depth ?? 3,
-            'max_pages' => $project->max_pages ?? 1000,
+            'max_depth' => $project->max_depth ?? 5,
+            'max_pages' => $project->max_pages ?? 5000,
             'include_images' => (bool) $project->check_images,
             'include_videos' => (bool) $project->check_videos,
             'delay_between_requests' => (float) ($project->delay_between_requests ?? 1.0),
-            'max_concurrent_requests' => (int) ($project->max_concurrent_requests ?? 2),
+            'max_concurrent_requests' => (int) ($project->max_concurrent_requests ?? 10),
             'massive_processing' => true,
             'output_directory' => 'sitemaps/projects/' . $project->id,
         ];

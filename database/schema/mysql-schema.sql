@@ -4,6 +4,25 @@
 /*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+DROP TABLE IF EXISTS `api_keys`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `api_keys` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` bigint unsigned NOT NULL,
+  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `key` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `last_used_at` timestamp NULL DEFAULT NULL,
+  `expires_at` timestamp NULL DEFAULT NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT '1',
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `api_keys_key_unique` (`key`),
+  KEY `api_keys_user_id_is_active_index` (`user_id`,`is_active`),
+  CONSTRAINT `api_keys_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `cache`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -313,3 +332,4 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (10,'2026_02_02_222
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (11,'2026_02_03_200128_update_plans_table_split_prices',2);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (12,'2026_02_04_174301_add_preferences_to_users_table',3);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (13,'2026_02_19_092500_add_details_to_plans_table',4);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (14,'2026_03_11_000001_create_api_keys_table',5);
