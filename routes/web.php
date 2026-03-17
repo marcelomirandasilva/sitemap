@@ -84,6 +84,7 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/preferences/ui', [App\Http\Controllers\PreferencesController::class, 'updateUi'])->name('preferences.ui.update');
     Route::put('/preferences/notifications', [App\Http\Controllers\PreferencesController::class, 'updateNotifications'])->name('preferences.notifications.update');
     Route::put('/preferences/billing', [App\Http\Controllers\PreferencesController::class, 'updateBilling'])->name('preferences.billing.update');
+    Route::put('/preferences/password', [App\Http\Controllers\PreferencesController::class, 'updatePassword'])->name('preferences.password.update');
     Route::get('/preferences', [App\Http\Controllers\PreferencesController::class, 'edit'])->name('preferences.edit');
 
     // Histórico de Pagamentos

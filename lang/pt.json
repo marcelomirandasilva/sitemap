@@ -272,8 +272,12 @@
     "preferences.billing.address": "Endereço",
     "preferences.billing.address_placeholder": "Endereço da empresa...",
     "preferences.billing.save": "SALVAR ALTERAÇÕES",
-    "preferences.password.desc": "A funcionalidade de alteração de senha está disponível na segurança do perfil.",
-    "preferences.password.link": "Ir para Segurança do Perfil",
+    "preferences.password.title": "Alterar Sua Senha:",
+    "preferences.password.current_password": "Senha atual",
+    "preferences.password.new_password": "Nova senha",
+    "preferences.password.confirm_password": "Repita a senha para confirmar",
+    "preferences.password.help_text": "A senha deve ter pelo menos 8 caracteres",
+    "preferences.password.submit": "ALTERAR SENHA",
     "preferences.saved": "Salvo.",
     "billing.history.title": "Histórico de Pagamentos",
     "billing.history.description": "Visualize e baixe suas faturas anteriores.",
@@ -325,5 +329,11 @@
     "The url field is required.": "O campo de URL é obrigatório.",
     "The selected email is invalid.": "O e-mail selecionado é inválido.",
     "These credentials do not match our records.": "Estas credenciais não correspondem aos nossos registros.",
-    "The url field must be a valid URL.": "O campo URL deve ser um endereço válido."
+    "The current password field is required.": "O campo senha atual é obrigatório.",
+    "The password confirmation does not match.": "A confirmação da senha não coincide.",
+    "The password must be at least 8 characters.": "A senha deve ter pelo menos 8 caracteres.",
+    "The provided password does not match your current password.": "A senha fornecida não coincide com sua senha atual.",
+    "The password field must be at least 8 characters.": "A senha deve ter pelo menos 8 caracteres.",
+    "The current_password field is required.": "O campo senha atual é obrigatório.",
+    "The password field confirmation does not match.": "A confirmação da senha não coincide."
 }

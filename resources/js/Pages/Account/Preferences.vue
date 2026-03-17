@@ -22,6 +22,11 @@ const props = defineProps({
 // Estado das Abas
 const activeTab = ref('personalize');
 
+// Visibilidade das senhas
+const showCurrentPassword = ref(false);
+const showNewPassword = ref(false);
+const showConfirmPassword = ref(false);
+
 const tabs = [
     { id: 'personalize', name: 'preferences.tabs.personalize' },
     { id: 'password', name: 'preferences.tabs.password' },
@@ -63,6 +68,28 @@ const billingForm = useForm({
 
 const updateBilling = () => {
     billingForm.put(route('preferences.billing.update'), { preserveScroll: true });
+};
+
+// 4. Password
+const passwordForm = useForm({
+    current_password: '',
+    password: '',
+    password_confirmation: '',
+});
+
+const updatePassword = () => {
+    passwordForm.put(route('preferences.password.update'), {
+        preserveScroll: true,
+        onSuccess: () => passwordForm.reset(),
+        onError: () => {
+            if (passwordForm.errors.password) {
+                passwordForm.reset('password', 'password_confirmation');
+            }
+            if (passwordForm.errors.current_password) {
+                passwordForm.reset('current_password');
+            }
+        },
+    });
 };
 </script>
 
@@ -252,10 +279,116 @@ const updateBilling = () => {
 
                         </div>
 
-                        <div v-show="activeTab === 'password'" class="py-10 text-center text-gray-500">
-                            <p class="mb-4">{{ $t('preferences.password.desc') }}</p>
-                            <Link :href="route('profile.edit')" class="text-primary-600 hover:underline">{{
-                                $t('preferences.password.link') }}</Link>
+                        <div v-show="activeTab === 'password'" class="p-6 space-y-6">
+                            <header class="mb-6 bg-primary-50 p-4 rounded-md border-l-4 border-primary-400">
+                                <h3 class="text-sm font-bold text-primary-900 uppercase tracking-wide">
+                                    {{ $t('preferences.password.title') }}
+                                </h3>
+                            </header>
+
+                            <form @submit.prevent="updatePassword" class="space-y-6 max-w-2xl">
+                                <div class="max-w-md">
+                                    <InputLabel for="current_password" :value="$t('preferences.password.current_password')" />
+                                    <div class="relative mt-1">
+                                        <TextInput
+                                            id="current_password"
+                                            v-model="passwordForm.current_password"
+                                            :type="showCurrentPassword ? 'text' : 'password'"
+                                            class="block w-full pr-10"
+                                            autocomplete="current-password"
+                                        />
+                                        <button
+                                            type="button"
+                                            @click="showCurrentPassword = !showCurrentPassword"
+                                            class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none"
+                                        >
+                                            <svg v-if="!showCurrentPassword" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.644C3.399 8.049 7.21 5 12 5c4.789 0 8.61 3.049 9.964 6.678.082.233.082.467 0 .7a10.455 10.455 0 01-9.964 6.678c-4.789 0-8.61-3.049-9.964-6.678z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            </svg>
+                                            <svg v-else xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.822 7.822L21 21m-2.228-2.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <InputError :message="passwordForm.errors.current_password" class="mt-2" />
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <InputLabel for="password" :value="$t('preferences.password.new_password')" />
+                                        <div class="relative mt-1">
+                                            <TextInput
+                                                id="password"
+                                                v-model="passwordForm.password"
+                                                :type="showNewPassword ? 'text' : 'password'"
+                                                class="block w-full pr-10"
+                                                autocomplete="new-password"
+                                            />
+                                            <button
+                                                type="button"
+                                                @click="showNewPassword = !showNewPassword"
+                                                class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none"
+                                            >
+                                                <svg v-if="!showNewPassword" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.644C3.399 8.049 7.21 5 12 5c4.789 0 8.61 3.049 9.964 6.678.082.233.082.467 0 .7a10.455 10.455 0 01-9.964 6.678c-4.789 0-8.61-3.049-9.964-6.678z" />
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                </svg>
+                                                <svg v-else xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.822 7.822L21 21m-2.228-2.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                        <InputError :message="passwordForm.errors.password" class="mt-2" />
+                                    </div>
+
+                                    <div>
+                                        <InputLabel for="password_confirmation" :value="$t('preferences.password.confirm_password')" />
+                                        <div class="relative mt-1">
+                                            <TextInput
+                                                id="password_confirmation"
+                                                v-model="passwordForm.password_confirmation"
+                                                :type="showConfirmPassword ? 'text' : 'password'"
+                                                class="block w-full pr-10"
+                                                autocomplete="new-password"
+                                            />
+                                            <button
+                                                type="button"
+                                                @click="showConfirmPassword = !showConfirmPassword"
+                                                class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none"
+                                            >
+                                                <svg v-if="!showConfirmPassword" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.644C3.399 8.049 7.21 5 12 5c4.789 0 8.61 3.049 9.964 6.678.082.233.082.467 0 .7a10.455 10.455 0 01-9.964 6.678c-4.789 0-8.61-3.049-9.964-6.678z" />
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                </svg>
+                                                <svg v-else xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.822 7.822L21 21m-2.228-2.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                        <InputError :message="passwordForm.errors.password_confirmation" class="mt-2" />
+                                    </div>
+                                </div>
+
+                                <p class="text-xs text-gray-500">{{ $t('preferences.password.help_text') }}</p>
+
+                                <div class="flex items-center gap-4">
+                                    <PrimaryButton :disabled="passwordForm.processing" class="py-3 px-8">
+                                        {{ $t('preferences.password.submit') }}
+                                    </PrimaryButton>
+
+                                    <Transition
+                                        enter-active-class="transition ease-in-out"
+                                        enter-from-class="opacity-0"
+                                        leave-active-class="transition ease-in-out"
+                                        leave-to-class="opacity-0"
+                                    >
+                                        <p v-if="passwordForm.recentlySuccessful" class="text-sm text-gray-600">
+                                            {{ $t('preferences.saved') }}
+                                        </p>
+                                    </Transition>
+                                </div>
+                            </form>
                         </div>
 
                     </div>

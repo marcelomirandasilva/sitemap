@@ -9,7 +9,7 @@ defineProps({
 <template>
     <div v-show="message">
         <p class="text-sm text-danger-600">
-            {{ message }}
+            {{ message ? $t(message) : '' }}
         </p>
     </div>
 </template>
