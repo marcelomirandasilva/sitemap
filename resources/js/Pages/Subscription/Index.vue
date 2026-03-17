@@ -7,6 +7,10 @@ import { ref } from 'vue';
 const props = defineProps({
     plans: Array,
     currentSubscription: Object,
+    currentPriceId: String,
+    isCancelled: Boolean,
+    onGracePeriod: Boolean,
+    endsAt: String,
     userCardLast4: String, // Recebe o final do cartão
     userCardBrand: String, // Recebe a bandeira (Visa, Master)
 });
@@ -19,8 +23,27 @@ const displayPlans = props.plans;
 
 // Helper para verificar se o plano está ativo
 const isPlanActive = (plan) => {
+    const isFreePlan = !plan.stripe_monthly_price_id && !plan.stripe_yearly_price_id;
+    
+    // Se não tem assinatura nenhuma, o Free é o ativo
+    if (!props.currentSubscription) {
+        return isFreePlan;
+    }
+
+    // Se a assinatura está cancelada mas ainda no período de carência (onGracePeriod):
+    // O plano pago CONTINUA sendo o ativo até expirar.
+    if (props.isCancelled && props.onGracePeriod) {
+        const currentPrice = props.currentSubscription?.stripe_price;
+        return currentPrice === plan.stripe_monthly_price_id || currentPrice === plan.stripe_yearly_price_id;
+    }
+
+    // Se já expirou de vez (isCancelled e NÃO onGracePeriod), volta pro Free
+    if (props.isCancelled && !props.onGracePeriod) {
+        return isFreePlan;
+    }
+
+    // Caso normal: plano ativo sem cancelamento
     const currentPrice = props.currentSubscription?.stripe_price;
-    if (!currentPrice) return false;
     return currentPrice === plan.stripe_monthly_price_id || currentPrice === plan.stripe_yearly_price_id;
 };
 
@@ -31,7 +54,10 @@ const handleSubscribe = (plan) => {
         ? plan.stripe_yearly_price_id 
         : plan.stripe_monthly_price_id;
 
-    if (!targetPriceId) {
+    const isTargetFree = !plan.stripe_monthly_price_id && !plan.stripe_yearly_price_id;
+
+    // Se NÃO for free e NÃO tiver preço, aí sim é erro de configuração
+    if (!targetPriceId && !isTargetFree) {
         alert("Erro na configuração do plano. Contate o suporte.");
         return;
     }
@@ -42,24 +68,31 @@ const handleSubscribe = (plan) => {
         return;
     }
 
-    // 3. Se for Assinante Existente (Troca de Plano), pede confirmação
-    const cardInfo = props.userCardLast4 
-        ? `cartão final ${props.userCardLast4}` 
-        : 'seu cartão cadastrado';
+    // 3. Se for Assinante Existente (Troca de Plano ou Cancelamento), pede confirmação
+    if (props.currentSubscription) {
+        if (isTargetFree) {
+            if (confirm("Você deseja cancelar sua assinatura paga e voltar ao plano gratuito?\n\nVocê manterá o acesso aos recursos atuais até o fim do período já pago.")) {
+                router.get(route('subscription.checkout', 'free')); // Enviamos 'free' ou qualquer ID que o backend identifique como free
+            }
+            return;
+        }
 
-    const message = `CONFIRMAÇÃO DE MUDANÇA:\n\n` +
-                    `Você deseja alterar seu plano para: ${plan.name}?\n` +
-                    `A diferença de valor será cobrada (ou creditada) imediatamente no ${cardInfo}.\n\n` +
-                    `Clique em OK para confirmar a cobrança.\n` +
-                    `Clique em Cancelar se preferir trocar o cartão antes.`;
+        const cardInfo = props.userCardLast4 
+            ? `cartão final ${props.userCardLast4}` 
+            : 'seu cartão cadastrado';
 
-    if (confirm(message)) {
-        // Usuário aceitou a cobrança imediata -> Envia para o controller fazer o swapAndInvoice
-        router.get(route('subscription.checkout', targetPriceId));
-    } else {
-        // Usuário cancelou -> Oferece ir para o portal
-        if(confirm("Deseja ir para o Portal do Cliente para gerenciar seus cartões?")) {
-            window.location.href = route('subscription.portal');
+        const message = `CONFIRMAÇÃO DE MUDANÇA:\n\n` +
+                        `Você deseja alterar seu plano para: ${plan.name}?\n` +
+                        `A diferença de valor será cobrada (ou creditada) imediatamente no ${cardInfo}.\n\n` +
+                        `Clique em OK para confirmar a cobrança.\n` +
+                        `Clique em Cancelar se preferir trocar o cartão antes.`;
+
+        if (confirm(message)) {
+            router.get(route('subscription.checkout', targetPriceId));
+        } else {
+            if(confirm("Deseja ir para o Portal do Cliente para gerenciar seus cartões?")) {
+                window.location.href = route('subscription.portal');
+            }
         }
     }
 };
@@ -76,8 +109,8 @@ const handleSubscribe = (plan) => {
         <div class="py-12">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
                 <div class="text-center max-w-2xl mx-auto mb-10">
-                     <h2 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">{{ $t('subscription.hero_title') }}</h2>
-                     <p class="mt-6 text-lg leading-8 text-gray-600">{{ $t('subscription.hero_subtitle') }}</p>
+                     <h2 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">{{ $t('subscription.hero_title_fixed') }}</h2>
+                     <p class="mt-6 text-lg leading-8 text-gray-600">{{ $t('subscription.hero_subtitle_fixed') }}</p>
                 </div>
 
                 <div class="flex justify-center mb-12">
@@ -90,7 +123,7 @@ const handleSubscribe = (plan) => {
                                 'rounded-full px-6 py-2 text-sm font-semibold leading-5 transition-all duration-200'
                             ]"
                         >
-                            {{ $t('subscription.monthly') || 'Mensal' }}
+                            {{ $t('subscription.monthly') }}
                         </button>
                         <button 
                             type="button"
@@ -100,7 +133,7 @@ const handleSubscribe = (plan) => {
                                 'relative rounded-full px-6 py-2 text-sm font-semibold leading-5 transition-all duration-200'
                             ]"
                         >
-                            {{ $t('subscription.yearly') || 'Anual' }}
+                            {{ $t('subscription.yearly') }}
                             <span class="absolute -top-3 -right-6 inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800 ring-1 ring-inset ring-green-600/20">
                                 {{ $t('subscription.save_badge') }}
                             </span>
@@ -115,6 +148,10 @@ const handleSubscribe = (plan) => {
                         :plan="plan" 
                         :billing-cycle="billingCycle"
                         :active="isPlanActive(plan)"
+                        :current-price-id="currentPriceId"
+                        :is-cancelled="isCancelled"
+                        :on-grace-period="onGracePeriod"
+                        :ends-at="endsAt"
                         @subscribe="handleSubscribe(plan)" 
                     />
                 </div>

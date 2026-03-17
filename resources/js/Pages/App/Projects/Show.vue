@@ -95,8 +95,13 @@ const buscarDetalhesJob = async () => {
         const response = await axios.get(route('crawler.show', props.project.id));
         const data = response.data;
 
-        // Atualiza estado local
+        // Atualiza estado local de forma reativa e completa
         tarefa.value = { ...tarefa.value, ...data };
+        
+        // Garante que métricas específicas sejam preservadas
+        if (data.current_url) tarefa.value.current_url = data.current_url;
+        if (data.queue_size !== undefined) tarefa.value.queue_size = data.queue_size;
+        if (data.current_depth !== undefined) tarefa.value.current_depth = data.current_depth;
 
         if (data.preview_urls) {
             listaUrls.value = data.preview_urls;
@@ -350,8 +355,15 @@ const downloadUrl = computed(() => {
                                     </div>
                                     
                                     <div class="text-sm text-gray-700 leading-relaxed mb-4">
-                                        <p>Pages processed: <strong>{{ tarefa.pages_count || 0 }}</strong> (<span class="text-accent-600">{{ tarefa.pages_count || 0 }} added in sitemap</span>)</p>
-                                        <p>Links found: <strong>--</strong>, Next level: <strong>--</strong></p>
+                                        <p>{{ $t('crawler.pages_processed') }}: <strong>{{ tarefa.pages_count || 0 }}</strong> (<span class="text-accent-600">{{ tarefa.pages_count || 0 }} {{ $t('crawler.added_sitemap') }}</span>)</p>
+                                        <p v-if="tarefa.current_url" class="truncate max-w-lg mx-auto mb-1">
+                                            {{ $t('crawler.current_page') }}: <span class="text-xs text-primary-600 font-mono">{{ tarefa.current_url }}</span>
+                                        </p>
+                                        <div class="flex justify-center gap-4 text-xs font-bold text-gray-500 uppercase">
+                                            <span>{{ $t('crawler.queued') }}: <span class="text-gray-900">{{ tarefa.queue_size || 0 }}</span></span>
+                                            <span>•</span>
+                                            <span>{{ $t('crawler.depth_level') }}: <span class="text-gray-900">{{ tarefa.current_depth || 0 }}</span></span>
+                                        </div>
                                     </div>
                                     
                                     <!-- Progress Bar Container -->

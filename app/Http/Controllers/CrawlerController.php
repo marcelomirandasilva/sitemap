@@ -83,10 +83,7 @@ class CrawlerController extends Controller
             $statusData = $this->sitemapService->checkStatus($latestJob->external_job_id, auth()->id());
 
             if ($statusData) {
-                Log::info("CrawlerController: Resposta recebida da API", [
-                    'status' => $statusData['status'] ?? 'N/A',
-                    'progress' => $statusData['progress'] ?? 'N/A'
-                ]);
+                Log::info("CrawlerController: Resposta recebida da API", $statusData);
 
                 $latestJob->update([
                     'status' => $statusData['status'] ?? $latestJob->status,
@@ -144,6 +141,9 @@ class CrawlerController extends Controller
             'artifacts' => $latestJob->artifacts,
             'preview_urls' => $previewUrls,
             'recent_pages' => $statusData['recent_pages'] ?? [],
+            'current_url' => $statusData['current_url'] ?? null,
+            'current_depth' => $statusData['current_depth'] ?? 0,
+            'queue_size' => $statusData['queue_size'] ?? 0,
         ]);
     }
 

@@ -135,13 +135,25 @@ watch(() => props.show, (novoValor) => {
 
 const iniciarCrawler = async () => {
     try {
-        tarefa.value = { status: 'queued', progress: 0, pages_count: 0 }; // Otimistic UI
+        tarefa.value = { status: 'queued', progress: 0, pages_count: 0, urls_crawled: 0, urls_found: 0, queue_size: 0, current_depth: 0 }; // Otimistic UI
         await axios.post(route('crawler.store', props.projeto.id));
         // A enquete já vai pegar o status real na próxima chamada
-        buscarStatus();
+        iniciarEnquete();
     } catch (erro) {
         console.error('Erro ao iniciar crawler:', erro);
         alert('Falha ao iniciar o crawler. Verifique o console.');
+    }
+};
+
+const pausarCrawler = async () => {
+    // Implementação futura ou placeholder para feedback visual
+    alert('Funcionalidade de pausa será integrada em breve.');
+};
+
+const resetarCrawler = async () => {
+    if (confirm(t('project.delete_confirm_text'))) {
+        pararEnquete();
+        await iniciarCrawler();
     }
 };
 
@@ -233,30 +245,58 @@ onUnmounted(() => {
                         {{ $t('crawler.email_notification') }}
                     </p>
 
-                    <div class="w-full max-w-2xl bg-[#e8f6fc] border border-[#bce8f1] p-0 mb-8">
                         <div class="p-3 text-center border-b border-[#bce8f1] bg-[#d9edf7] relative">
                             <span class="text-primary-800 font-bold text-sm">{{ $t('crawler.update_in_progress') }}</span>
-                            <span class="ml-2 px-1.5 py-0.5 bg-[#f0ad4e] text-white text-[10px] font-bold rounded cursor-not-allowed">▐▌ {{ $t('crawler.pause') }}</span>
+                            <span 
+                                @click="pausarCrawler"
+                                class="ml-2 px-1.5 py-0.5 bg-[#f0ad4e] text-white text-[10px] font-bold rounded cursor-pointer hover:bg-[#ec971f]"
+                            >
+                                ▐▌ {{ $t('crawler.pause') }}
+                            </span>
                         </div>
                         
-                        <div class="p-6 text-center text-primary-800 text-sm leading-relaxed">
-                            {{ $t('crawler.time_elapsed') }}: {{ tempoDecorrido }}, {{ $t('crawler.pages_processed') }}: {{ tarefa?.pages_count || 0 }} ({{ tarefa?.pages_count || 0 }} {{ $t('crawler.added_sitemap') }})<br>
-                            <span class="text-xs opacity-75">{{ $t('crawler.queued') }}: 128, {{ $t('crawler.depth_level') }}: 1, {{ $t('crawler.next_level') }}: 64</span><br>
-                            {{ $t('crawler.current_page') }}: <span class="font-bold text-accent-600">/</span>
+                        <div class="p-6 text-center text-primary-800 text-sm leading-relaxed min-h-[100px] flex flex-col justify-center">
+                            <div>
+                                {{ $t('crawler.time_elapsed') }}: <span class="font-bold">{{ tempoDecorrido }}</span>, 
+                                {{ $t('crawler.pages_processed') }}: <span class="font-bold">{{ tarefa?.urls_crawled || tarefa?.pages_count || 0 }}</span> 
+                                ({{ tarefa?.pages_count || 0 }} {{ $t('crawler.added_sitemap') }})
+                            </div>
+                            <div class="text-xs opacity-75 mt-1">
+                                {{ $t('crawler.queued') }}: <span class="font-bold">{{ tarefa?.queue_size || 0 }}</span>, 
+                                {{ $t('crawler.depth_level') }}: <span class="font-bold">{{ tarefa?.current_depth || 0 }}</span>, 
+                                {{ $t('crawler.next_level') }}: <span class="font-bold">{{ Math.floor((tarefa?.queue_size || 0) * 0.8) }}</span>
+                            </div>
+                            <div class="mt-2 text-xs">
+                                {{ $t('crawler.current_page') }}: 
+                                <span class="font-bold text-accent-600 break-all">
+                                    {{ tarefa?.current_url || '/' }}
+                                </span>
+                            </div>
                         </div>
 
                         <div class="h-2 w-full bg-[#d0e6f0] relative">
                              <div class="h-full bg-primary-600 transition-all duration-500" :style="{ width: larguraBarra + '%' }"></div>
                         </div>
-                    </div>
 
                     <div class="flex flex-col gap-3 w-full max-w-xl">
                         <h4 class="text-primary-600 font-bold uppercase text-sm border-b border-gray-200 pb-1 mb-2">{{ $t('crawler.bot_controls') }}</h4>
                         <div class="flex items-center gap-3 text-sm text-gray-500">
-                            <button class="px-4 py-1.5 bg-[#f0ad4e] hover:bg-[#ec971f] text-white font-bold rounded text-xs w-24 flex justify-center items-center gap-1 shadow-sm">▐▌ {{ $t('crawler.pause') }}</button> {{ $t('crawler.pause_help') }}
+                            <button 
+                                @click="pausarCrawler"
+                                class="px-4 py-1.5 bg-[#f0ad4e] hover:bg-[#ec971f] text-white font-bold rounded text-xs w-24 flex justify-center items-center gap-1 shadow-sm transition-colors"
+                            >
+                                ▐▌ {{ $t('crawler.pause') }}
+                            </button> 
+                            {{ $t('crawler.pause_help') }}
                         </div>
                         <div class="flex items-center gap-3 text-sm text-gray-500">
-                            <button class="px-4 py-1.5 bg-[#d9534f] hover:bg-[#c9302c] text-white font-bold rounded text-xs w-24 flex justify-center items-center gap-1 shadow-sm" @click="$emit('close')">↻ {{ $t('crawler.reset') }}</button> {{ $t('crawler.reset_help') }}
+                            <button 
+                                @click="resetarCrawler"
+                                class="px-4 py-1.5 bg-[#d9534f] hover:bg-[#c9302c] text-white font-bold rounded text-xs w-24 flex justify-center items-center gap-1 shadow-sm transition-colors"
+                            >
+                                ↻ {{ $t('crawler.reset') }}
+                            </button> 
+                            {{ $t('crawler.reset_help') }}
                         </div>
                     </div>
                 </div>

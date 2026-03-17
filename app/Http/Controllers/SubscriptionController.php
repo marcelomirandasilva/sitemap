@@ -14,12 +14,18 @@ class SubscriptionController extends Controller
      */
     public function index()
     {
+        $subscription = auth()->user()->subscription('default');
+
         return Inertia::render('Subscription/Index', [
             // Trazendo planos ordenados pelo preço
             'plans' => Plan::orderBy('price_monthly_brl', 'asc')->get(),
 
             // Dados da assinatura atual
-            'currentSubscription' => auth()->user()->subscription('default'),
+            'currentSubscription' => $subscription,
+            'currentPriceId' => $subscription ? $subscription->stripe_price : null,
+            'isCancelled' => $subscription ? $subscription->canceled() : false,
+            'onGracePeriod' => $subscription ? $subscription->onGracePeriod() : false,
+            'endsAt' => $subscription && $subscription->ends_at ? $subscription->ends_at->format('d/m/Y') : null,
 
             // Dados parciais do cartão para a mensagem de confirmação
             'userCardLast4' => auth()->user()->pm_last_four,
@@ -38,6 +44,18 @@ class SubscriptionController extends Controller
         // CENÁRIO 1: Usuário já é assinante (UPGRADE/DOWNGRADE)
         // ----------------------------------------------------------------------
         if ($user->subscribed('default')) {
+            // Se o plano escolhido for o "Free" (identificado por não ter price_id no Stripe)
+            $plan = Plan::where('stripe_monthly_price_id', $priceId)
+                ->orWhere('stripe_yearly_price_id', $priceId)
+                ->first();
+
+            if (!$plan || (!$plan->stripe_monthly_price_id && !$plan->stripe_yearly_price_id)) {
+                // Usuário quer voltar ao FREE -> Cancela a assinatura atual
+                $user->subscription('default')->cancel();
+                return redirect()->route('subscription.index')
+                    ->with('success', 'Sua assinatura paga foi cancelada. Você continuará com os recursos atuais até o fim do período faturado e depois voltará ao plano gratuito.');
+            }
+
             try {
                 // Tenta trocar o plano e cobrar a diferença (Prorata) imediatamente
                 // usando o cartão já salvo.
@@ -58,7 +76,7 @@ class SubscriptionController extends Controller
             } catch (\Exception $e) {
                 // Erro genérico? Manda para o portal para ele ver o que houve.
                 return redirect()->route('subscription.portal')
-                    ->with('error', 'Houve um problema no pagamento automátio. Por favor, verifique seu cartão.');
+                    ->with('error', 'Houve um problema no pagamento automático. Por favor, verifique seu cartão.');
             }
         }
 
