@@ -8,10 +8,12 @@ import { computed } from 'vue';
 const page = usePage();
 const user = computed(() => page.props.auth.user);
 const requiresVerification = computed(() => user.value && user.value.email_verified_at === null);
+const theme = computed(() => user.value?.ui_preferences?.theme || 'light');
 </script>
 
 <template>
-    <div class="min-h-screen bg-gradient-to-b from-primary-50 to-[#f5f5f5] font-sans text-gray-700 flex flex-col">
+    <div :class="{'dark': theme === 'dark'}" class="min-h-screen font-sans text-gray-700 flex flex-col">
+        <div class="min-h-screen bg-gradient-to-b from-primary-50 to-[#f5f5f5] dark:from-gray-900 dark:to-gray-800 dark:text-gray-100 flex flex-col flex-grow">
         
         <div>
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -57,5 +59,6 @@ const requiresVerification = computed(() => user.value && user.value.email_verif
         </main>
 
         <AppFooter />
+    </div>
     </div>
 </template>
