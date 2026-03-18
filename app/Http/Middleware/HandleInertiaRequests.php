@@ -35,6 +35,25 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
             ],
             'appName' => config('app.name'),
+            'userProjects' => $request->user() ?
+                $request->user()->projects()
+                    ->select('id', 'name', 'url', 'last_crawled_at', 'status', 'max_pages')
+                    ->withCount('pages')
+                    ->orderBy('updated_at', 'desc')
+                    ->take(10)
+                    ->get()
+                    ->map(function ($project) use ($request) {
+                        return [
+                            'id' => $project->id,
+                            'name' => $project->name,
+                            'url' => str_replace(['http://', 'https://'], '', rtrim($project->url, '/')),
+                            'last_crawled_at' => $project->last_crawled_at ? $project->last_crawled_at->toISOString() : null,
+                            'pages_count' => $project->pages_count,
+                            'status' => $project->status,
+                            'plan_name' => $request->user()->plan ? $request->user()->plan->name : 'Free'
+                        ];
+                    }) : [],
+            'userProjectsCount' => $request->user() ? $request->user()->projects()->count() : 0,
             'flash' => [
                 'success' => fn() => $request->session()->get('success'),
                 'error' => fn() => $request->session()->get('error'),

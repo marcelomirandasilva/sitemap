@@ -10,6 +10,34 @@ const mudarIdioma = (lang) => {
     loadLanguageAsync(lang);
 };
 
+const formatTimeAgo = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now - date) / 1000);
+    
+    // Fallback: Default to PT-BR as requested, but uses the user's selected language seamlessly if possible
+    const lang = localStorage.getItem('user_locale') || 'pt';
+    
+    try {
+        const rtf = new Intl.RelativeTimeFormat(lang, { numeric: 'auto', style: 'long' });
+        
+        if (diffInSeconds < 60) return rtf.format(-Math.max(1, diffInSeconds), 'second');
+        const diffInMinutes = Math.floor(diffInSeconds / 60);
+        if (diffInMinutes < 60) return rtf.format(-diffInMinutes, 'minute');
+        const diffInHours = Math.floor(diffInMinutes / 60);
+        if (diffInHours < 24) return rtf.format(-diffInHours, 'hour');
+        const diffInDays = Math.floor(diffInHours / 24);
+        if (diffInDays < 30) return rtf.format(-diffInDays, 'day');
+        const diffInMonths = Math.floor(diffInDays / 30);
+        if (diffInMonths < 12) return rtf.format(-diffInMonths, 'month');
+        const diffInYears = Math.floor(diffInDays / 365);
+        return rtf.format(-diffInYears, 'year');
+    } catch (e) {
+        return date.toLocaleDateString(lang);
+    }
+};
+
 onMounted(() => {
     const savedLocale = localStorage.getItem('user_locale');
     if (savedLocale) {
@@ -49,21 +77,49 @@ onMounted(() => {
              </Dropdown>
         </div>
 
-        <Dropdown align="right" width="48">
+        <Dropdown align="right" width="64">
             <template #trigger>
                 <button class="flex items-center gap-1 hover:opacity-80 transition cursor-pointer">
-                    <span class="border border-accent-800 rounded px-1.5 py-0.5 text-xs">0</span>
+                    <span class="border border-accent-800 rounded px-1.5 py-0.5 text-xs">{{ $page.props.userProjectsCount }}</span>
                     <span>{{ $t('nav.my_sites') }}</span>
                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                 </button>
             </template>
 
             <template #content>
-                <DropdownLink :href="route('dashboard')" class="flex items-center gap-2">
+                <DropdownLink :href="route('dashboard')" class="flex items-center gap-2 border-b border-gray-100 mb-1">
                     <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
-                    {{ $t('dashboard.title') }}
+                    {{ $t('dashboard.control_panel') }}
                 </DropdownLink>
-                <DropdownLink :href="route('dashboard')" class="flex items-center gap-2">
+                
+                <div class="max-h-60 overflow-y-auto">
+                    <Link
+                        v-for="project in $page.props.userProjects"
+                        :key="project.id"
+                        :href="route('projects.show', project.id)"
+                        class="block px-4 py-2 hover:bg-gray-50 transition border-b border-gray-50 last:border-b-0"
+                    >
+                        <div class="flex items-center justify-between mb-1">
+                            <div class="flex items-center gap-2 w-full">
+                                <span class="w-2 h-2 rounded-full flex-shrink-0" 
+                                      :class="project.status === 'active' ? 'bg-green-500' : 'bg-red-500'"></span>
+                                <span class="text-sm text-gray-700 w-full font-medium truncate leading-tight">{{ project.url }}</span>
+                            </div>
+                            <span class="text-[10px] font-medium px-1.5 py-0.5 rounded border border-gray-200 text-gray-500 flex-shrink-0 ml-2">
+                                {{ project.plan_name }}
+                            </span>
+                        </div>
+                        <div class="text-xs text-gray-400 pl-4 whitespace-nowrap">
+                            {{ formatTimeAgo(project.last_crawled_at) || $t('freq.never') }}, {{ project.pages_count }} {{ project.pages_count === 1 ? 'página' : $t('project.pages_count').toLowerCase() }}
+                        </div>
+                    </Link>
+                </div>
+
+                <div v-if="$page.props.userProjects.length === 0" class="px-4 py-3 text-xs text-gray-500 text-center">
+                    {{ $t('dashboard.no_websites') }}
+                </div>
+
+                <DropdownLink :href="route('dashboard')" class="flex items-center gap-2 border-t border-gray-100 mt-1 pb-2">
                     <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                     {{ $t('nav.add_website') }}
                 </DropdownLink>
