@@ -30,7 +30,11 @@ const showConfirmPassword = ref(false);
 const tabs = [
     { id: 'personalize', name: 'preferences.tabs.personalize' },
     { id: 'password', name: 'preferences.tabs.password' },
+    { id: 'remove_account', name: 'preferences.tabs.remove_account' },
 ];
+
+const confirmDeactivation = ref(false);
+const deactivateForm = useForm({});
 
 // --- LOGICA DOS FORMS (Personalize Tab) ---
 
@@ -91,6 +95,12 @@ const updatePassword = () => {
         },
     });
 };
+
+const submitDeactivation = () => {
+    deactivateForm.delete(route('preferences.deactivate'), {
+        onBefore: () => confirm('Tem certeza que deseja excluir sua conta permanentemente? Esta ação não pode ser desfeita.'),
+    });
+};
 </script>
 
 <template>
@@ -115,17 +125,9 @@ const updatePassword = () => {
                                 activeTab === tab.id
                                     ? 'border-primary-500 text-primary-600'
                                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
-                                'w-1/4 py-4 px-1 text-center border-b-2 font-medium text-sm transition-colors duration-200'
+                                'w-1/3 py-4 px-1 text-center border-b-2 font-medium text-sm transition-colors duration-200'
                             ]">
                                 {{ $t(tab.name).toUpperCase() }}
-                            </button>
-                            <button
-                                class="w-1/4 py-4 px-1 text-center border-b-2 border-transparent text-gray-400 cursor-not-allowed">
-                                {{ $t('preferences.tabs.sitemaps').toUpperCase() }}
-                            </button>
-                            <button
-                                class="w-1/4 py-4 px-1 text-center border-b-2 border-transparent text-gray-400 cursor-not-allowed">
-                                {{ $t('preferences.tabs.remove_account').toUpperCase() }}
                             </button>
                         </nav>
                     </div>
@@ -389,6 +391,51 @@ const updatePassword = () => {
                                     </Transition>
                                 </div>
                             </form>
+                        </div>
+
+                        <div v-show="activeTab === 'remove_account'" class="p-6 space-y-6">
+                            <div v-if="!confirmDeactivation">
+                                <header class="mb-6 bg-primary-50 p-4 rounded-md border-l-4 border-primary-400">
+                                    <h3 class="text-sm font-bold text-primary-900 uppercase tracking-wide">
+                                        {{ $t('preferences.deactivate.title') }}
+                                    </h3>
+                                </header>
+                                <p class="text-sm text-gray-600">
+                                    {{ $t('preferences.deactivate.help_text') }}
+                                    <a href="#" @click.prevent="confirmDeactivation = true" class="text-danger-600 font-bold hover:underline">
+                                        {{ $t('preferences.deactivate.click_here') }}
+                                    </a>.
+                                </p>
+                            </div>
+
+                            <div v-else class="space-y-6">
+                                <header class="mb-6 bg-gray-100 p-4 rounded-md border-b flex items-center gap-3">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-gray-600">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                                    </svg>
+                                    <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wide">
+                                        {{ $t('preferences.deactivate.title') }}
+                                    </h3>
+                                </header>
+
+                                <h4 class="text-xl text-gray-800">{{ $t('preferences.deactivate.title') }}</h4>
+
+                                <div class="bg-primary-50 text-primary-900 p-4 rounded border border-primary-100 text-sm">
+                                    {{ $t('preferences.deactivate.info_box') }}
+                                </div>
+
+                                <div class="bg-danger-600 text-white p-4 rounded shadow-sm font-medium text-sm">
+                                    {{ $t('preferences.deactivate.warning_box') }}
+                                </div>
+
+                                <button
+                                    @click="submitDeactivation"
+                                    :disabled="deactivateForm.processing"
+                                    class="bg-danger-600 hover:bg-danger-700 text-white font-bold py-3 px-6 rounded uppercase tracking-wider text-sm transition-colors shadow-sm disabled:opacity-50"
+                                >
+                                    {{ $t('preferences.deactivate.button') }}
+                                </button>
+                            </div>
                         </div>
 
                     </div>

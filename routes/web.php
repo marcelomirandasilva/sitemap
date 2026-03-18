@@ -86,6 +86,7 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/preferences/billing', [App\Http\Controllers\PreferencesController::class, 'updateBilling'])->name('preferences.billing.update');
     Route::put('/preferences/password', [App\Http\Controllers\PreferencesController::class, 'updatePassword'])->name('preferences.password.update');
     Route::get('/preferences', [App\Http\Controllers\PreferencesController::class, 'edit'])->name('preferences.edit');
+    Route::delete('/preferences/deactivate', [App\Http\Controllers\PreferencesController::class, 'deactivate'])->name('preferences.deactivate');
 
     // Histórico de Pagamentos
     Route::get('/billing', [App\Http\Controllers\BillingController::class, 'index'])->name('billing.index');

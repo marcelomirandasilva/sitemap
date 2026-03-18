@@ -117,4 +117,18 @@ class PreferencesController extends Controller
 
         return back()->with('success', 'Senha alterada com sucesso.');
     }
+
+    public function deactivate(Request $request)
+    {
+        $user = $request->user();
+
+        Auth::logout();
+
+        $user->delete();
+
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return Redirect::to('/')->with('success', 'Sua conta foi desativada com sucesso.');
+    }
 }
