@@ -12,35 +12,43 @@ class BillingController extends Controller
      */
     public function index(Request $request)
     {
+        $user = $request->user();
         $invoices = [];
 
         // Verifica se o usuário tem faturas no Stripe
-        if ($request->user()->hasStripeId()) {
+        if ($user->hasStripeId()) {
             try {
-                // Recupera as faturas (invoices) do Stripe via Cashier
-                // O método invoices() retorna uma coleção de objetos Laravel\Cashier\Invoice
-                $stripeInvoices = $request->user()->invoices();
-
+                $stripeInvoices = $user->invoices();
                 $invoices = $stripeInvoices->map(function ($invoice) {
                     return [
                         'id' => $invoice->id,
                         'date' => $invoice->date()->toIso8601String(),
-                        'total' => $invoice->total(), // Já formatado pelo Cashier se usar o método correto, mas aqui retorna valor cru ou objeto. Vamos ajustar no frontend ou formatar aqui.
-                        'total_formatted' => $invoice->realTotal(), // Cashier costuma ter helpers, mas vamos simplificar enviando dados brutos e formatando no frontend ou usar o método 'total' que retorna string formatada em algumas versões. Vamos garantir string.
-                        // Na verdade, o Cashier moderno retorna um objeto Invoice do Stripe-PHP wrapado.
-                        // O método ->total() do Cashier retorna uma string formatada (ex: "R$ 20,00"), o que é ótimo para exibição.
+                        'total' => $invoice->total(),
+                        'total_formatted' => $invoice->realTotal(),
                         'status' => $invoice->status,
-                        'invoice_pdf' => $invoice->invoice_pdf, // Link direto para o PDF hospedado no Stripe
+                        'invoice_pdf' => $invoice->invoice_pdf,
                     ];
                 });
             } catch (\Exception $e) {
-                // Em caso de erro (api key inválida, etc), retorna lista vazia para não quebrar a tela
                 \Log::error('Erro ao buscar faturas: ' . $e->getMessage());
             }
         }
 
+        $subscription = $user->subscription('default');
+
+        $activeSubscription = null;
+        if ($user->plan && strtolower($user->plan->name) !== 'free') {
+            $activeSubscription = [
+                'name' => $user->plan->name,
+                'status' => $subscription ? $subscription->stripe_status : 'active',
+                'cancel_at_period_end' => $subscription ? $subscription->onGracePeriod() : false,
+                'ends_at' => $subscription && $subscription->ends_at ? $subscription->ends_at->toIso8601String() : null,
+            ];
+        }
+
         return Inertia::render('Billing/Index', [
             'invoices' => $invoices,
+            'activeSubscription' => $activeSubscription,
         ]);
     }
 }

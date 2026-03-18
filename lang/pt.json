@@ -340,5 +340,13 @@
     "The provided password does not match your current password.": "A senha fornecida não coincide com sua senha atual.",
     "The password field must be at least 8 characters.": "A senha deve ter pelo menos 8 caracteres.",
     "The current_password field is required.": "O campo senha atual é obrigatório.",
-    "The password field confirmation does not match.": "A confirmação da senha não coincide."
+    "The password field confirmation does not match.": "A confirmação da senha não coincide.",
+    "billing.subscriptions.title": "SUAS ASSINATURAS",
+    "billing.subscriptions.help": "AJUDA",
+    "billing.subscriptions.no_active": "Nenhuma assinatura ativa encontrada",
+    "billing.subscriptions.active": "Assinatura Ativa:",
+    "billing.subscriptions.renews_at": "Renova em:",
+    "billing.subscriptions.expires_at": "Expira em:",
+    "billing.subscriptions.manage": "Gerenciar Assinatura",
+    "billing.subscriptions.downgrade_scheduled": "Esta assinatura não será renovada automaticamente. Sua conta retornará ao plano Free em :date."
 }

@@ -328,5 +328,13 @@
     "info.adv5_text": "on your website and resolve them with the help of our top-rated Support.",
     "info.adv6_pre": "You will gain access to",
     "info.adv6_bold": "in-depth reports",
-    "info.adv6_text": "such as the Site history, Broken links, Internal and External links, Site Structure and more, we will also create and maintain Images, Video, News sitemaps and RSS feed for you."
+    "info.adv6_text": "such as the Site history, Broken links, Internal and External links, Site Structure and more, we will also create and maintain Images, Video, News sitemaps and RSS feed for you.",
+    "billing.subscriptions.title": "YOUR SUBSCRIPTIONS",
+    "billing.subscriptions.help": "HELP",
+    "billing.subscriptions.no_active": "No active subscriptions found",
+    "billing.subscriptions.active": "Active Subscription:",
+    "billing.subscriptions.renews_at": "Renews at:",
+    "billing.subscriptions.expires_at": "Expires at:",
+    "billing.subscriptions.manage": "Manage Subscription",
+    "billing.subscriptions.downgrade_scheduled": "This subscription will not auto-renew. Your workspace will revert to the Free plan on :date."
 }
