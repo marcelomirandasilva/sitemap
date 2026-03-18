@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Models\Project;
+use App\Models\Projeto;
 use App\Models\User;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -43,37 +43,37 @@ class SitemapGeneratorService
     /**
      * Inicia um novo Job de Sitemap para o projeto.
      */
-    public function startJob(Project $project): ?string
+    public function startJob(Projeto $projeto): ?string
     {
-        $userId = $project->user_id;
+        $userId = $projeto->user_id;
 
         $payload = [
-            'start_urls' => [$project->url],
-            'max_depth' => $project->max_depth ?? 5,
-            'max_pages' => $project->max_pages ?? 5000,
-            'include_images' => (bool) $project->check_images,
-            'include_videos' => (bool) $project->check_videos,
-            'delay_between_requests' => (float) ($project->delay_between_requests ?? 1.0),
-            'max_concurrent_requests' => (int) ($project->max_concurrent_requests ?? 10),
+            'start_urls' => [$projeto->url],
+            'max_depth' => $projeto->max_depth ?? 5,
+            'max_pages' => $projeto->max_pages ?? 5000,
+            'include_images' => (bool) $projeto->check_images,
+            'include_videos' => (bool) $projeto->check_videos,
+            'delay_between_requests' => (float) ($projeto->delay_between_requests ?? 1.0),
+            'max_concurrent_requests' => (int) ($projeto->max_concurrent_requests ?? 10),
             'massive_processing' => true,
-            'output_directory' => 'sitemaps/projects/' . $project->id,
+            'output_directory' => 'sitemaps/projects/' . $projeto->id,
         ];
 
         try {
-            $response = Http::withHeaders($this->internalHeaders($userId, $project->id))
+            $response = Http::withHeaders($this->internalHeaders($userId, $projeto->id))
                 ->timeout($this->timeout)
                 ->post("{$this->baseUrl}/api/v1/sitemaps", $payload);
 
             if ($response->created() || $response->ok()) {
                 $jobId = $response->json('job_id');
 
-                $project->update(['current_crawler_job_id' => $jobId]);
+                $projeto->update(['current_crawler_job_id' => $jobId]);
 
                 return $jobId;
             }
 
             Log::error('Falha ao criar job de sitemap', [
-                'project_id' => $project->id,
+                'project_id' => $projeto->id,
                 'response' => $response->body(),
             ]);
 
@@ -194,7 +194,7 @@ class SitemapGeneratorService
 
         if (!file_exists($filePath) && !file_exists($filePath . '.zip')) {
             try {
-                $job = \App\Models\SitemapJob::where('external_job_id', $jobId)->first();
+                $job = \App\Models\TarefaSitemap::where('external_job_id', $jobId)->first();
                 if ($job && $job->project_id) {
                     $projectPath = base_path('../api-sitemap/sitemaps/projects/' . $job->project_id . '/');
                     if (file_exists($projectPath . $filename) || file_exists($projectPath . $filename . '.zip')) {

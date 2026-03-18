@@ -69,14 +69,14 @@ const atualizarJobProjeto = (job) => {
     if (!projetoSelecionado.value) return;
 
     // Atualiza o objeto selecionado (para o modal)
-    projetoSelecionado.value.latest_job = job;
+    projetoSelecionado.value.ultimo_job = job;
 
     // Atualiza na lista principal (para os cards)
     // Nota: Como props são readonly, o ideal seria ter uma cópia local, mas modificação profunda em Objetos dentro de Array prop funciona no Vue 3.
     // Se falhar, precisaremos clonar props.projetos para um ref local.
     const projetoNaLista = props.projetos.find(p => p.id === projetoSelecionado.value.id);
     if (projetoNaLista) {
-        projetoNaLista.latest_job = job;
+        projetoNaLista.ultimo_job = job;
     }
 };
 
@@ -84,7 +84,7 @@ const atualizarJobProjeto = (job) => {
 const contagens = computed(() => {
     return {
         todos: props.projetos.length,
-        progresso: props.projetos.filter(p => p.latest_job && ['running', 'queued'].includes(p.latest_job.status)).length
+        progresso: props.projetos.filter(p => p.ultimo_job && ['running', 'queued'].includes(p.ultimo_job.status)).length
     };
 });
 
@@ -93,7 +93,7 @@ const projetosFiltrados = computed(() => {
 
     // 1. Filtro de Status/Tipo
     if (filtroAtivo.value === 'progresso') {
-        resultado = resultado.filter(p => p.latest_job && ['running', 'queued'].includes(p.latest_job.status));
+        resultado = resultado.filter(p => p.ultimo_job && ['running', 'queued'].includes(p.ultimo_job.status));
     }
 
     // 2. Filtro de Busca

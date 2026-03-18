@@ -36,9 +36,9 @@ class HandleInertiaRequests extends Middleware
             ],
             'appName' => config('app.name'),
             'userProjects' => $request->user() ?
-                $request->user()->projects()
+                $request->user()->projetos()
                     ->select('id', 'name', 'url', 'last_crawled_at', 'status', 'max_pages')
-                    ->withCount('pages')
+                    ->withCount('paginas')
                     ->orderBy('updated_at', 'desc')
                     ->take(10)
                     ->get()
@@ -48,12 +48,12 @@ class HandleInertiaRequests extends Middleware
                             'name' => $project->name,
                             'url' => str_replace(['http://', 'https://'], '', rtrim($project->url, '/')),
                             'last_crawled_at' => $project->last_crawled_at ? $project->last_crawled_at->toISOString() : null,
-                            'pages_count' => $project->pages_count,
+                            'pages_count' => $project->paginas_count,
                             'status' => $project->status,
-                            'plan_name' => $request->user()->plan ? $request->user()->plan->name : 'Free'
+                            'plan_name' => $request->user()->plano ? $request->user()->plano->name : 'Free'
                         ];
                     }) : [],
-            'userProjectsCount' => $request->user() ? $request->user()->projects()->count() : 0,
+            'userProjectsCount' => $request->user() ? $request->user()->projetos()->count() : 0,
             'flash' => [
                 'success' => fn() => $request->session()->get('success'),
                 'error' => fn() => $request->session()->get('error'),

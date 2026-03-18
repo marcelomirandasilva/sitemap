@@ -27,7 +27,7 @@ const columns = [
 const fetchUrls = async () => {
     loading.value = true;
     try {
-        const response = await axios.get(route('crawler.urls', props.projectId), {
+        const response = await axios.get(route('projects.urls', props.projectId), {
             params: {
                 page: page.value,
                 per_page: perPage.value,

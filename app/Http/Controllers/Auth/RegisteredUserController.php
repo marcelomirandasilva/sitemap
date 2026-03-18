@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
+use App\Models\Plano;
 use App\Services\SitemapGeneratorService;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
@@ -17,7 +17,8 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\Rules;
 use Inertia\Inertia;
 use Inertia\Response;
-use App\Models\Project;
+use App\Models\User;
+use App\Models\Projeto;
 
 class RegisteredUserController extends Controller
 {
@@ -38,7 +39,7 @@ class RegisteredUserController extends Controller
             'laravelVersion' => \Illuminate\Foundation\Application::VERSION,
             'phpVersion' => PHP_VERSION,
             'defaultTab' => 'signup',
-            'plans' => \App\Models\Plan::all(), // Planos injetados
+            'plans' => \App\Models\Plano::all(), // Planos injetados
         ]);
     }
 
@@ -57,21 +58,23 @@ class RegisteredUserController extends Controller
         ]);
 
         // Cria uma senha aleatória que o usuário nunca saberá, pois ele vai criar a dele na ativação
-        // 1. Cria o Usuário (Sempre no plano Free ID 1)
+        // Atribui o Plano "Free" como Padrão do Sistema
+        $plano = Plano::where('slug', 'free')->first();
+
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make(Str::random(32)),
-            'plan_id' => 1,
+            'plan_id' => $plano ? $plano->id : null,
             'role' => 'user',
         ]);
 
         // 2. Cria o Primeiro Projeto automaticamente
-        $user->load('plan');
-        $temRecursosAvancados = $user->plan && $user->plan->has_advanced_features;
+        $user->load('plano');
+        $temRecursosAvancados = $user->plano && $user->plano->has_advanced_features;
 
         $domain = parse_url($request->url, PHP_URL_HOST) ?? $request->url;
-        $project = Project::create([
+        $projeto = Projeto::create([
             'user_id' => $user->id,
             'name' => $domain,
             'url' => $request->url,
@@ -83,16 +86,16 @@ class RegisteredUserController extends Controller
 
         // 3. Inicia o crawler automaticamente
         try {
-            $externalJobId = $this->sitemapService->startJob($project);
+            $externalJobId = $this->sitemapService->startJob($projeto);
 
             if ($externalJobId) {
-                $project->sitemapJobs()->create([
+                $projeto->tarefasSitemap()->create([
                     'external_job_id' => $externalJobId,
                     'status' => 'queued',
                     'started_at' => now(),
                 ]);
             } else {
-                Log::warning("Falha ao iniciar crawler no cadastro para o projeto {$project->id}");
+                Log::warning("Falha ao iniciar crawler no cadastro para o projeto {$projeto->id}");
             }
         } catch (\Exception $e) {
             Log::error('Erro ao iniciar crawler no cadastro: ' . $e->getMessage());
@@ -112,7 +115,7 @@ class RegisteredUserController extends Controller
 
         Auth::login($user);
 
-        return redirect()->route('projects.show', $project->id)
+        return redirect()->route('projects.show', $projeto->id)
             ->with('success', 'Conta criada com sucesso! Verifique seu email para ativá-la.');
     }
 }

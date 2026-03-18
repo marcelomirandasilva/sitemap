@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Link extends Model
 {
+    protected $table = 'links';
     protected $fillable = [
         'project_id',
         'source_page_id',
@@ -20,13 +21,13 @@ class Link extends Model
         'is_broken' => 'boolean',
     ];
 
-    public function project()
+    public function projeto()
     {
-        return $this->belongsTo(Project::class);
+        return $this->belongsTo(Projeto::class, 'project_id');
     }
 
-    public function sourcePage()
+    public function paginaOrigem()
     {
-        return $this->belongsTo(Page::class, 'source_page_id');
+        return $this->belongsTo(Pagina::class, 'source_page_id');
     }
 }

@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Project;
-use App\Models\SitemapJob;
+use App\Models\Projeto;
+use App\Models\TarefaSitemap;
 use App\Services\SitemapGeneratorService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
-class CrawlerController extends Controller
+class RastreadorController extends Controller
 {
     protected $sitemapService;
 
@@ -20,22 +20,22 @@ class CrawlerController extends Controller
     /**
      * Inicia um novo processo de rastreamento para o projeto.
      */
-    public function store(Request $request, Project $project)
+    public function store(Request $request, Projeto $projeto)
     {
         // Autorização básica (idealmente usar Policies)
-        if ($project->user_id !== auth()->id()) {
+        if ($projeto->user_id !== auth()->id()) {
             abort(403);
         }
 
         try {
-            $externalJobId = $this->sitemapService->startJob($project);
+            $externalJobId = $this->sitemapService->startJob($projeto);
 
             if (!$externalJobId) {
                 return response()->json(['message' => 'Falha ao iniciar o serviço de crawler. Tente novamente.'], 500);
             }
 
             // Registrar o Job localmente
-            $job = $project->sitemapJobs()->create([
+            $job = $projeto->tarefasSitemap()->create([
                 'external_job_id' => $externalJobId,
                 'status' => 'queued',
                 'started_at' => now(),
@@ -55,15 +55,15 @@ class CrawlerController extends Controller
     /**
      * Verifica e atualiza o status do último job do projeto.
      */
-    public function show(Project $project)
+    public function getStatus(Projeto $projeto)
     {
-        if ($project->user_id !== auth()->id()) {
+        if ($projeto->user_id !== auth()->id()) {
             abort(403);
         }
 
-        $latestJob = $project->sitemapJobs()->latest()->first();
+        $ultimo_job = $projeto->tarefasSitemap()->latest()->first();
 
-        if (!$latestJob) {
+        if (!$ultimo_job) {
             return response()->json([
                 'status' => null,
                 'progress' => 0,
@@ -74,48 +74,48 @@ class CrawlerController extends Controller
 
         // Consultar API externa para atualização somente se necessário
         // (Podemos otimizar futuramente para não chamar API se acabou de completar)
-        $shouldCheckApi = !in_array($latestJob->status, ['completed', 'failed', 'cancelled']) || empty($latestJob->artifacts);
+        $shouldCheckApi = !in_array($ultimo_job->status, ['completed', 'failed', 'cancelled']) || empty($ultimo_job->artifacts);
 
         $statusData = [];
 
         if ($shouldCheckApi) {
-            Log::info("CrawlerController: Consultando API para Job {$latestJob->external_job_id}");
-            $statusData = $this->sitemapService->checkStatus($latestJob->external_job_id, auth()->id());
+            Log::info("CrawlerController: Consultando API para Job {$ultimo_job->external_job_id}");
+            $statusData = $this->sitemapService->checkStatus($ultimo_job->external_job_id, auth()->id());
 
             if ($statusData) {
                 Log::info("CrawlerController: Resposta recebida da API", $statusData);
 
-                $latestJob->update([
-                    'status' => $statusData['status'] ?? $latestJob->status,
-                    'progress' => $statusData['progress'] ?? $latestJob->progress,
-                    'pages_count' => $statusData['result']['total_urls'] ?? $statusData['urls_found'] ?? $statusData['pages_count'] ?? $latestJob->pages_count ?? 0,
+                $ultimo_job->update([
+                    'status' => $statusData['status'] ?? $ultimo_job->status,
+                    'progress' => $statusData['progress'] ?? $ultimo_job->progress,
+                    'pages_count' => $statusData['result']['total_urls'] ?? $statusData['urls_found'] ?? $statusData['pages_count'] ?? $ultimo_job->pages_count ?? 0,
                     'images_count' => $statusData['result']['total_images'] ?? $statusData['images_found'] ?? 0,
                     'videos_count' => $statusData['result']['total_videos'] ?? $statusData['videos_found'] ?? 0,
                     'message' => $statusData['message'] ?? null,
-                    'artifacts' => $statusData['artifacts'] ?? $latestJob->artifacts ?? [],
+                    'artifacts' => $statusData['artifacts'] ?? $ultimo_job->artifacts ?? [],
                 ]);
 
                 // IMPORTANTE: Recarregar o modelo para refletir as alterações do banco
-                $latestJob->refresh();
+                $ultimo_job->refresh();
 
-                Log::info("CrawlerController: Job atualizado no BD", ['id' => $latestJob->id, 'status' => $latestJob->status, 'progress' => $latestJob->progress]);
+                Log::info("CrawlerController: Job atualizado no BD", ['id' => $ultimo_job->id, 'status' => $ultimo_job->status, 'progress' => $ultimo_job->progress]);
 
                 // Se completou agora e ainda não temos artifacts (fallback), buscar artefatos
-                if ($latestJob->status === 'completed') {
-                    if (empty($latestJob->artifacts)) {
+                if ($ultimo_job->status === 'completed') {
+                    if (empty($ultimo_job->artifacts)) {
                         Log::info("CrawlerController: Buscando artefatos explicitamente...");
-                        $artifacts = $this->sitemapService->getArtifacts($latestJob->external_job_id, auth()->id());
-                        $latestJob->update([
+                        $artifacts = $this->sitemapService->getArtifacts($ultimo_job->external_job_id, auth()->id());
+                        $ultimo_job->update([
                             'artifacts' => $artifacts,
                         ]);
-                        $latestJob->refresh();
+                        $ultimo_job->refresh();
                     }
 
                     // Atualizar status do Job e timestamp
-                    $latestJob->update(['completed_at' => now()]);
+                    $ultimo_job->update(['completed_at' => now()]);
 
                     // Atualizar o PROJETO pai
-                    $project->update([
+                    $projeto->update([
                         'last_crawled_at' => now(),
                         'status' => 'active' // Ativa o projeto se estava pendente
                     ]);
@@ -124,21 +124,21 @@ class CrawlerController extends Controller
         }
 
         $previewUrls = [];
-        if ($latestJob->status === 'completed') {
-            $previewUrls = $this->sitemapService->getPreviewUrls($latestJob->artifacts ?? [], $latestJob->external_job_id);
-            Log::info("CrawlerController: Gerado preview para Job {$latestJob->external_job_id}. Total URLs: " . count($previewUrls));
+        if ($ultimo_job->status === 'completed') {
+            $previewUrls = $this->sitemapService->getPreviewUrls($ultimo_job->artifacts ?? [], $ultimo_job->external_job_id);
+            Log::info("CrawlerController: Gerado preview para Job {$ultimo_job->external_job_id}. Total URLs: " . count($previewUrls));
         }
 
         return response()->json([
-            'status' => $latestJob->status,
-            'progress' => $latestJob->progress,
-            'message' => $latestJob->message ?? null,
-            'pages_count' => $latestJob->pages_count,
-            'urls_crawled' => $statusData['urls_crawled'] ?? $latestJob->pages_count ?? 0,
-            'urls_found' => $statusData['urls_found'] ?? $latestJob->pages_count ?? 0,
-            'images_count' => $latestJob->images_count ?? 0,
-            'videos_count' => $latestJob->videos_count ?? 0,
-            'artifacts' => $latestJob->artifacts,
+            'status' => $ultimo_job->status,
+            'progress' => $ultimo_job->progress,
+            'message' => $ultimo_job->message ?? null,
+            'pages_count' => $ultimo_job->pages_count,
+            'urls_crawled' => $statusData['urls_crawled'] ?? $ultimo_job->pages_count ?? 0,
+            'urls_found' => $statusData['urls_found'] ?? $ultimo_job->pages_count ?? 0,
+            'images_count' => $ultimo_job->images_count ?? 0,
+            'videos_count' => $ultimo_job->videos_count ?? 0,
+            'artifacts' => $ultimo_job->artifacts,
             'preview_urls' => $previewUrls,
             'recent_pages' => $statusData['recent_pages'] ?? [],
             'current_url' => $statusData['current_url'] ?? null,
@@ -150,16 +150,16 @@ class CrawlerController extends Controller
     /**
      * Retorna paginated URLs a partir do arquivo sitemap/txt
      */
-    public function getUrls(Request $request, Project $project)
+    public function getUrls(Request $request, Projeto $projeto)
     {
         try {
-            if ($project->user_id !== auth()->id()) {
+            if ($projeto->user_id !== auth()->id()) {
                 abort(403);
             }
 
-            $latestJob = $project->sitemapJobs()->latest()->first();
+            $ultimo_job = $projeto->tarefasSitemap()->latest()->first();
 
-            if (!$latestJob || empty($latestJob->artifacts)) {
+            if (!$ultimo_job || empty($ultimo_job->artifacts)) {
                 return response()->json([
                     'data' => [],
                     'total' => 0,
@@ -168,7 +168,7 @@ class CrawlerController extends Controller
             }
 
             // Determinar qual arquivo ler (XML preferencia ou TXT)
-            $artifacts = collect($latestJob->artifacts);
+            $artifacts = collect($ultimo_job->artifacts);
 
             $targetArtifact = $artifacts->firstWhere(function ($a) {
                 return isset($a['name']) && str_ends_with($a['name'], 'sitemap.xml');
@@ -184,8 +184,8 @@ class CrawlerController extends Controller
             // Como o SitemapDataReaderService precisa de PATH, vamos resolver.
             // A estrutura de pastas deve bater com a do seu servidor.
             $paths = [
-                base_path('../api-sitemap/sitemaps/projects/' . $project->id . '/' . $targetArtifact['name']),
-                base_path('../api-sitemap/sitemaps/' . $latestJob->external_job_id . '/' . $targetArtifact['name']),
+                base_path('../api-sitemap/sitemaps/projects/' . $projeto->id . '/' . $targetArtifact['name']),
+                base_path('../api-sitemap/sitemaps/' . $ultimo_job->external_job_id . '/' . $targetArtifact['name']),
             ];
 
             $validPath = null;

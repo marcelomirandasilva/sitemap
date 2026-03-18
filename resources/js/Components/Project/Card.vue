@@ -64,7 +64,7 @@ const badgePlano = computed(() => {
 
         <!-- Corpo do Card (Status do Rastreador) -->
         <div class="p-5 flex-1 flex flex-col justify-center">
-            <StatusRastreador :projeto="projeto" :ultima-tarefa="projeto.latest_job" />
+            <StatusRastreador :projeto="projeto" :ultima-tarefa="projeto.ultimo_job" />
         </div>
 
         <!-- Footer do Card -->
@@ -73,7 +73,7 @@ const badgePlano = computed(() => {
                 <span class="font-semibold">{{ $t('project.created_at') }}</span> {{ formataData(projeto.created_at) }}
             </div>
             <div title="Páginas encontradas no último crawl">
-                📄 {{ projeto.latest_job?.pages_count || 0 }} {{ $t('project.pages_count') }}
+                📄 {{ projeto.ultimo_job?.pages_count || 0 }} {{ $t('project.pages_count') }}
             </div>
         </div>
     </div>

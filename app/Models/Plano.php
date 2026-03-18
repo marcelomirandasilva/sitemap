@@ -5,9 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Plan extends Model
+class Plano extends Model
 {
     use HasFactory;
+
+    protected $table = 'plans';
 
     protected $fillable = [
         'name',
@@ -57,9 +59,9 @@ class Plan extends Model
         return $this->price_yearly_usd / 100;
     }
 
-    public function subscriptions()
+    public function assinaturas()
     {
-        return $this->hasMany(Subscription::class);
+        return $this->hasMany(Assinatura::class);
     }
 
     public function users()

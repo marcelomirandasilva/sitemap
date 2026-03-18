@@ -5,9 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Subscription extends Model
+class Assinatura extends Model
 {
     use HasFactory;
+
+    protected $table = 'subscriptions';
 
     protected $fillable = [
         'user_id',
@@ -39,9 +41,9 @@ class Subscription extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function plan()
+    public function plano()
     {
-        return $this->belongsTo(Plan::class);
+        return $this->belongsTo(Plano::class);
     }
 
     // --- Métodos Auxiliares ---

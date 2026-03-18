@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Str;
 
-class ApiKey extends Model
+class ChaveApi extends Model
 {
     use HasFactory;
 
@@ -47,7 +47,7 @@ class ApiKey extends Model
     /**
      * Gera uma nova API Key única com prefixo sk_live_
      */
-    public static function generateKey(): string
+    public static function gerarChave(): string
     {
         return 'sk_live_' . Str::random(48);
     }
@@ -55,7 +55,7 @@ class ApiKey extends Model
     /**
      * Verifica se a chave está válida (ativa e dentro do prazo)
      */
-    public function isValid(): bool
+    public function estaValida(): bool
     {
         if (!$this->is_active) {
             return false;
@@ -71,7 +71,7 @@ class ApiKey extends Model
     /**
      * Registra o uso da chave (atualiza last_used_at)
      */
-    public function markAsUsed(): void
+    public function marcarUso(): void
     {
         $this->update(['last_used_at' => now()]);
     }

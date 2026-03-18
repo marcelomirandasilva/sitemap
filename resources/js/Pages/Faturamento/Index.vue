@@ -4,8 +4,8 @@ import { Head, Link } from '@inertiajs/vue3';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 
 defineProps({
-    invoices: Array,
-    activeSubscription: Object,
+    faturas: Array,
+    assinatura_ativa: Object,
 });
 </script>
 
@@ -37,7 +37,7 @@ defineProps({
                     
                     <div class="p-8">
                         <!-- Estado Vazio -->
-                        <div v-if="!activeSubscription" class="text-2xl font-light text-gray-600">
+                        <div v-if="!assinatura_ativa" class="text-2xl font-light text-gray-600">
                             {{ $t('billing.subscriptions.no_active') }}
                         </div>
                         
@@ -46,19 +46,19 @@ defineProps({
                             <div>
                                 <h3 class="text-xl font-light text-gray-800 flex items-center gap-2">
                                     {{ $t('billing.subscriptions.active') }} 
-                                    <span class="font-bold text-primary-600">{{ activeSubscription.name }}</span>
-                                    <span v-if="activeSubscription.status === 'canceled' || activeSubscription.cancel_at_period_end" class="text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded ml-2 font-medium">
+                                    <span class="font-bold text-primary-600">{{ assinatura_ativa.name }}</span>
+                                    <span v-if="assinatura_ativa.status === 'canceled' || assinatura_ativa.cancel_at_period_end" class="text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded ml-2 font-medium">
                                         {{ $t('subscription.pending_cancellation') }}
                                     </span>
                                 </h3>
-                                <div class="mt-2" v-if="activeSubscription.ends_at">
-                                    <div v-if="activeSubscription.cancel_at_period_end" class="inline-flex items-center gap-2 text-warning-800 bg-warning-50 border border-warning-200 px-4 py-2.5 rounded-md text-sm font-medium">
+                                <div class="mt-2" v-if="assinatura_ativa.ends_at">
+                                    <div v-if="assinatura_ativa.cancel_at_period_end" class="inline-flex items-center gap-2 text-warning-800 bg-warning-50 border border-warning-200 px-4 py-2.5 rounded-md text-sm font-medium">
                                         <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                                        {{ $t('billing.subscriptions.downgrade_scheduled', { date: new Date(activeSubscription.ends_at).toLocaleDateString() }) }}
+                                        {{ $t('billing.subscriptions.downgrade_scheduled', { date: new Date(assinatura_ativa.ends_at).toLocaleDateString() }) }}
                                     </div>
                                     <p v-else class="text-sm text-gray-500">
                                         {{ $t('billing.subscriptions.renews_at') }}
-                                        {{ new Date(activeSubscription.ends_at).toLocaleDateString() }}
+                                        {{ new Date(assinatura_ativa.ends_at).toLocaleDateString() }}
                                     </p>
                                 </div>
                             </div>
@@ -98,32 +98,32 @@ defineProps({
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
-                                    <tr v-for="invoice in invoices" :key="invoice.id">
+                                    <tr v-for="fatura in faturas" :key="fatura.id">
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {{ new Date(invoice.date).toLocaleDateString() }}
+                                            {{ new Date(fatura.date).toLocaleDateString() }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                            {{ invoice.total_formatted }}
+                                            {{ fatura.total_formatted }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
                                                 :class="{
-                                                    'bg-green-100 text-green-800': invoice.status === 'paid',
-                                                    'bg-danger-100 text-danger-800': invoice.status === 'uncollectible' || invoice.status === 'void',
-                                                    'bg-yellow-100 text-yellow-800': invoice.status === 'open',
+                                                    'bg-green-100 text-green-800': fatura.status === 'paid',
+                                                    'bg-danger-100 text-danger-800': fatura.status === 'uncollectible' || fatura.status === 'void',
+                                                    'bg-yellow-100 text-yellow-800': fatura.status === 'open',
                                                 }"
                                             >
-                                                {{ $t('billing.history.status.' + invoice.status) }}
+                                                {{ $t('billing.history.status.' + fatura.status) }}
                                             </span>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <a :href="invoice.invoice_pdf" target="_blank" class="text-primary-600 hover:text-primary-900 flex items-center justify-end gap-1">
+                                            <a :href="fatura.invoice_pdf" target="_blank" class="text-primary-600 hover:text-primary-900 flex items-center justify-end gap-1">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                                                 {{ $t('billing.history.download') }}
                                             </a>
                                         </td>
                                     </tr>
-                                    <tr v-if="invoices.length === 0">
+                                    <tr v-if="faturas.length === 0">
                                         <td colspan="4" class="px-6 py-10 text-center text-gray-500 italic">
                                             {{ $t('billing.history.no_invoices') }}
                                         </td>

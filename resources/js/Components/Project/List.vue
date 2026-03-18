@@ -52,7 +52,7 @@ const filteredProjects = computed(() => {
         result = result.filter(p => 
             p.url.toLowerCase().includes(query) || 
             (p.name && p.name.toLowerCase().includes(query)) ||
-            (p.latest_job?.status && p.latest_job.status.toLowerCase().includes(query))
+            (p.ultimo_job?.status && p.ultimo_job.status.toLowerCase().includes(query))
         );
     }
 
@@ -72,8 +72,8 @@ const filteredProjects = computed(() => {
 });
 
 const getSortableValue = (obj, key) => {
-    if (key === 'status') return obj.latest_job?.status || '';
-    if (key === 'updated_at') return obj.latest_job?.updated_at || obj.created_at || '';
+    if (key === 'status') return obj.ultimo_job?.status || '';
+    if (key === 'updated_at') return obj.ultimo_job?.updated_at || obj.created_at || '';
     if (key === 'url') return obj.url || '';
     if (key === 'name') return obj.name || '';
     return '';
@@ -163,7 +163,7 @@ const onSearch = () => {
                         <!-- Status -->
                         <td class="px-6 py-4 align-top w-48">
                             <div class="flex flex-col gap-2 items-start">
-                                <StatusRastreador :projeto="projeto" :ultima-tarefa="projeto.latest_job" :simple="true" />
+                                <StatusRastreador :projeto="projeto" :ultima-tarefa="projeto.ultimo_job" :simple="true" />
                             </div>
                         </td>
 
@@ -182,10 +182,10 @@ const onSearch = () => {
                         <!-- Updated / Crawler Status -->
                         <td class="px-6 py-4 align-top w-1/4">
                             <div class="flex flex-col gap-1">
-                                <div class="text-xs text-gray-500 mb-1" v-if="projeto.latest_job">
-                                   <span v-if="projeto.latest_job.status === 'completed'">
-                                        {{ formataData(projeto.latest_job.updated_at) }}<br>
-                                        <span class="text-primary-600 font-medium">{{ projeto.latest_job.pages_count }} {{ $t('project.pages_count') || 'Páginas' }}</span>
+                                <div class="text-xs text-gray-500 mb-1" v-if="projeto.ultimo_job">
+                                   <span v-if="projeto.ultimo_job.status === 'completed'">
+                                        {{ formataData(projeto.ultimo_job.updated_at) }}<br>
+                                        <span class="text-primary-600 font-medium">{{ projeto.ultimo_job.pages_count }} {{ $t('project.pages_count') || 'Páginas' }}</span>
                                    </span>
                                    <span v-else>
                                        Sitemap processing...
@@ -200,7 +200,7 @@ const onSearch = () => {
                                 <Link :href="route('projects.show', projeto.id)" class="inline-flex items-center justify-center px-3 py-1.5 bg-white border border-gray-300 rounded text-[11px] font-semibold text-gray-700 uppercase tracking-widest hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-25 transition w-full text-center shadow-sm">
                                     {{ $t('project.view_action') || 'Visualizar' }}
                                 </Link>
-                                <StatusRastreador :projeto="projeto" :ultima-tarefa="projeto.latest_job" :action-only="true" />
+                                <StatusRastreador :projeto="projeto" :ultima-tarefa="projeto.ultimo_job" :action-only="true" />
                             </div>
                         </td>
                     </tr>

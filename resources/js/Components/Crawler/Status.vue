@@ -67,7 +67,7 @@ const iniciarRastreador = async () => {
     
     iniciando.value = true;
     try {
-        const res = await axios.post(route('crawler.store', props.projeto.id));
+        const res = await axios.post(route('projects.crawl', props.projeto.id));
         
         // Captura o ID do novo job
         const newJobId = res.data.external_job_id || res.data.job_id;
@@ -98,7 +98,7 @@ const agendarProximaBusca = () => {
 
 const buscarStatus = async () => {
     try {
-        const resposta = await axios.get(route('crawler.show', props.projeto.id) + '?t=' + new Date().getTime());
+        const resposta = await axios.get(route('projects.status', props.projeto.id) + '?t=' + new Date().getTime());
         const jobRecebido = resposta.data;
 
         // VALIDAÇÃO DE CORRIDA:

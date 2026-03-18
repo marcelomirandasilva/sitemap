@@ -4,8 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class SitemapJob extends Model
+class TarefaSitemap extends Model
 {
+    protected $table = 'sitemap_jobs';
     protected $fillable = [
         'project_id',
         'external_job_id',
@@ -30,9 +31,9 @@ class SitemapJob extends Model
         'completed_at' => 'datetime',
     ];
 
-    public function project()
+    public function projeto()
     {
-        return $this->belongsTo(Project::class);
+        return $this->belongsTo(Projeto::class, 'project_id');
     }
 
     /**

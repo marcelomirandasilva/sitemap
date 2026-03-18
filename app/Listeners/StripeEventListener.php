@@ -4,7 +4,7 @@ namespace App\Listeners;
 
 use Laravel\Cashier\Events\WebhookReceived;
 use App\Models\User;
-use App\Models\Plan;
+use App\Models\Plano;
 use Illuminate\Support\Facades\Log;
 
 class StripeEventListener
@@ -80,14 +80,14 @@ class StripeEventListener
 
         if ($user) {
             // 2. Achar o plano local pelo ID do preço do Stripe (Mensal ou Anual)
-            $plan = Plan::where('stripe_monthly_price_id', $priceId)
+            $plano = Plano::where('stripe_monthly_price_id', $priceId)
                 ->orWhere('stripe_yearly_price_id', $priceId)
                 ->first();
 
-            if ($plan) {
-                $user->plan_id = $plan->id;
+            if ($plano) {
+                $user->plan_id = $plano->id;
                 $user->save();
-                Log::info("Webhook Stripe: Plano do usuário {$user->id} atualizado para {$plan->name}");
+                Log::info("Webhook Stripe: Plano do usuário {$user->id} atualizado para {$plano->name}");
             } else {
                 Log::warning("Webhook Stripe: Plano local não encontrado para o price_id {$priceId}");
             }

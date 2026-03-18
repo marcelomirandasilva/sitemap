@@ -64,19 +64,19 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->timezone ?? config('app.timezone');
     }
-    public function plan()
+    public function plano()
     {
-        return $this->belongsTo(Plan::class);
+        return $this->belongsTo(Plano::class);
     }
 
-    public function projects()
+    public function projetos()
     {
-        return $this->hasMany(Project::class);
+        return $this->hasMany(Projeto::class);
     }
 
-    public function apiKeys()
+    public function chavesApi()
     {
-        return $this->hasMany(ApiKey::class);
+        return $this->hasMany(ChaveApi::class);
     }
 
     /**

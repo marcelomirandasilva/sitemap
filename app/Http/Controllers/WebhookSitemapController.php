@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\SitemapJob;
+use App\Models\TarefaSitemap;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Log;
  *
  * A autenticação é feita via X-Internal-Token (mesmo segredo compartilhado).
  */
-class SitemapWebhookController extends Controller
+class WebhookSitemapController extends Controller
 {
     /**
      * Processa o aviso de conclusão de job enviado pela API Python.
@@ -40,7 +40,7 @@ class SitemapWebhookController extends Controller
         $errorMessage = $request->input('error_message');
 
         // Busca o job no banco
-        $job = SitemapJob::where('external_job_id', $externalJobId)->first();
+        $job = TarefaSitemap::where('external_job_id', $externalJobId)->first();
 
         if (!$job) {
             Log::warning("Webhook recebido para job_id desconhecido: {$externalJobId}");

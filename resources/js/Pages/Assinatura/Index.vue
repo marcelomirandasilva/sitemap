@@ -5,71 +5,71 @@ import PricingCard from '@/Components/PricingCard.vue';
 import { ref } from 'vue';
 
 const props = defineProps({
-    plans: Array,
-    currentSubscription: Object,
-    currentPriceId: String,
-    isCancelled: Boolean,
-    onGracePeriod: Boolean,
-    endsAt: String,
-    userCardLast4: String, // Recebe o final do cartão
-    userCardBrand: String, // Recebe a bandeira (Visa, Master)
+    planos: Array,
+    assinatura_atual: Object,
+    id_preco_atual: String,
+    esta_cancelado: Boolean,
+    em_periodo_carencia: Boolean,
+    termina_em: String,
+    cartao_final_4: String, // Recebe o final do cartão
+    marca_do_cartao: String, // Recebe a bandeira (Visa, Master)
 });
 
 // Estado do Ciclo de Cobrança ('monthly' ou 'yearly')
 const billingCycle = ref('monthly');
 
 // A verdade vem do banco de dados via props
-const displayPlans = props.plans;
+const displayPlans = props.planos;
 
 // Helper para verificar se o plano está ativo
 const isPlanActive = (plan) => {
     const isFreePlan = !plan.stripe_monthly_price_id && !plan.stripe_yearly_price_id;
     
     // Se não tem assinatura nenhuma, o Free é o ativo
-    if (!props.currentSubscription) {
+    if (!props.assinatura_atual) {
         return isFreePlan;
     }
 
     // Se a assinatura está cancelada mas ainda no período de carência (onGracePeriod):
     // O plano pago CONTINUA sendo o ativo até expirar.
-    if (props.isCancelled && props.onGracePeriod) {
-        const currentPrice = props.currentSubscription?.stripe_price;
-        return currentPrice === plan.stripe_monthly_price_id || currentPrice === plan.stripe_yearly_price_id;
+    if (props.esta_cancelado && props.em_periodo_carencia) {
+        const precoAtual = props.assinatura_atual?.stripe_price;
+        return precoAtual === plan.stripe_monthly_price_id || precoAtual === plan.stripe_yearly_price_id;
     }
 
-    // Se já expirou de vez (isCancelled e NÃO onGracePeriod), volta pro Free
-    if (props.isCancelled && !props.onGracePeriod) {
+    // Se já expirou de vez (esta_cancelado e NÃO em_periodo_carencia), volta pro Free
+    if (props.esta_cancelado && !props.em_periodo_carencia) {
         return isFreePlan;
     }
 
     // Caso normal: plano ativo sem cancelamento
-    const currentPrice = props.currentSubscription?.stripe_price;
-    return currentPrice === plan.stripe_monthly_price_id || currentPrice === plan.stripe_yearly_price_id;
+    const precoAtual = props.assinatura_atual?.stripe_price;
+    return precoAtual === plan.stripe_monthly_price_id || precoAtual === plan.stripe_yearly_price_id;
 };
 
 // --- LÓGICA DE ASSINATURA INTELIGENTE ---
 const handleSubscribe = (plan) => {
     // 1. Descobrir qual ID de preço estamos comprando (Mensal ou Anual?)
-    const targetPriceId = billingCycle.value === 'yearly' 
+    const idPrecoAlvo = billingCycle.value === 'yearly' 
         ? plan.stripe_yearly_price_id 
         : plan.stripe_monthly_price_id;
 
     const isTargetFree = !plan.stripe_monthly_price_id && !plan.stripe_yearly_price_id;
 
     // Se NÃO for free e NÃO tiver preço, aí sim é erro de configuração
-    if (!targetPriceId && !isTargetFree) {
+    if (!idPrecoAlvo && !isTargetFree) {
         alert("Erro na configuração do plano. Contate o suporte.");
         return;
     }
 
     // 2. Se for um Novo Assinante (não tem plano), vai direto pro Checkout do Stripe
-    if (!props.currentSubscription) {
-        window.location.href = route('subscription.checkout', targetPriceId);
+    if (!props.assinatura_atual) {
+        window.location.href = route('subscription.checkout', idPrecoAlvo);
         return;
     }
 
     // 3. Se for Assinante Existente (Troca de Plano ou Cancelamento), pede confirmação
-    if (props.currentSubscription) {
+    if (props.assinatura_atual) {
         if (isTargetFree) {
             if (confirm("Você deseja cancelar sua assinatura paga e voltar ao plano gratuito?\n\nVocê manterá o acesso aos recursos atuais até o fim do período já pago.")) {
                 router.get(route('subscription.checkout', 'free')); // Enviamos 'free' ou qualquer ID que o backend identifique como free
@@ -77,18 +77,18 @@ const handleSubscribe = (plan) => {
             return;
         }
 
-        const cardInfo = props.userCardLast4 
-            ? `cartão final ${props.userCardLast4}` 
+        const infoCartao = props.cartao_final_4 
+            ? `cartão final ${props.cartao_final_4}` 
             : 'seu cartão cadastrado';
 
         const message = `CONFIRMAÇÃO DE MUDANÇA:\n\n` +
                         `Você deseja alterar seu plano para: ${plan.name}?\n` +
-                        `A diferença de valor será cobrada (ou creditada) imediatamente no ${cardInfo}.\n\n` +
+                        `A diferença de valor será cobrada (ou creditada) imediatamente no ${infoCartao}.\n\n` +
                         `Clique em OK para confirmar a cobrança.\n` +
                         `Clique em Cancelar se preferir trocar o cartão antes.`;
 
         if (confirm(message)) {
-            router.get(route('subscription.checkout', targetPriceId));
+            router.get(route('subscription.checkout', idPrecoAlvo));
         } else {
             if(confirm("Deseja ir para o Portal do Cliente para gerenciar seus cartões?")) {
                 window.location.href = route('subscription.portal');
@@ -148,10 +148,10 @@ const handleSubscribe = (plan) => {
                         :plan="plan" 
                         :billing-cycle="billingCycle"
                         :active="isPlanActive(plan)"
-                        :current-price-id="currentPriceId"
-                        :is-cancelled="isCancelled"
-                        :on-grace-period="onGracePeriod"
-                        :ends-at="endsAt"
+                        :current-price-id="id_preco_atual"
+                        :is-cancelled="esta_cancelado"
+                        :on-grace-period="em_periodo_carencia"
+                        :ends-at="termina_em"
                         @subscribe="handleSubscribe(plan)" 
                     />
                 </div>

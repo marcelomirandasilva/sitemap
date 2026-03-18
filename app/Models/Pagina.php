@@ -4,8 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Page extends Model
+class Pagina extends Model
 {
+    protected $table = 'pages';
     protected $fillable = [
         'project_id',
         'url',
@@ -17,9 +18,9 @@ class Page extends Model
         'size_bytes',
     ];
 
-    public function project()
+    public function projeto()
     {
-        return $this->belongsTo(Project::class);
+        return $this->belongsTo(Projeto::class, 'project_id');
     }
 
     public function links()

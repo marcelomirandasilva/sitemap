@@ -8,11 +8,11 @@ import axios from 'axios';
 import UrlDataTable from '@/Components/Project/UrlDataTable.vue';
 
 const props = defineProps({
-    project: {
+    projeto: {
         type: Object,
         required: true,
     },
-    latest_job: {
+    ultimo_job: {
         type: Object,
         default: null,
     },
@@ -30,7 +30,7 @@ const abaAtiva = ref("details");
 const carregando = ref(false);
 
 // Estado reativo inicializado com props (cache/ssr)
-const tarefa = ref(props.latest_job || {});
+const tarefa = ref(props.ultimo_job || {});
 const listaUrls = ref(props.preview_urls || []);
 
 // Computado para exibir (usa o estado reativo)
@@ -88,11 +88,11 @@ let pollingInterval = null;
 
 // Busca dados atualizados (Async Lazy Load)
 const buscarDetalhesJob = async () => {
-    if (!props.project.id) return;
+    if (!props.projeto.id) return;
 
     carregando.value = true;
     try {
-        const response = await axios.get(route('crawler.show', props.project.id));
+        const response = await axios.get(route('projects.status', { projeto: props.projeto.id }));
         const data = response.data;
 
         // Atualiza estado local de forma reativa e completa
@@ -152,7 +152,7 @@ const confirmarExclusao = () => {
         cancelButtonText: t('project.delete_cancel_btn')
     }).then((result) => {
         if (result.isConfirmed) {
-            router.delete(route('projects.destroy', props.project.id));
+            router.delete(route('projects.destroy', { projeto: props.projeto.id }));
         }
     })
 };
@@ -168,7 +168,7 @@ const downloadUrl = computed(() => {
 
 <template>
 
-    <Head :title="project.name || $t('project.details')" />
+    <Head :title="projeto.name || $t('project.details')" />
 
     <AppLayout>
         <template #hero>
@@ -185,11 +185,11 @@ const downloadUrl = computed(() => {
                             </Link>
                             <div>
                                 <h1 class="text-3xl font-light text-gray-700">
-                                    {{ project.name || project.url }}
+                                    {{ projeto.name || projeto.url }}
                                 </h1>
-                                <a :href="project.url" target="_blank"
+                                <a :href="projeto.url" target="_blank"
                                     class="text-sm text-primary-500 hover:underline flex items-center gap-1">
-                                    {{ project.url }}
+                                    {{ projeto.url }}
                                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14">
@@ -338,7 +338,7 @@ const downloadUrl = computed(() => {
                             <div v-if="['queued', 'running'].includes(tarefa.status)" class="text-center py-12 px-4 border border-primary-100 bg-primary-50/20 rounded-lg">
                                 <h2 class="text-primary-500 text-xl font-bold uppercase tracking-wider mb-4">Please Wait</h2>
                                 <p class="text-gray-700 font-medium mb-1" style="font-size: 15px;">
-                                    {{ appName }} has started working with your website <strong>{{ project.name || project.url }}</strong>,
+                                    {{ appName }} has started working with your website <strong>{{ projeto.name || projeto.url }}</strong>,
                                 </p>
                                 <p class="text-gray-600 mb-8" style="font-size: 15px;">
                                     but your sitemap is not ready yet.<br>
@@ -386,7 +386,7 @@ const downloadUrl = computed(() => {
                                 </div>
     
                                 <!-- Tabela Paginada via API -->
-                                <UrlDataTable :project-id="project.id" />
+                                <UrlDataTable :projeto-id="projeto.id" />
                             </div>
                         </div>
                         

@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Inertia\Inertia;
 
-class InfoArticleController extends Controller
+class ArtigoInfoController extends Controller
 {
     /**
      * Mapa de artigos informativos.

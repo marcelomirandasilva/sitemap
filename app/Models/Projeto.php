@@ -3,9 +3,14 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-class Project extends Model
+class Projeto extends Model
 {
+    use HasFactory;
+
+    protected $table = 'projects';
+
     protected $fillable = [
         'user_id',
         'name',
@@ -36,18 +41,18 @@ class Project extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function pages()
+    public function paginas()
     {
-        return $this->hasMany(Page::class);
+        return $this->hasMany(Pagina::class, 'project_id');
     }
 
     public function links()
     {
-        return $this->hasMany(Link::class);
+        return $this->hasMany(Link::class, 'project_id');
     }
 
-    public function sitemapJobs()
+    public function tarefasSitemap()
     {
-        return $this->hasMany(SitemapJob::class);
+        return $this->hasMany(TarefaSitemap::class, 'project_id');
     }
 }

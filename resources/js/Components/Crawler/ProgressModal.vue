@@ -69,7 +69,7 @@ const agendarProximaBusca = () => {
 
 const buscarStatus = async () => {
     try {
-        const resposta = await axios.get(route('crawler.show', props.projeto.id) + '?t=' + new Date().getTime());
+        const resposta = await axios.get(route('projects.status', props.projeto.id) + '?t=' + new Date().getTime());
         tarefa.value = resposta.data;
         emit('update:job', tarefa.value); // Notifica o pai
 
@@ -136,7 +136,7 @@ watch(() => props.show, (novoValor) => {
 const iniciarCrawler = async () => {
     try {
         tarefa.value = { status: 'queued', progress: 0, pages_count: 0, urls_crawled: 0, urls_found: 0, queue_size: 0, current_depth: 0 }; // Otimistic UI
-        await axios.post(route('crawler.store', props.projeto.id));
+        await axios.post(route('projects.crawl', props.projeto.id));
         // A enquete já vai pegar o status real na próxima chamada
         iniciarEnquete();
     } catch (erro) {
