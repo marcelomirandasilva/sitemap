@@ -16,7 +16,6 @@ class PreferenciasController extends Controller
     public function updateUi(Request $request)
     {
         $validated = $request->validate([
-            'timezone' => ['required', 'string', Rule::in(timezone_identifiers_list())],
             // Validação aninhada para segurança
             'ui_preferences' => ['required', 'array'],
             'ui_preferences.theme' => ['required', 'in:light,dark'],
@@ -24,7 +23,6 @@ class PreferenciasController extends Controller
 
         $request->user()->update([
             'ui_preferences' => array_merge($request->user()->ui_preferences ?? [], $validated['ui_preferences']),
-            'timezone' => $validated['timezone'],
         ]);
 
         return back()->with('success', 'Preferências de interface atualizadas.');
@@ -89,12 +87,7 @@ class PreferenciasController extends Controller
 
     public function edit(Request $request)
     {
-        $timezones = collect(timezone_identifiers_list())->groupBy(function ($timezone) {
-            return explode('/', $timezone)[0];
-        });
-
-        return Inertia::render('Account/Preferences', [ // <--- Verifique se o caminho do arquivo Vue é este mesmo
-            'timezones' => $timezones,
+        return Inertia::render('Account/Preferences', [
             'user' => $request->user(),
             // Garantir valores default caso seja null no banco
             'preferences' => array_merge(

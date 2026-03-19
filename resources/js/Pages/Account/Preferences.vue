@@ -14,7 +14,6 @@ import SectionBorder from '@/Components/SectionBorder.vue';
 
 // Props
 const props = defineProps({
-    timezones: Object,
     user: Object,
     preferences: Object,
 });
@@ -40,7 +39,6 @@ const deactivateForm = useForm({});
 
 // 1. Configurações Gerais
 const configForm = useForm({
-    timezone: props.user.timezone || 'UTC',
     ui_preferences: {
         theme: props.preferences?.theme || 'light',
     }
@@ -202,25 +200,7 @@ const submitDeactivation = () => {
                                         </div>
                                     </div>
 
-                                    <div>
-                                        <InputLabel for="timezone" :value="$t('preferences.appearance.timezone')"
-                                            class="mb-2" />
-                                        <p class="text-xs text-gray-500 mb-2">{{
-                                            $t('preferences.appearance.timezone_desc') }}
-                                        </p>
-                                        <SelectInput id="timezone" v-model="configForm.timezone"
-                                            class="w-full max-w-md">
-                                            <option value="" disabled>{{ $t('preferences.appearance.select_timezone') }}
-                                            </option>
-                                            <optgroup v-for="(zones, continent) in timezones" :key="continent"
-                                                :label="continent">
-                                                <option v-for="zone in zones" :key="zone" :value="zone">
-                                                    {{ zone.replace('_', ' ') }}
-                                                </option>
-                                            </optgroup>
-                                        </SelectInput>
-                                        <InputError :message="configForm.errors.timezone" class="mt-2" />
-                                    </div>
+
 
                                     <div class="flex items-center gap-4">
                                         <PrimaryButton :disabled="configForm.processing">

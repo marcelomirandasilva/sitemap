@@ -57,13 +57,6 @@ class User extends Authenticatable implements MustVerifyEmail
         ];
     }
 
-    /**
-     * Helper para obter o timezone preferido do usuário
-     */
-    public function preferredTimezone(): string
-    {
-        return $this->timezone ?? config('app.timezone');
-    }
     public function plano()
     {
         return $this->belongsTo(Plano::class);

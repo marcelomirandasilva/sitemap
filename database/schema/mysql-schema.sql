@@ -291,7 +291,6 @@ CREATE TABLE `users` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `email` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `timezone` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'UTC',
   `ui_preferences` json DEFAULT NULL,
   `notification_preferences` json DEFAULT NULL,
   `billing_address` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
@@ -336,3 +335,4 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (12,'2026_02_04_174
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (13,'2026_02_19_092500_add_details_to_plans_table',4);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (14,'2026_03_11_000001_create_api_keys_table',5);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (15,'2026_03_19_105500_add_seo_fields_to_pages_table',6);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (16,'2026_03_19_112000_drop_timezone_from_users_table',7);
