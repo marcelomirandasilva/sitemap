@@ -1,21 +1,51 @@
-# Laragon Environment
+# Laragon Environment Configuration
 
-The user is running Laragon on the **D:** drive (confirmed via file application).
+## System Path
+Base Directory: C:\laragon
 
-## MySQL Path
-**Version:** MySQL 8.4.3
-**Bin Path:** `D:\bin\mysql\mysql-8.4.3-winx64\bin`
-**Executable:** `D:\bin\mysql\mysql-8.4.3-winx64\bin\mysql.exe`
-**Dump Executable:** `D:\bin\mysql\mysql-8.4.3-winx64\bin\mysqldump.exe`
+## Git & Shell Configuration
+- Git Bin Path: C:\laragon\bin\git\bin (bash.exe, sh.exe)
+- Git Cmd Path: C:\laragon\bin\git\cmd (git.exe)
+- Bash Executable: C:\laragon\bin\git\bin\bash.exe
+- Git Executable: C:\laragon\bin\git\cmd\git.exe
 
-## PHP Path
-**Version:** PHP 8.4.3
-**Bin Path:** `D:\bin\php\php-8.4.3-nts-Win32-vs17-x64`
-**Executable:** `D:\bin\php\php-8.4.3-nts-Win32-vs17-x64\php.exe`
+## MySQL Configuration
+- Version: MySQL 8.4.3
+- Bin Path: C:\laragon\bin\mysql\mysql-8.4.3-winx64\bin
+- Executable: C:\laragon\bin\mysql\mysql-8.4.3-winx64\bin\mysql.exe
+- Dump Executable: C:\laragon\bin\mysql\mysql-8.4.3-winx64\bin\mysqldump.exe
 
-## Usage Guidelines
-1. **Laravel Config:** Prefer configuring `config/database.php` with `dump_binary_path` instead of relying on system PATH.
-2. **Terminal Commands:** If running raw commands, you may need to prepend the path:
-   * **CMD:** `set PATH=%PATH%;D:\bin\mysql\mysql-8.4.3-winx64\bin;D:\bin\php\php-8.4.3-nts-Win32-vs17-x64`
-   * **Git Bash:** `export PATH=$PATH:/d/bin/mysql/mysql-8.4.3-winx64/bin:/d/bin/php/php-8.4.3-nts-Win32-vs17-x64`
+## PHP Configuration
+- Version: PHP 8.4.2 (NTS x64)
+- Bin Path: C:\laragon\bin\php\php-8.4.2-nts-Win32-vs17-x64
+- Executable: C:\laragon\bin\php\php-8.4.2-nts-Win32-vs17-x64\php.exe
 
+## Node.js Configuration
+- Version: Node v22
+- Bin Path: C:\laragon\bin\nodejs\node-v22
+- Executable: C:\laragon\bin\nodejs\node-v22\node.exe
+
+## Composer Configuration
+- Path: C:\laragon\bin\composer
+- Executable: C:\laragon\bin\composer\composer.phar
+
+## Terminal Setup (Copy & Paste)
+
+### Windows CMD:
+set PATH=%PATH%;C:\laragon\bin\git\bin;C:\laragon\bin\git\cmd;C:\laragon\bin\mysql\mysql-8.4.3-winx64\bin;C:\laragon\bin\php\php-8.4.2-nts-Win32-vs17-x64;C:\laragon\bin\nodejs\node-v22;C:\laragon\bin\composer
+
+### Windows PowerShell:
+$env:Path += ";C:\laragon\bin\git\bin;C:\laragon\bin\git\cmd;C:\laragon\bin\mysql\mysql-8.4.3-winx64\bin;C:\laragon\bin\php\php-8.4.2-nts-Win32-vs17-x64;C:\laragon\bin\nodejs\node-v22;C:\laragon\bin\composer"
+
+### Git Bash:
+export PATH=$PATH:/c/laragon/bin/git/bin:/c/laragon/bin/git/cmd:/c/laragon/bin/mysql/mysql-8.4.3-winx64/bin:/c/laragon/bin/php/php-8.4.2-nts-Win32-vs17-x64:/c/laragon/bin/nodejs/node-v22:/c/laragon/bin/composer
+
+## Laravel Integration (config/database.php)
+'connections' => [
+    'mysql' => [
+        // ...
+        'dump' => [
+           'dump_binary_path' => 'C:\laragon\bin\mysql\mysql-8.4.3-winx64\bin',
+        ]
+    ],
+],

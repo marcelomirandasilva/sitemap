@@ -4,7 +4,7 @@ import { trans as t } from 'laravel-vue-i18n';
 import axios from 'axios';
 
 const props = defineProps({
-    projectId: {
+    projetoId: {
         type: Number,
         required: true
     }
@@ -27,7 +27,7 @@ const columns = [
 const fetchUrls = async () => {
     loading.value = true;
     try {
-        const response = await axios.get(route('projects.urls', props.projectId), {
+        const response = await axios.get(route('projects.urls', { projeto: props.projetoId }), {
             params: {
                 page: page.value,
                 per_page: perPage.value,

@@ -57,6 +57,7 @@ class WebhookSitemapController extends Controller
 
         if ($status === 'completed') {
             $updateData['progress'] = 100;
+            \App\Jobs\ProcessSitemapArtifactsJob::dispatch($job); // Envia para Ingestão de Banco de Dados
         }
 
         if ($errorMessage) {

@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Projeto;
 use App\Models\TarefaSitemap;
+use App\Models\Pagina;
+
 use App\Services\SitemapGeneratorService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -119,6 +121,9 @@ class RastreadorController extends Controller
                         'last_crawled_at' => now(),
                         'status' => 'active' // Ativa o projeto se estava pendente
                     ]);
+
+                    // IMPORTANTE: Dispara a ingestão de páginas para preencher a base de dados
+                    \App\Jobs\ProcessSitemapArtifactsJob::dispatch($ultimo_job);
                 }
             }
         }
@@ -157,37 +162,63 @@ class RastreadorController extends Controller
                 abort(403);
             }
 
-            $ultimo_job = $projeto->tarefasSitemap()->latest()->first();
+            $page = $request->input('page', 1);
+            $perPage = $request->input('per_page', 50);
+            $search = $request->input('q');
 
-            if (!$ultimo_job || empty($ultimo_job->artifacts)) {
+            // Lê diretamente da tabela pages (Pagina)
+            $query = Pagina::where('project_id', $projeto->id);
+
+            if ($search) {
+                $query->where('url', 'like', '%' . $search . '%');
+            }
+
+            $total = $query->count();
+            $records = $query->orderBy('id')
+                ->skip(($page - 1) * $perPage)
+                ->take($perPage)
+                ->get()
+                ->map(function ($p) {
+                    return [
+                        'url' => $p->url,
+                        'title' => $p->title,
+                        'status_code' => $p->status_code,
+                        'content_type' => $p->content_type,
+                        'size_bytes' => $p->size_bytes,
+                        'lastMod' => $p->updated_at->toDateTimeString(), // Fallback para data de rastreio
+                        'priority' => '0.5', // Default se não tiver no banco
+                        'changeFreq' => 'monthly', // Default se não tiver no banco
+                    ];
+                });
+
+            if ($total > 0) {
                 return response()->json([
-                    'data' => [],
-                    'total' => 0,
-                    'message' => 'Nenhum artefato encontrado para leitura.'
+                    'data' => $records,
+                    'total' => $total,
                 ]);
             }
 
-            // Determinar qual arquivo ler (XML preferencia ou TXT)
-            $artifacts = collect($ultimo_job->artifacts);
+            // Fallback: se banco vazio, tenta ler do XML
+            $ultimo_job = $projeto->tarefasSitemap()->latest()->first();
 
-            $targetArtifact = $artifacts->firstWhere(function ($a) {
-                return isset($a['name']) && str_ends_with($a['name'], 'sitemap.xml');
-            }) ?? $artifacts->firstWhere(function ($a) {
-                return isset($a['name']) && str_ends_with($a['name'], '.txt');
-            });
+            if (!$ultimo_job || empty($ultimo_job->artifacts)) {
+                return response()->json(['data' => [], 'total' => 0]);
+            }
+
+            $artifacts = collect($ultimo_job->artifacts);
+            $targetArtifact = $artifacts->firstWhere(fn($a) => isset($a['name']) && str_ends_with($a['name'], 'sitemap.xml'))
+                ?? $artifacts->firstWhere(fn($a) => isset($a['name']) && str_ends_with($a['name'], '.txt'));
 
             if (!$targetArtifact) {
                 return response()->json(['data' => [], 'total' => 0]);
             }
 
-            // Helper para resolver path (reaproveitando lógica do Service original ou duplicando simples)
-            // Como o SitemapDataReaderService precisa de PATH, vamos resolver.
-            // A estrutura de pastas deve bater com a do seu servidor.
             $paths = [
                 base_path('../api-sitemap/sitemaps/projects/' . $projeto->id . '/' . $targetArtifact['name']),
                 base_path('../api-sitemap/sitemaps/' . $ultimo_job->external_job_id . '/' . $targetArtifact['name']),
             ];
 
+            clearstatcache();
             $validPath = null;
             foreach ($paths as $p) {
                 if (file_exists($p)) {
@@ -197,22 +228,10 @@ class RastreadorController extends Controller
             }
 
             if (!$validPath) {
-                // Debug: retornar paths tentados
-                return response()->json([
-                    'data' => [],
-                    'total' => 0,
-                    'error' => 'Arquivo físico não encontrado',
-                    'debug_paths' => $paths
-                ]);
+                return response()->json(['data' => [], 'total' => 0]);
             }
 
-            // Instanciar leitor (Idealmente injetado, mas new aqui facilita por agora)
             $reader = new \App\Services\SitemapDataReaderService();
-
-            $page = $request->input('page', 1);
-            $perPage = $request->input('per_page', 50);
-            $search = $request->input('q');
-
             $result = $reader->getPaginatedUrls($validPath, $page, $perPage, $search);
 
             return response()->json($result);
