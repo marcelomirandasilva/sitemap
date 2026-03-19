@@ -102,6 +102,8 @@ class ProcessSitemapArtifactsJob implements ShouldQueue
                         'path_hash' => hash('sha256', $pageData['url']),
                         'status_code' => $pageData['status_code'] ?? 200,
                         'title' => substr($pageData['title'] ?? '', 0, 255),
+                        'priority' => $pageData['priority'] ?? '0.5',
+                        'change_frequency' => $pageData['change_frequency'] ?? 'monthly',
                         'load_time_ms' => $pageData['load_time_ms'] ?? 0,
                         'content_type' => substr($pageData['content_type'] ?? 'text/html', 0, 100),
                         'size_bytes' => $pageData['size_bytes'] ?? 0,

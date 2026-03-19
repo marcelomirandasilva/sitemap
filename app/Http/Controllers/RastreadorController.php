@@ -185,9 +185,9 @@ class RastreadorController extends Controller
                         'status_code' => $p->status_code,
                         'content_type' => $p->content_type,
                         'size_bytes' => $p->size_bytes,
-                        'lastMod' => $p->updated_at->toDateTimeString(), // Fallback para data de rastreio
-                        'priority' => '0.5', // Default se não tiver no banco
-                        'changeFreq' => 'monthly', // Default se não tiver no banco
+                        'lastMod' => $p->updated_at->toDateTimeString(),
+                        'priority' => $p->priority ?? '0.5',
+                        'changeFreq' => $p->change_frequency ?? 'monthly',
                     ];
                 });
 

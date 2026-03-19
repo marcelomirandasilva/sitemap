@@ -130,6 +130,8 @@ CREATE TABLE `pages` (
   `path_hash` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `status_code` int DEFAULT NULL,
   `title` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `priority` varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `change_frequency` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `load_time_ms` double DEFAULT NULL,
   `content_type` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `size_bytes` bigint DEFAULT NULL,
@@ -333,3 +335,4 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (11,'2026_02_03_200
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (12,'2026_02_04_174301_add_preferences_to_users_table',3);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (13,'2026_02_19_092500_add_details_to_plans_table',4);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (14,'2026_03_11_000001_create_api_keys_table',5);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (15,'2026_03_19_105500_add_seo_fields_to_pages_table',6);
