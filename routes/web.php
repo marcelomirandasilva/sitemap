@@ -94,6 +94,15 @@ Route::middleware(['auth'])->group(function () {
 
     // Histórico de Pagamentos
     Route::get('/billing', [App\Http\Controllers\FaturamentoController::class, 'index'])->name('billing.index');
+
+    // Sistema de Suporte ao Usuário (Tickets)
+    Route::prefix('support')->name('support.')->controller(App\Http\Controllers\TicketController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/', 'store')->name('store');
+        Route::get('/{ticket}', 'show')->name('show');
+        Route::post('/{ticket}/reply', 'reply')->name('reply');
+        Route::patch('/{ticket}/fechar', 'fechar')->name('fechar');
+    });
 });
 
 // Rotas de Desenvolvimento
