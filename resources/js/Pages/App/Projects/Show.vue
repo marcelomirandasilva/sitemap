@@ -334,23 +334,23 @@ const downloadUrl = computed(() => {
                         <!-- ABA DETAILS -->
                         <div v-if="abaAtiva === 'details'">
                             
-                            <!-- Boco "PLEASE WAIT" (Animado/Polling) -->
+                            <!-- Bloco "AGUARDE" (Animado/Polling) -->
                             <div v-if="['queued', 'running'].includes(tarefa.status)" class="text-center py-12 px-4 border border-primary-100 bg-primary-50/20 rounded-lg">
-                                <h2 class="text-primary-500 text-xl font-bold uppercase tracking-wider mb-4">Please Wait</h2>
+                                <h2 class="text-primary-500 text-xl font-bold uppercase tracking-wider mb-4">{{ $t('crawler.please_wait') }}</h2>
                                 <p class="text-gray-700 font-medium mb-1" style="font-size: 15px;">
-                                    {{ appName }} has started working with your website <strong>{{ projeto.name || projeto.url }}</strong>,
+                                    {{ appName }} {{ $t('crawler.please_wait_msg1') }} <strong>{{ projeto.name || projeto.url }}</strong>,
                                 </p>
                                 <p class="text-gray-600 mb-8" style="font-size: 15px;">
-                                    but your sitemap is not ready yet.<br>
-                                    You will find the progress details below.
+                                    {{ $t('crawler.please_wait_msg2') }}<br>
+                                    {{ $t('crawler.please_wait_msg3') }}
                                 </p>
                                 
                                 <div class="max-w-xl mx-auto border-t border-b border-gray-200 py-6">
                                     <div class="flex items-center justify-center gap-3 mb-4">
-                                        <span class="text-gray-700">Update in progress</span>
+                                        <span class="text-gray-700">{{ $t('crawler.update_in_progress') }}</span>
                                         <button class="bg-warning-500 hover:bg-warning-600 text-white text-xs font-bold uppercase px-3 py-1 rounded flex items-center gap-1 transition-colors">
                                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                            Pause
+                                            {{ $t('crawler.pause') }}
                                         </button>
                                     </div>
                                     
@@ -371,6 +371,16 @@ const downloadUrl = computed(() => {
                                         <div class="h-full bg-primary-500 transition-all duration-500 rounded-l-full" :style="{ width: Math.max(10, Math.min(100, Math.floor(tarefa.progress || 0))) + '%' }"></div>
                                         <div class="h-full bg-warning-500 transition-all duration-500 rounded-r-full flex-grow animate-pulse opacity-50"></div>
                                     </div>
+                                </div>
+
+                                <!-- Botão SAIR -->
+                                <div class="mt-6">
+                                    <Link :href="route('dashboard')" class="inline-flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-800 font-bold text-sm uppercase tracking-wider px-5 py-2 rounded transition-colors">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                                        </svg>
+                                        {{ $t('crawler.exit') }}
+                                    </Link>
                                 </div>
                             </div>
                             

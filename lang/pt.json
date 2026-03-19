@@ -386,5 +386,14 @@
     "support.send_reply": "ENVIAR RESPOSTA",
     "support.cancel": "Cancelar",
     "support.close_ticket": "ENCERRAR TICKET",
-    "support.ticket_closed_msg": "Este ticket foi encerrado. Abra um novo ticket se precisar de mais ajuda."
+    "support.ticket_closed_msg": "Este ticket foi encerrado. Abra um novo ticket se precisar de mais ajuda.",
+    "crawler.please_wait": "AGUARDE",
+    "crawler.please_wait_msg1": "começou a trabalhar no seu site",
+    "crawler.please_wait_msg2": "mas o seu sitemap ainda não está pronto.",
+    "crawler.please_wait_msg3": "Você encontrará o progresso detalhado abaixo.",
+    "crawler.back_dashboard": "Voltar ao painel",
+    "crawler.exit": "SAIR",
+    "crawler.recent_pages": "Páginas encontradas",
+    "crawler.error_generic": "Ocorreu uma falha técnica. Detalhes foram registrados no log.",
+    "crawler.error_unknown": "Erro desconhecido."
 }

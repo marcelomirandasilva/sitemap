@@ -32,8 +32,9 @@ Ao criar controllers do tipo resource, utilize os nomes de métodos padrão do L
 - Explique o "porquê" da lógica, não apenas o "quê".
 
 ## 4. Integração Laragon/Windows 11
-- **Migrations:** Ao sugerir a execução de migrations, use o comando direto: `php artisan migrate`.
-- **Logs:** Se houver erro, instrua o agente a verificar o log em `storage\logs\laravel.log` usando o comando PowerShell: `Get-Content -Tail 50 storage\logs\laravel.log`.
+- **Migrations:** Ao sugerir a execução de migrations, use sempre o caminho completo do binário PHP definido nas Diretrizes Globais (ex: `/c/laragon/bin/php/.../php.exe artisan migrate`).
+- **Logs:** Se houver erro, instrua o agente a verificar o log em `storage/logs/laravel.log` (use barras normais no terminal).
+- **PowerShell:** Para leituras rápidas via PowerShell (se necessário), mantenha a compatibilidade de barras invertidas apenas se o comando for executado explicitamente via `powershell.exe`.
 
 ## 5. Idioma de Saída (Chat/Thoughts)
 - O raciocínio (Thought) e a explicação da implementação devem ser obrigatoriamente em português do Brasil.

@@ -374,5 +374,14 @@
     "support.send_reply": "SEND REPLY",
     "support.cancel": "Cancel",
     "support.close_ticket": "CLOSE TICKET",
-    "support.ticket_closed_msg": "This ticket has been closed. Open a new ticket if you need further assistance."
+    "support.ticket_closed_msg": "This ticket has been closed. Open a new ticket if you need further assistance.",
+    "crawler.please_wait": "PLEASE WAIT",
+    "crawler.please_wait_msg1": "has started working with your website",
+    "crawler.please_wait_msg2": "but your sitemap is not ready yet.",
+    "crawler.please_wait_msg3": "You will find the progress details below.",
+    "crawler.back_dashboard": "Back to dashboard",
+    "crawler.exit": "EXIT",
+    "crawler.recent_pages": "Pages found",
+    "crawler.error_generic": "A technical error occurred. Details have been logged.",
+    "crawler.error_unknown": "Unknown error."
 }
