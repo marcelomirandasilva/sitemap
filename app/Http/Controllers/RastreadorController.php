@@ -30,7 +30,14 @@ class RastreadorController extends Controller
         }
 
         try {
-            $externalJobId = $this->sitemapService->startJob($projeto);
+            // Calcula o limite efetivo de páginas respeitando o plano do usuário
+            $usuario = auth()->user()->load('plano');
+            $limitePlano = $usuario->plano?->max_pages ?? 500; // Plano Free como fallback seguro
+            $limiteEfetivo = min($projeto->max_pages ?? $limitePlano, $limitePlano);
+
+            Log::info("RastreadorController: Iniciando job com limite de {$limiteEfetivo} páginas (plano: {$limitePlano}, projeto: {$projeto->max_pages})");
+
+            $externalJobId = $this->sitemapService->startJob($projeto, $limiteEfetivo);
 
             if (!$externalJobId) {
                 return response()->json(['message' => 'Falha ao iniciar o serviço de crawler. Tente novamente.'], 500);
