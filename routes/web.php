@@ -38,7 +38,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/projects/{projeto}', [ProjetoController::class, 'destroy'])->name('projects.destroy');
 
     // Crawler (Ações no Projeto)
-    Route::post('/projects/{projeto}/crawl', [RastreadorController::class, 'store'])->name('projects.crawl');
+    Route::post('/projects/{projeto}/crawl', [RastreadorController::class, 'store'])
+        ->middleware('throttle:crawlers')
+        ->name('projects.crawl');
     Route::get('/projects/{projeto}/status', [RastreadorController::class, 'getStatus'])->name('projects.status');
     Route::get('/projects/{projeto}/preview', [RastreadorController::class, 'getPreviewUrls'])->name('projects.preview');
     Route::get('/projects/{projeto}/urls', [RastreadorController::class, 'getUrls'])->name('projects.urls');
