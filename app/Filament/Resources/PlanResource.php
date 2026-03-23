@@ -17,7 +17,11 @@ class PlanResource extends Resource
 {
     protected static ?string $model = Plano::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-credit-card';
+
+    protected static ?string $navigationLabel = 'Planos';
+    protected static ?string $pluralLabel = 'Planos';
+    protected static ?string $modelLabel = 'Plano';
 
     public static function form(Form $form): Form
     {
