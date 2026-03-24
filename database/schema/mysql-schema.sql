@@ -184,7 +184,7 @@ CREATE TABLE `plans` (
   `price_yearly_usd` int DEFAULT NULL,
   `max_projects` int NOT NULL DEFAULT '10',
   `has_advanced_features` tinyint(1) NOT NULL DEFAULT '0',
-  `update_frequency` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `update_frequency` enum('diario','semanal','quinzenal','mensal','anual','manual') COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `ideal_for` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
@@ -391,3 +391,4 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (16,'2026_03_19_112
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (17,'2026_03_19_120000_create_tickets_table',8);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (18,'2026_03_19_120001_create_respostas_tickets_table',8);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (19,'2026_03_19_120002_create_anexos_tickets_table',8);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (20,'2026_03_23_200411_change_update_frequency_to_enum_on_plans_table',9);

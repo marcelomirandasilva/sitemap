@@ -58,7 +58,7 @@ class PlanoController extends Controller
             'name' => 'required|string|max:255',
             'slug' => 'required|string|max:255|unique:plans,slug' . ($id ? ",{$id}" : ''),
             'ideal_for' => 'nullable|string|max:255',
-            'update_frequency' => 'nullable|string|max:255',
+            'update_frequency' => 'required|string|in:diario,semanal,quinzenal,mensal,anual,manual',
             'max_projects' => 'required|integer|min:-1',
             'max_pages' => 'required|integer|min:-1',
             'has_advanced_features' => 'boolean',

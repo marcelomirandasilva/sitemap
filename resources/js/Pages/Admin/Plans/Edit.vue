@@ -74,8 +74,16 @@ const salvar = () => {
                                 <InputError :message="form.errors.ideal_for" class="mt-2" />
                             </div>
                             <div class="lg:col-span-2">
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Frequência de Atualização</label>
-                                <input v-model="form.update_frequency" type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 dark:bg-gray-900 dark:border-gray-600 dark:text-white">
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Frequência de Atualização Automática</label>
+                                <select v-model="form.update_frequency" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 dark:bg-gray-900 dark:border-gray-600 dark:text-white" required>
+                                    <option value="" disabled>Selecione uma Frequência</option>
+                                    <option value="diario">Diária (A cada 24h)</option>
+                                    <option value="semanal">Semanal (A cada 7 dias)</option>
+                                    <option value="quinzenal">Quinzenal (A cada 15 dias)</option>
+                                    <option value="mensal">Mensal (A cada 30 dias)</option>
+                                    <option value="anual">Anual (A cada 365 dias)</option>
+                                    <option value="manual">Sob Demanda (Apenas Manual)</option>
+                                </select>
                                 <InputError :message="form.errors.update_frequency" class="mt-2" />
                             </div>
                         </div>
