@@ -10,10 +10,21 @@ use Illuminate\Support\Str;
 
 class PlanoController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $planos = Plano::orderBy('price_monthly_brl', 'asc')->get();
-        return Inertia::render('Admin/Plans/Index', ['planos' => $planos]);
+        $sortBy = $request->get('sort_by', 'price_monthly_brl');
+        $sortOrder = $request->get('sort_order', 'asc');
+
+        $allowedSorts = ['name', 'max_projects', 'max_pages', 'price_monthly_brl'];
+        if (!in_array($sortBy, $allowedSorts)) {
+            $sortBy = 'price_monthly_brl';
+        }
+
+        $planos = Plano::orderBy($sortBy, $sortOrder)->get();
+        return Inertia::render('Admin/Plans/Index', [
+            'planos' => $planos,
+            'filters' => $request->only(['sort_by', 'sort_order'])
+        ]);
     }
 
     public function create()

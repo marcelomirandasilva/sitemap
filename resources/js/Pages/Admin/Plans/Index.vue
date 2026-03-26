@@ -1,11 +1,39 @@
 <script setup>
 import AppLayout from '@/Layouts/AppLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
+import { ref } from 'vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 
-defineProps({
+const props = defineProps({
     planos: Array,
+    filters: Object,
 });
+
+const sort = ref({
+    column: props.filters.sort_by || 'price_monthly_brl',
+    order: props.filters.sort_order || 'asc'
+});
+
+const updateQuery = () => {
+    router.get(route('admin.plans.index'), { 
+        sort_by: sort.value.column,
+        sort_order: sort.value.order
+    }, {
+        preserveState: true,
+        replace: true,
+        preserveScroll: true
+    });
+};
+
+const sortBy = (column) => {
+    if (sort.value.column === column) {
+        sort.value.order = sort.value.order === 'asc' ? 'desc' : 'asc';
+    } else {
+        sort.value.column = column;
+        sort.value.order = 'asc';
+    }
+    updateQuery();
+};
 
 const formatCurrency = (value) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
@@ -55,9 +83,24 @@ const destroy = (id) => {
                         <table class="w-full whitespace-nowrap text-left text-sm text-gray-600 dark:text-gray-300">
                             <thead class="bg-gray-100 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 font-semibold text-gray-700 dark:text-gray-300">
                                 <tr>
-                                    <th class="px-6 py-4">Nome do Plano / Slug</th>
-                                    <th class="px-6 py-4">Desbloqueios (Projetos x Pags)</th>
-                                    <th class="px-6 py-4">Billing Mensal (BRL)</th>
+                                    <th @click="sortBy('name')" class="px-6 py-4 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-800 transition">
+                                        <div class="flex items-center gap-1">
+                                            Nome do Plano / Slug
+                                            <svg v-if="sort.column === 'name'" :class="sort.order === 'asc' ? 'rotate-180' : ''" class="w-3 h-3 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
+                                        </div>
+                                    </th>
+                                    <th @click="sortBy('max_projects')" class="px-6 py-4 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-800 transition">
+                                        <div class="flex items-center gap-1">
+                                            Desbloqueios (Projetos x Pags)
+                                            <svg v-if="sort.column === 'max_projects'" :class="sort.order === 'asc' ? 'rotate-180' : ''" class="w-3 h-3 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
+                                        </div>
+                                    </th>
+                                    <th @click="sortBy('price_monthly_brl')" class="px-6 py-4 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-800 transition">
+                                        <div class="flex items-center gap-1">
+                                            Billing Mensal (BRL)
+                                            <svg v-if="sort.column === 'price_monthly_brl'" :class="sort.order === 'asc' ? 'rotate-180' : ''" class="w-3 h-3 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
+                                        </div>
+                                    </th>
                                     <th class="px-6 py-4 text-center">Mídia / Recursos</th>
                                     <th class="px-6 py-4 px-3 text-right">Controles</th>
                                 </tr>

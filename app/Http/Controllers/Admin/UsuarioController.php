@@ -15,12 +15,23 @@ class UsuarioController extends Controller
 {
     public function index(Request $request)
     {
-        $query = User::with(['plano', 'subscriptions'])->orderBy('created_at', 'desc');
+        $sortBy = $request->get('sort_by', 'created_at');
+        $sortOrder = $request->get('sort_order', 'desc');
+
+        // Validação de colunas permitidas para evitar SQL Injection via order
+        $allowedSorts = ['name', 'email', 'role', 'created_at'];
+        if (!in_array($sortBy, $allowedSorts)) {
+            $sortBy = 'created_at';
+        }
+
+        $query = User::with(['plano', 'subscriptions'])->orderBy($sortBy, $sortOrder);
 
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where('name', 'like', "%{$search}%")
-                ->orWhere('email', 'like', "%{$search}%");
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
+            });
         }
 
         $users = $query->paginate(15)->withQueryString();
@@ -33,7 +44,7 @@ class UsuarioController extends Controller
 
         return Inertia::render('Admin/Users/Index', [
             'users' => $users,
-            'filters' => $request->only(['search'])
+            'filters' => $request->only(['search', 'sort_by', 'sort_order'])
         ]);
     }
 

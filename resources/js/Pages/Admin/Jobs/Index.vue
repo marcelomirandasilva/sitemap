@@ -9,13 +9,35 @@ const props = defineProps({
 });
 
 const statusFilter = ref(props.filters.status || 'todos');
+const sort = ref({
+    column: props.filters.sort_by || 'created_at',
+    order: props.filters.sort_order || 'desc'
+});
 
-watch(statusFilter, (value) => {
-    router.get(route('admin.jobs.index'), { status: value }, {
+const updateQuery = () => {
+    router.get(route('admin.jobs.index'), { 
+        status: statusFilter.value,
+        sort_by: sort.value.column,
+        sort_order: sort.value.order
+    }, {
         preserveState: true,
         replace: true,
     });
+};
+
+watch(statusFilter, (value) => {
+    updateQuery();
 });
+
+const sortBy = (column) => {
+    if (sort.value.column === column) {
+        sort.value.order = sort.value.order === 'asc' ? 'desc' : 'asc';
+    } else {
+        sort.value.column = column;
+        sort.value.order = 'asc';
+    }
+    updateQuery();
+};
 
 const cancelarProcesso = (id) => {
     if(confirm('Tem certeza que deseja forçar o encerramento deste rastreio? Isso o marcará como Failed e as URLs descobertas não serão salvas ativamente a menos que o job saiba lidar com SIGTERM, caso contrário ele falhará imediatamente.')) {
@@ -71,11 +93,31 @@ const formatData = (iso) => {
                         <table class="w-full whitespace-nowrap text-left text-sm text-gray-600 dark:text-gray-300">
                             <thead class="bg-gray-100 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 font-semibold text-gray-700 dark:text-gray-300">
                                 <tr>
-                                    <th class="px-6 py-4">Sessão #ID</th>
+                                    <th @click="sortBy('id')" class="px-6 py-4 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-800 transition">
+                                        <div class="flex items-center gap-1">
+                                            Sessão #ID
+                                            <svg v-if="sort.column === 'id'" :class="sort.order === 'asc' ? 'rotate-180' : ''" class="w-3 h-3 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
+                                        </div>
+                                    </th>
                                     <th class="px-6 py-4">Alvo URL</th>
-                                    <th class="px-6 py-4">Status Motor</th>
-                                    <th class="px-6 py-4">Progresso / Páginas</th>
-                                    <th class="px-6 py-4">Iniciado (Timestamp)</th>
+                                    <th @click="sortBy('status')" class="px-6 py-4 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-800 transition">
+                                        <div class="flex items-center gap-1">
+                                            Status Motor
+                                            <svg v-if="sort.column === 'status'" :class="sort.order === 'asc' ? 'rotate-180' : ''" class="w-3 h-3 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
+                                        </div>
+                                    </th>
+                                    <th @click="sortBy('pages_processed')" class="px-6 py-4 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-800 transition">
+                                        <div class="flex items-center gap-1">
+                                            Progresso / Páginas
+                                            <svg v-if="sort.column === 'pages_processed'" :class="sort.order === 'asc' ? 'rotate-180' : ''" class="w-3 h-3 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
+                                        </div>
+                                    </th>
+                                    <th @click="sortBy('created_at')" class="px-6 py-4 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-800 transition">
+                                        <div class="flex items-center gap-1">
+                                            Iniciado (Timestamp)
+                                            <svg v-if="sort.column === 'created_at'" :class="sort.order === 'asc' ? 'rotate-180' : ''" class="w-3 h-3 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
+                                        </div>
+                                    </th>
                                     <th class="px-6 py-4 text-right">Controles</th>
                                 </tr>
                             </thead>

@@ -11,7 +11,15 @@ class TarefaSitemapController extends Controller
 {
     public function index(Request $request)
     {
-        $query = TarefaSitemap::with(['projeto.user'])->orderBy('created_at', 'desc');
+        $sortBy = $request->get('sort_by', 'created_at');
+        $sortOrder = $request->get('sort_order', 'desc');
+
+        $allowedSorts = ['id', 'status', 'pages_processed', 'created_at', 'projeto.url']; // projeto.url needs join if used directly, but usually we sort by model columns
+        if (!in_array($sortBy, $allowedSorts)) {
+            $sortBy = 'created_at';
+        }
+
+        $query = TarefaSitemap::with(['projeto.user'])->orderBy($sortBy, $sortOrder);
 
         if ($request->filled('status') && $request->status !== 'todos') {
             $query->where('status', $request->status);
@@ -21,7 +29,7 @@ class TarefaSitemapController extends Controller
 
         return Inertia::render('Admin/Jobs/Index', [
             'jobs' => $jobs,
-            'filters' => $request->only(['status'])
+            'filters' => $request->only(['status', 'sort_by', 'sort_order'])
         ]);
     }
 

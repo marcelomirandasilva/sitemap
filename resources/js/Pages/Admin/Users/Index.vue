@@ -11,14 +11,36 @@ const props = defineProps({
 });
 
 const search = ref(props.filters.search || '');
+const sort = ref({
+    column: props.filters.sort_by || 'created_at',
+    order: props.filters.sort_order || 'desc'
+});
 
-watch(search, (value) => {
-    router.get(route('admin.users.index'), { search: value }, {
+const updateQuery = () => {
+    router.get(route('admin.users.index'), { 
+        search: search.value,
+        sort_by: sort.value.column,
+        sort_order: sort.value.order
+    }, {
         preserveState: true,
         replace: true,
         preserveScroll: true
     });
+};
+
+watch(search, (value) => {
+    updateQuery();
 });
+
+const sortBy = (column) => {
+    if (sort.value.column === column) {
+        sort.value.order = sort.value.order === 'asc' ? 'desc' : 'asc';
+    } else {
+        sort.value.column = column;
+        sort.value.order = 'asc';
+    }
+    updateQuery();
+};
 
 const impersonate = (userId) => {
     if (confirm('Deseja realmente assumir o controle desta conta? Você sairá do modo Administrador.')) {
@@ -69,11 +91,26 @@ const formatData = (iso) => {
                         <table class="w-full whitespace-nowrap text-left text-sm text-gray-600 dark:text-gray-300">
                             <thead class="bg-gray-100 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 font-semibold text-gray-700 dark:text-gray-300">
                                 <tr>
-                                    <th class="px-6 py-4">Nome completo</th>
+                                    <th @click="sortBy('name')" class="px-6 py-4 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-800 transition">
+                                        <div class="flex items-center gap-1">
+                                            Nome completo
+                                            <svg v-if="sort.column === 'name'" :class="sort.order === 'asc' ? 'rotate-180' : ''" class="w-3 h-3 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
+                                        </div>
+                                    </th>
                                     <th class="px-6 py-4">Plano</th>
-                                    <th class="px-6 py-4">Função</th>
+                                    <th @click="sortBy('role')" class="px-6 py-4 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-800 transition text-center">
+                                        <div class="flex items-center justify-center gap-1">
+                                            Função
+                                            <svg v-if="sort.column === 'role'" :class="sort.order === 'asc' ? 'rotate-180' : ''" class="w-3 h-3 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
+                                        </div>
+                                    </th>
                                     <th class="px-6 py-4">Assinatura Stripe</th>
-                                    <th class="px-6 py-4">Cadastro</th>
+                                    <th @click="sortBy('created_at')" class="px-6 py-4 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-800 transition">
+                                        <div class="flex items-center gap-1">
+                                            Cadastro
+                                            <svg v-if="sort.column === 'created_at'" :class="sort.order === 'asc' ? 'rotate-180' : ''" class="w-3 h-3 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
+                                        </div>
+                                    </th>
                                     <th class="px-6 py-4 text-right">Ações</th>
                                 </tr>
                             </thead>
