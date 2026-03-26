@@ -201,7 +201,7 @@ CREATE TABLE `projects` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `user_id` bigint unsigned NOT NULL,
   `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `url` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `url` varchar(2048) COLLATE utf8mb4_unicode_ci NOT NULL,
   `user_agent_custom` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `delay_between_requests` double NOT NULL DEFAULT '1',
   `max_concurrent_requests` int NOT NULL DEFAULT '2',
@@ -392,3 +392,4 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (17,'2026_03_19_120
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (18,'2026_03_19_120001_create_respostas_tickets_table',8);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (19,'2026_03_19_120002_create_anexos_tickets_table',8);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (20,'2026_03_23_200411_change_update_frequency_to_enum_on_plans_table',9);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (21,'2026_03_24_160500_alter_projects_url_length',10);
