@@ -22,7 +22,7 @@ const props = defineProps({
     },
     features: {
         type: Object,
-        default: () => ({ images_videos: false })
+        default: () => ({ permite_imagens: false, permite_videos: false })
     }
 });
 
@@ -164,6 +164,31 @@ const downloadUrl = computed(() => {
                      tarefa.value.artifacts.find(a => a.name && a.name.endsWith('.txt'));
     return artifact ? artifact.download_url : null;
 });
+
+const toggleFeature = (feature) => {
+    const newValue = !props.projeto[feature];
+    
+    // Feedback visual imediato (otimista)
+    props.projeto[feature] = newValue;
+
+    router.patch(route('projects.update', { projeto: props.projeto.id }), {
+        [feature]: newValue
+    }, {
+        preserveScroll: true,
+        onSuccess: () => {
+            // Notificação de sucesso silenciada ou toast
+        },
+        onError: () => {
+            // Reverte em caso de erro
+            props.projeto[feature] = !newValue;
+            Swal.fire({
+                title: t('common.error'),
+                text: t('project.update_error'),
+                icon: 'error'
+            });
+        }
+    });
+};
 </script>
 
 <template>
@@ -276,9 +301,15 @@ const downloadUrl = computed(() => {
                         <div class="bg-surface-200 text-gray-600 text-center py-2 font-bold uppercase tracking-wider">{{
                             $t('project.images') }}</div>
                         <div class="p-6 text-center">
-                            <div v-if="features.images_videos">
+                            <div v-if="features.permite_imagens">
                                 <span class="text-4xl font-bold text-primary-800">{{ tarefa.images_count || 0 }}</span>
-                                <div class="text-xs font-bold text-gray-400 uppercase mt-1">{{ $t('project.stat_indexed') }}
+                                <div class="text-xs font-bold text-gray-400 uppercase mt-1">{{ $t('project.stat_indexed') }}</div>
+                                
+                                <div class="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
+                                    <span class="text-[10px] font-bold text-gray-500 uppercase">{{ $t('project.track_images') }}</span>
+                                    <button @click="toggleFeature('check_images')" :class="['relative inline-flex h-4 w-8 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none', projeto.check_images ? 'bg-primary-600' : 'bg-gray-200']">
+                                        <span :class="['translate-x-0 pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out', projeto.check_images ? 'translate-x-4' : 'translate-x-0']"></span>
+                                    </button>
                                 </div>
                             </div>
                             <div v-else>
@@ -297,9 +328,15 @@ const downloadUrl = computed(() => {
                         <div class="bg-surface-200 text-gray-600 text-center py-2 font-bold uppercase tracking-wider">{{
                             $t('project.videos') }}</div>
                         <div class="p-6 text-center">
-                            <div v-if="features.images_videos">
+                            <div v-if="features.permite_videos">
                                 <span class="text-4xl font-bold text-primary-800">{{ tarefa.videos_count || 0 }}</span>
-                                <div class="text-xs font-bold text-gray-400 uppercase mt-1">{{ $t('project.stat_indexed') }}
+                                <div class="text-xs font-bold text-gray-400 uppercase mt-1">{{ $t('project.stat_indexed') }}</div>
+
+                                <div class="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
+                                    <span class="text-[10px] font-bold text-gray-500 uppercase">{{ $t('project.track_videos') }}</span>
+                                    <button @click="toggleFeature('check_videos')" :class="['relative inline-flex h-4 w-8 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none', projeto.check_videos ? 'bg-primary-600' : 'bg-gray-200']">
+                                        <span :class="['translate-x-0 pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out', projeto.check_videos ? 'translate-x-4' : 'translate-x-0']"></span>
+                                    </button>
                                 </div>
                             </div>
                             <div v-else>

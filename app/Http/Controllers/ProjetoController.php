@@ -42,8 +42,8 @@ class ProjetoController extends Controller
             'url' => $validated['url'],
             'status' => 'pending',
             'frequency' => 'manual',
-            'check_images' => $temRecursosAvancados,
-            'check_videos' => $temRecursosAvancados,
+            'check_images' => (bool) ($user->plano?->permite_imagens),
+            'check_videos' => (bool) ($user->plano?->permite_videos),
         ]);
 
         // 6. Inicia o Crawler Automaticamente
@@ -88,7 +88,8 @@ class ProjetoController extends Controller
         $usuario->load('plano');
 
         $funcionalidades = [
-            'images_videos' => $usuario->plano ? (bool) $usuario->plano->has_advanced_features : false,
+            'permite_imagens' => $usuario->plano ? (bool) $usuario->plano->permite_imagens : false,
+            'permite_videos' => $usuario->plano ? (bool) $usuario->plano->permite_videos : false,
         ];
 
         return Inertia::render('App/Projects/Show', [
@@ -97,6 +98,34 @@ class ProjetoController extends Controller
             'preview_urls' => [], // Frontend busca via AJAX
             'features' => $funcionalidades
         ]);
+    }
+
+    public function update(Request $request, Projeto $projeto)
+    {
+        if ($projeto->user_id !== auth()->id()) {
+            abort(403);
+        }
+
+        $usuario = auth()->user();
+        $usuario->load('plano');
+
+        $validated = $request->validate([
+            'check_images' => 'boolean',
+            'check_videos' => 'boolean',
+        ]);
+
+        // Validação extra: não permitir ativar se o plano não permitir
+        if (isset($validated['check_images']) && $validated['check_images'] && !($usuario->plano?->permite_imagens)) {
+            $validated['check_images'] = false;
+        }
+
+        if (isset($validated['check_videos']) && $validated['check_videos'] && !($usuario->plano?->permite_videos)) {
+            $validated['check_videos'] = false;
+        }
+
+        $projeto->update($validated);
+
+        return Redirect::back()->with('success', 'Configurações atualizadas!');
     }
 
     public function destroy(Projeto $projeto)

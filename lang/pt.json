@@ -395,5 +395,9 @@
     "crawler.exit": "SAIR",
     "crawler.recent_pages": "Páginas encontradas",
     "crawler.error_generic": "Ocorreu uma falha técnica. Detalhes foram registrados no log.",
-    "crawler.error_unknown": "Erro desconhecido."
+    "crawler.error_unknown": "Erro desconhecido.",
+    "project.track_images": "Rastrear Imagens",
+    "project.track_videos": "Rastrear Vídeos",
+    "project.update_error": "Erro ao atualizar configuração.",
+    "common.error": "Erro"
 }

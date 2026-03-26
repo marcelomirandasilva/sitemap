@@ -23,12 +23,16 @@ class Plano extends Model
         'price_yearly_usd',
         'max_projects',
         'has_advanced_features',
+        'permite_imagens',
+        'permite_videos',
         'update_frequency',
         'ideal_for',
     ];
 
     protected $casts = [
         'has_advanced_features' => 'boolean',
+        'permite_imagens' => 'boolean',
+        'permite_videos' => 'boolean',
         'max_pages' => 'integer',
         'max_projects' => 'integer',
         'price_monthly_brl' => 'integer',

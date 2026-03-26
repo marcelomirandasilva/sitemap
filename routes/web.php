@@ -35,6 +35,7 @@ Route::get('/dashboard', [App\Http\Controllers\PainelController::class, 'index']
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/projects', [ProjetoController::class, 'store'])->name('projects.store');
     Route::get('/projects/{projeto}', [ProjetoController::class, 'show'])->name('projects.show');
+    Route::patch('/projects/{projeto}', [ProjetoController::class, 'update'])->name('projects.update');
     Route::delete('/projects/{projeto}', [ProjetoController::class, 'destroy'])->name('projects.destroy');
 
     // Crawler (Ações no Projeto)

@@ -37,6 +37,20 @@ class RastreadorController extends Controller
 
             Log::info("RastreadorController: Iniciando job com limite de {$limiteEfetivo} páginas (plano: {$limitePlano}, projeto: {$projeto->max_pages})");
 
+            // Validação de Segurança: Garante que o usuário não burlou o limite do plano para mídia
+            $permiteImagens = (bool) ($usuario->plano?->permite_imagens);
+            $permiteVideos = (bool) ($usuario->plano?->permite_videos);
+
+            if ($projeto->check_images && !$permiteImagens) {
+                $projeto->update(['check_images' => false]);
+                Log::warning("RastreadorController: Rastreamento de imagens desativado (não permitido no plano)");
+            }
+
+            if ($projeto->check_videos && !$permiteVideos) {
+                $projeto->update(['check_videos' => false]);
+                Log::warning("RastreadorController: Rastreamento de vídeos desativado (não permitido no plano)");
+            }
+
             $externalJobId = $this->sitemapService->startJob($projeto, $limiteEfetivo);
 
             if (!$externalJobId) {

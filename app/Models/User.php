@@ -61,7 +61,7 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser
 
     public function plano()
     {
-        return $this->belongsTo(Plano::class);
+        return $this->belongsTo(Plano::class, 'plan_id');
     }
 
     public function projetos()
