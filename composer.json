@@ -8,7 +8,6 @@
     "require": {
         "php": "^8.2",
         "fakerphp/faker": "^1.23",
-        "filament/filament": "^3.2",
         "inertiajs/inertia-laravel": "^2.0",
         "laravel/cashier": "^16.2",
         "laravel/framework": "^12.0",
@@ -64,8 +63,7 @@
         ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
-            "@php artisan package:discover --ansi",
-            "@php artisan filament:upgrade"
+            "@php artisan package:discover --ansi"
         ],
         "post-update-cmd": [
             "@php artisan vendor:publish --tag=laravel-assets --ansi --force"

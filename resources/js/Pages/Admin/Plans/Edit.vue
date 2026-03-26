@@ -18,6 +18,8 @@ const form = useForm({
     max_projects: props.plano.max_projects ?? 10,
     max_pages: props.plano.max_pages ?? 500,
     has_advanced_features: !!props.plano.has_advanced_features,
+    permite_imagens: !!props.plano.permite_imagens,
+    permite_videos: !!props.plano.permite_videos,
     stripe_monthly_price_id: props.plano.stripe_monthly_price_id || '',
     stripe_yearly_price_id: props.plano.stripe_yearly_price_id || '',
     price_monthly_brl: props.plano.price_monthly_brl || null,
@@ -103,11 +105,23 @@ const salvar = () => {
                                 <input v-model="form.max_pages" type="number" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 dark:bg-gray-900 dark:border-gray-600 dark:text-white" required>
                                 <InputError :message="form.errors.max_pages" class="mt-2" />
                             </div>
-                            <div class="col-span-1 md:col-span-2 pt-2">
+                            <div class="col-span-1 md:col-span-2 pt-4 grid grid-cols-1 md:grid-cols-3 gap-4 border-t dark:border-gray-700">
                                 <label class="flex items-start">
                                     <input v-model="form.has_advanced_features" type="checkbox" class="mt-1 rounded border-gray-300 text-primary-600 shadow-sm focus:ring-primary-500 dark:bg-gray-900 dark:border-gray-600">
                                     <div class="ml-3">
-                                        <span class="block text-sm font-medium text-gray-700 dark:text-gray-300">Possui Recursos Avançados (Premium Limits)</span>
+                                        <span class="block text-sm font-medium text-gray-700 dark:text-gray-300">Recursos Avançados</span>
+                                    </div>
+                                </label>
+                                <label class="flex items-start">
+                                    <input v-model="form.permite_imagens" type="checkbox" class="mt-1 rounded border-gray-300 text-primary-600 shadow-sm focus:ring-primary-500 dark:bg-gray-900 dark:border-gray-600">
+                                    <div class="ml-3">
+                                        <span class="block text-sm font-medium text-gray-700 dark:text-gray-300">Permite Imagens</span>
+                                    </div>
+                                </label>
+                                <label class="flex items-start">
+                                    <input v-model="form.permite_videos" type="checkbox" class="mt-1 rounded border-gray-300 text-primary-600 shadow-sm focus:ring-primary-500 dark:bg-gray-900 dark:border-gray-600">
+                                    <div class="ml-3">
+                                        <span class="block text-sm font-medium text-gray-700 dark:text-gray-300">Permite Vídeos</span>
                                     </div>
                                 </label>
                             </div>

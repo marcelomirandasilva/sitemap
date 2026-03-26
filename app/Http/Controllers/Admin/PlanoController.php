@@ -62,6 +62,8 @@ class PlanoController extends Controller
             'max_projects' => 'required|integer|min:-1',
             'max_pages' => 'required|integer|min:-1',
             'has_advanced_features' => 'boolean',
+            'permite_imagens' => 'boolean',
+            'permite_videos' => 'boolean',
             'stripe_monthly_price_id' => 'nullable|string|max:255',
             'stripe_yearly_price_id' => 'nullable|string|max:255',
             'price_monthly_brl' => 'nullable|numeric|min:0',

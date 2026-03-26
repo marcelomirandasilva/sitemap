@@ -58,7 +58,7 @@ const destroy = (id) => {
                                     <th class="px-6 py-4">Nome do Plano / Slug</th>
                                     <th class="px-6 py-4">Desbloqueios (Projetos x Pags)</th>
                                     <th class="px-6 py-4">Billing Mensal (BRL)</th>
-                                    <th class="px-6 py-4 text-center">Avançado</th>
+                                    <th class="px-6 py-4 text-center">Mídia / Recursos</th>
                                     <th class="px-6 py-4 px-3 text-right">Controles</th>
                                 </tr>
                             </thead>
@@ -86,10 +86,15 @@ const destroy = (id) => {
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 text-sm text-center">
-                                        <span v-if="plano.has_advanced_features" class="inline-flex items-center text-success-600 bg-success-50 px-2 py-0.5 rounded text-xs border border-success-200 dark:bg-success-900/30 dark:text-success-400 dark:border-success-800">
-                                            Sim
-                                        </span>
-                                        <span v-else class="inline-flex items-center text-gray-500 bg-gray-100 px-2 py-0.5 rounded text-xs border border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700">Não</span>
+                                        <div class="flex items-center justify-center gap-2">
+                                            <span :title="plano.permite_imagens ? 'Permite Imagens' : 'Bloqueia Imagens'" :class="plano.permite_imagens ? 'text-emerald-500' : 'text-gray-300'">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                            </span>
+                                            <span :title="plano.permite_videos ? 'Permite Vídeos' : 'Bloqueia Vídeos'" :class="plano.permite_videos ? 'text-emerald-500' : 'text-gray-300'">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                                            </span>
+                                            <span v-if="plano.has_advanced_features" title="Recursos Premium" class="text-amber-500 font-bold ml-1">★</span>
+                                        </div>
                                     </td>
                                     <td class="px-6 py-4 text-right space-x-3">
                                         <Link :href="route('admin.plans.edit', plano.id)" class="inline-flex items-center text-primary-600 hover:text-primary-900 font-medium">
