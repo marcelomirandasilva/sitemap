@@ -116,25 +116,36 @@ Route::middleware(['auth'])->prefix('dev')->group(function () {
 
 require __DIR__ . '/auth.php';
 
-// Back-office Nativo (Vue + Inertia)
-Route::prefix('administracao')->name('admin.')->middleware(['auth', 'verified', 'admin'])->group(function () {
-    Route::get('/', [\App\Http\Controllers\Admin\PainelController::class, 'index'])->name('dashboard');
+// Área de Gestão (Back-office Nativo Vue + Inertia)
+Route::prefix('gestao')->name('admin.')->group(function () {
 
-    // Usuários
-    Route::resource('users', \App\Http\Controllers\Admin\UsuarioController::class)->except(['create', 'store', 'show', 'destroy']);
-    Route::post('users/{user}/impersonate', [\App\Http\Controllers\Admin\UsuarioController::class, 'impersonate'])->name('users.impersonate');
+    // Auth Administrativo Independente
+    Route::middleware('guest')->group(function () {
+        Route::get('/login', [\App\Http\Controllers\Admin\Auth\AuthenticatedSessionController::class, 'create'])->name('login');
+        Route::post('/login', [\App\Http\Controllers\Admin\Auth\AuthenticatedSessionController::class, 'store']);
+    });
 
-    // Planos
-    Route::resource('plans', \App\Http\Controllers\Admin\PlanoController::class)->except(['show']);
+    // Rotas Protegidas da Gestão
+    Route::middleware(['auth', 'verified', 'admin'])->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\PainelController::class, 'index'])->name('dashboard');
+        Route::post('/logout', [\App\Http\Controllers\Admin\Auth\AuthenticatedSessionController::class, 'destroy'])->name('logout');
 
-    // Tickets
-    Route::get('tickets', [\App\Http\Controllers\Admin\TicketController::class, 'index'])->name('tickets.index');
-    Route::get('tickets/{ticket}', [\App\Http\Controllers\Admin\TicketController::class, 'show'])->name('tickets.show');
-    Route::post('tickets/{ticket}/reply', [\App\Http\Controllers\Admin\TicketController::class, 'reply'])->name('tickets.reply');
-    Route::put('tickets/{ticket}', [\App\Http\Controllers\Admin\TicketController::class, 'update'])->name('tickets.update');
+        // Usuários
+        Route::resource('users', \App\Http\Controllers\Admin\UsuarioController::class)->except(['create', 'store', 'show', 'destroy']);
+        Route::post('users/{user}/impersonate', [\App\Http\Controllers\Admin\UsuarioController::class, 'impersonate'])->name('users.impersonate');
 
-    // Monitoramento Crawler
-    Route::get('jobs', [\App\Http\Controllers\Admin\TarefaSitemapController::class, 'index'])->name('jobs.index');
-    Route::get('jobs/{job}', [\App\Http\Controllers\Admin\TarefaSitemapController::class, 'show'])->name('jobs.show');
-    Route::delete('jobs/{job}/cancel', [\App\Http\Controllers\Admin\TarefaSitemapController::class, 'cancel'])->name('jobs.cancel');
+        // Planos
+        Route::resource('plans', \App\Http\Controllers\Admin\PlanoController::class)->except(['show']);
+
+        // Tickets
+        Route::get('tickets', [\App\Http\Controllers\Admin\TicketController::class, 'index'])->name('tickets.index');
+        Route::get('tickets/{ticket}', [\App\Http\Controllers\Admin\TicketController::class, 'show'])->name('tickets.show');
+        Route::post('tickets/{ticket}/reply', [\App\Http\Controllers\Admin\TicketController::class, 'reply'])->name('tickets.reply');
+        Route::put('tickets/{ticket}', [\App\Http\Controllers\Admin\TicketController::class, 'update'])->name('tickets.update');
+
+        // Monitoramento Crawler
+        Route::get('jobs', [\App\Http\Controllers\Admin\TarefaSitemapController::class, 'index'])->name('jobs.index');
+        Route::get('jobs/{job}', [\App\Http\Controllers\Admin\TarefaSitemapController::class, 'show'])->name('jobs.show');
+        Route::delete('jobs/{job}/cancel', [\App\Http\Controllers\Admin\TarefaSitemapController::class, 'cancel'])->name('jobs.cancel');
+    });
 });

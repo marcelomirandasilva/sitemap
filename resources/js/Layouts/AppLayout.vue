@@ -2,11 +2,19 @@
 import { Head, Link, usePage } from '@inertiajs/vue3';
 import AppHeader from '@/Components/App/Header.vue';
 import AppTopbar from '@/Components/App/Topbar.vue';
+import AdminTopbar from '@/Components/Admin/Topbar.vue';
 import AppFooter from '@/Components/App/Footer.vue';
 import { computed } from 'vue';
 
 const page = usePage();
 const user = computed(() => page.props.auth.user);
+const isAdminRoute = computed(() => {
+    try {
+        return route().current('admin.*');
+    } catch (e) {
+        return false;
+    }
+});
 const requiresVerification = computed(() => user.value && user.value.email_verified_at === null);
 const theme = computed(() => user.value?.ui_preferences?.theme || 'light');
 </script>
@@ -20,7 +28,8 @@ const theme = computed(() => user.value?.ui_preferences?.theme || 'light');
                 <div class="flex justify-between items-center h-20">
                     <AppHeader />
 
-                    <AppTopbar />
+                    <AdminTopbar v-if="isAdminRoute" />
+                    <AppTopbar v-else />
                 </div>
             </div>
             <div v-if="$slots.hero" class="pb-12">

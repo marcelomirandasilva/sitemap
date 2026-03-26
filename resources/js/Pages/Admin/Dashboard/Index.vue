@@ -19,7 +19,7 @@ defineProps({
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center flex items-center justify-center gap-3">
                     <svg class="w-8 h-8 text-accent-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
                     <h1 class="text-3xl font-light text-gray-700 dark:text-gray-200">
-                        Administração Global
+                        Sitemap <span class="font-bold text-primary-600">Gestão</span>
                     </h1>
                 </div>
             </div>
