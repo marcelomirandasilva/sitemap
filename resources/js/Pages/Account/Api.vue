@@ -1,8 +1,11 @@
 <script setup>
 import AppLayout from '@/Layouts/AppLayout.vue';
-import { Head, useForm, router } from '@inertiajs/vue3';
+import { Head, useForm, router, usePage } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import { trans } from 'laravel-vue-i18n';
+
+const page = usePage();
+const appName = computed(() => page.props.appName || 'PRO Sitemaps');
 
 const props = defineProps({
     apiKey:         { type: String, default: null },
@@ -238,7 +241,7 @@ const scrollTo = (id) => {
 
                     <!-- Título -->
                     <div class="text-center py-4 border-b border-gray-200">
-                        <h1 class="text-lg font-bold text-gray-700 uppercase tracking-wide">{{ $t('api.title_internal') }}</h1>
+                        <h1 class="text-lg font-bold text-gray-700 uppercase tracking-wide">{{ $t('api.title_internal', { appName }) }}</h1>
                     </div>
 
                     <!-- Abas -->
@@ -273,7 +276,7 @@ const scrollTo = (id) => {
                     <div v-show="activeTab === 'reference'" class="p-6">
 
                         <!-- Intro -->
-                        <p class="text-sm text-gray-700 mb-2">{{ $t('api.ref.intro') }}</p>
+                        <p class="text-sm text-gray-700 mb-2">{{ $t('api.ref.intro', { appName }) }}</p>
                         <p class="text-sm text-gray-600 mb-4">
                             {{ $t('api.ref.visit_setup') }}
                             <button @click="activeTab = 'setup'" class="text-accent-600 font-semibold hover:underline">{{ $t('api.ref.setup_link') }}</button>
@@ -477,13 +480,12 @@ const scrollTo = (id) => {
                         <!-- Endpoint URL -->
                         <div class="border border-gray-200 rounded">
                             <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 text-sm font-semibold text-gray-700">
-                                {{ $t('api.setup.endpoint_title') }}
+                                {{ $t('api.setup.endpoint_title', { appName }) }}
                             </div>
                             <div class="px-4 py-4 space-y-2 text-sm text-gray-700">
                                 <p>
-                                    {{ $t('api.setup.endpoint_info1') }}
+                                    {{ $t('api.setup.endpoint_info1', { appName }) }}
                                     <strong class="text-accent-700">POST</strong>
-                                    {{ $t('api.setup.endpoint_info1').includes('método') ? '' : ' method' }}
                                 </p>
                                 <p>
                                     {{ $t('api.setup.endpoint_info2') }}
