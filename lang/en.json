@@ -407,7 +407,7 @@
     "api.ref.method8": "2.6 Request Sitemap update",
     "api.ref.method9": "2.7 Receive Update notifications",
 
-    "api.title_internal": "{appName} API",
+    "api.title_internal": ":appName API",
     "api.ref.ep.site_add": "Create New Site Entry",
     "api.ref.ep.sites_list": "Retrieve Site Entries List",
     "api.ref.ep.get_sitemap": "Get Sitemap Details",
@@ -458,8 +458,8 @@
     "api.setup.reset_text": "if you would like to reset your API Key.",
     "api.setup.reset_warning": "Note that this action will also invalidate your current API Key and all further API requests must use the new key instead!",
 
-    "api.setup.endpoint_title": "{appName} API endpoint URL",
-    "api.setup.endpoint_info1": "- all {appName} API requests must be sent using",
+    "api.setup.endpoint_title": ":appName API endpoint URL",
+    "api.setup.endpoint_info1": "- all :appName API requests must be sent using",
     "api.setup.endpoint_info2": "- all required parameters must be included in the request body with",
     "api.setup.endpoint_info3": "- request must be sent to the following endpoint URL:",
 

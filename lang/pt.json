@@ -405,8 +405,8 @@
     "api.tab_reference": "API REFERENCE",
     "api.tab_setup": "SETUP API",
 
-    "api.title_internal": "{appName} API",
-    "api.ref.intro": "A {appName} API permite acesso programático para gerenciar sua conta, incluindo disparar atualizações de sitemaps e receber notificações de atualização via webhooks.",
+    "api.title_internal": ":appName API",
+    "api.ref.intro": "A :appName API permite acesso programático para gerenciar sua conta, incluindo disparar atualizações de sitemaps e receber notificações de atualização via webhooks.",
     "api.ref.visit_setup": "Visite a seção",
     "api.ref.setup_link": "Setup API",
     "api.ref.setup_suffix": "para configurar sua Chave de API.",
@@ -474,7 +474,7 @@
     "api.setup.reset_text": "se quiser redefinir sua Chave de API.",
     "api.setup.reset_warning": "Observe que esta ação também invalidará sua Chave de API atual e todas as solicitações futuras deverão usar a nova chave!",
 
-    "api.setup.endpoint_title": "URL do endpoint da {appName} API",
+    "api.setup.endpoint_title": "URL do endpoint da :appName API",
     "api.setup.endpoint_info1": "- todas as solicitações devem ser enviadas usando o método",
     "api.setup.endpoint_info2": "- todos os parâmetros obrigatórios devem ser incluídos no corpo da solicitação com o tipo de conteúdo",
     "api.setup.endpoint_info3": "- a solicitação deve ser enviada para a seguinte URL de endpoint:",
