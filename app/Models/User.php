@@ -29,6 +29,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'notification_preferences',
         'billing_address',
         'vat_number',
+        'api_callback_url',
     ];
 
     /**

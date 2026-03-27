@@ -354,6 +354,7 @@ CREATE TABLE `users` (
   `role` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'user',
   `password` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `remember_token` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `api_callback_url` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `stripe_id` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `pm_type` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `pm_last_four` varchar(4) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
@@ -396,3 +397,4 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (19,'2026_03_19_120
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (20,'2026_03_23_200411_change_update_frequency_to_enum_on_plans_table',9);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (21,'2026_03_24_160500_alter_projects_url_length',10);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (22,'2026_03_26_141827_add_media_permissions_to_plans_table',11);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (23,'2026_03_27_143412_add_api_callback_url_to_users_table',12);

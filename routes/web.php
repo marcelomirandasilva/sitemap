@@ -98,6 +98,11 @@ Route::middleware(['auth'])->group(function () {
     // Histórico de Pagamentos
     Route::get('/billing', [App\Http\Controllers\FaturamentoController::class, 'index'])->name('billing.index');
 
+    // Página de API do Usuário (Referência + Setup)
+    Route::get('/account/api', [App\Http\Controllers\ApiController::class, 'index'])->name('account.api');
+    Route::post('/account/api/reset-key', [App\Http\Controllers\ApiController::class, 'resetKey'])->name('account.api.reset-key');
+    Route::post('/account/api/callback-url', [App\Http\Controllers\ApiController::class, 'saveCallbackUrl'])->name('account.api.callback-url');
+
     // Sistema de Suporte ao Usuário (Tickets)
     Route::prefix('support')->name('support.')->controller(App\Http\Controllers\TicketController::class)->group(function () {
         Route::get('/', 'index')->name('index');

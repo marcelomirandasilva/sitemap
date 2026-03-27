@@ -11,6 +11,8 @@ class ChaveApi extends Model
 {
     use HasFactory;
 
+    protected $table = 'api_keys';
+
     protected $fillable = [
         'user_id',
         'name',
