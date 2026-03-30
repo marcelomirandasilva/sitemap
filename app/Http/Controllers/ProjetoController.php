@@ -46,9 +46,15 @@ class ProjetoController extends Controller
             'check_videos' => (bool) ($user->plano?->permite_videos),
         ]);
 
+        // Recarrega defaults do banco para iniciar o job com a mesma configuração
+        // usada pelo fluxo de "retomar / iniciar".
+        $projeto->refresh();
+        $limitePlano = $user->plano?->max_pages ?? 500;
+        $limiteEfetivo = min($projeto->max_pages ?? $limitePlano, $limitePlano);
+
         // 6. Inicia o Crawler Automaticamente
         try {
-            $externalJobId = $this->sitemapService->startJob($projeto);
+            $externalJobId = $this->sitemapService->startJob($projeto, $limiteEfetivo);
 
             if ($externalJobId) {
                 $projeto->tarefasSitemap()->create([

@@ -29,6 +29,23 @@ const larguraBarra = computed(() => {
     return tarefa.value.progress || 0;
 });
 
+const paginasAdicionadas = computed(() => {
+    if (!tarefa.value) return 0;
+    return tarefa.value.pages_count ?? tarefa.value.urls_found ?? 0;
+});
+
+const paginasPuladas = computed(() => {
+    if (!tarefa.value) return 0;
+    return tarefa.value.urls_excluded ?? 0;
+});
+
+const paginasDescobertas = computed(() => paginasAdicionadas.value + paginasPuladas.value);
+
+const progressoPercentual = computed(() => {
+    if (!tarefa.value) return 0;
+    return Math.floor(tarefa.value.progress || 0);
+});
+
 
 
 const arquivosMapeados = computed(() => {
@@ -135,7 +152,7 @@ watch(() => props.show, (novoValor) => {
 
 const iniciarCrawler = async () => {
     try {
-        tarefa.value = { status: 'queued', progress: 0, pages_count: 0, urls_crawled: 0, urls_found: 0, queue_size: 0, current_depth: 0 }; // Otimistic UI
+        tarefa.value = { status: 'queued', progress: 0, pages_count: 0, urls_crawled: 0, urls_found: 0, urls_excluded: 0, queue_size: 0, current_depth: 0 }; // Otimistic UI
         await axios.post(route('projects.crawl', props.projeto.id));
         // A enquete já vai pegar o status real na próxima chamada
         iniciarEnquete();
@@ -234,7 +251,7 @@ onUnmounted(() => {
                         <div class="flex items-center gap-2 text-xs text-primary-800 font-bold">
                             <span class="flex items-center gap-2">
                                 <svg class="animate-spin w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                                {{ tarefa?.pages_count || 0 }}/500 {{ $t('crawler.update_in_progress') }}
+                                {{ progressoPercentual }}% {{ $t('crawler.update_in_progress') }}
                             </span>
                         </div>
                     </div>
@@ -257,9 +274,9 @@ onUnmounted(() => {
                         
                         <div class="p-6 text-center text-primary-800 text-sm leading-relaxed min-h-[100px] flex flex-col justify-center">
                             <div>
-                                {{ $t('crawler.time_elapsed') }}: <span class="font-bold">{{ tempoDecorrido }}</span>, 
-                                {{ $t('crawler.pages_processed') }}: <span class="font-bold">{{ tarefa?.urls_crawled || tarefa?.pages_count || 0 }}</span> 
-                                ({{ tarefa?.pages_count || 0 }} {{ $t('crawler.added_sitemap') }})
+                                {{ $t('crawler.time_elapsed') }}: <span class="font-bold">{{ tempoDecorrido }}</span>,
+                                {{ $t('crawler.pages_processed') }}: <span class="font-bold">{{ tarefa?.urls_crawled || paginasAdicionadas }}</span>
+                                ({{ paginasAdicionadas }} {{ $t('crawler.added_sitemap') }})
                             </div>
                             <div class="text-xs opacity-75 mt-1">
                                 {{ $t('crawler.queued') }}: <span class="font-bold">{{ tarefa?.queue_size || 0 }}</span>, 
@@ -315,15 +332,15 @@ onUnmounted(() => {
                             <div class="bg-primary-400 text-white text-center py-1 font-bold uppercase text-lg">{{ $t('crawler.pages_card') }}</div>
                             <div class="p-4 flex justify-between items-center bg-white">
                                 <div class="text-center">
-                                    <span class="text-3xl font-bold text-primary-800">{{ tarefa?.pages_count }}</span>
-                                    <span class="text-xs text-green-500 font-bold ml-1">▲ {{ tarefa?.pages_count }}</span>
+                                    <span class="text-3xl font-bold text-primary-800">{{ paginasAdicionadas }}</span>
+                                    <span class="text-xs text-green-500 font-bold ml-1">▲ {{ paginasAdicionadas }}</span>
                                     <div class="text-[10px] font-bold text-primary-800 uppercase mt-1">{{ $t('crawler.indexed') }}</div>
                                     <a href="#" class="text-[10px] text-accent-600 border border-accent-600 rounded px-1 mt-1 inline-block hover:bg-accent-600 hover:text-white transition">☑ {{ $t('crawler.view_sitemap') }}</a>
                                 </div>
                                 <div class="text-right text-xs text-gray-600 space-y-1">
-                                    <div><span class="font-bold">{{ tarefa?.pages_count + 130 }}</span> {{ $t('crawler.discovered') }}</div>
-                                    <div class="text-danger-400"><span class="font-bold">130</span> {{ $t('crawler.skipped') }} »</div>
-                                    <div class="text-green-600"><span class="font-bold">{{ tarefa?.pages_count }}</span> {{ $t('crawler.added') }} »</div>
+                                    <div><span class="font-bold">{{ paginasDescobertas }}</span> {{ $t('crawler.discovered') }}</div>
+                                    <div class="text-danger-400"><span class="font-bold">{{ paginasPuladas }}</span> {{ $t('crawler.skipped') }}</div>
+                                    <div class="text-green-600"><span class="font-bold">{{ paginasAdicionadas }}</span> {{ $t('crawler.added') }}</div>
                                 </div>
                             </div>
                         </div>

@@ -97,7 +97,11 @@ class RastreadorController extends Controller
 
         // Consultar API externa para atualização somente se necessário
         // (Podemos otimizar futuramente para não chamar API se acabou de completar)
-        $shouldCheckApi = !in_array($ultimo_job->status, ['completed', 'failed', 'cancelled']) || empty($ultimo_job->artifacts);
+        $shouldCheckApi = !in_array($ultimo_job->status, ['completed', 'failed', 'cancelled'])
+            || empty($ultimo_job->artifacts)
+            || is_null($ultimo_job->urls_found)
+            || is_null($ultimo_job->urls_crawled)
+            || is_null($ultimo_job->urls_excluded);
 
         $statusData = [];
 
@@ -112,6 +116,9 @@ class RastreadorController extends Controller
                     'status' => $statusData['status'] ?? $ultimo_job->status,
                     'progress' => $statusData['progress'] ?? $ultimo_job->progress,
                     'pages_count' => $statusData['result']['total_urls'] ?? $statusData['urls_found'] ?? $statusData['pages_count'] ?? $ultimo_job->pages_count ?? 0,
+                    'urls_found' => $statusData['result']['total_urls'] ?? $statusData['urls_found'] ?? $statusData['pages_count'] ?? $ultimo_job->urls_found,
+                    'urls_crawled' => $statusData['urls_crawled'] ?? $ultimo_job->urls_crawled,
+                    'urls_excluded' => $statusData['urls_excluded'] ?? $ultimo_job->urls_excluded,
                     'images_count' => $statusData['result']['total_images'] ?? $statusData['images_found'] ?? 0,
                     'videos_count' => $statusData['result']['total_videos'] ?? $statusData['videos_found'] ?? 0,
                     'message' => $statusData['message'] ?? null,
@@ -160,8 +167,9 @@ class RastreadorController extends Controller
             'progress' => $ultimo_job->progress,
             'message' => $ultimo_job->message ?? null,
             'pages_count' => $ultimo_job->pages_count,
-            'urls_crawled' => $statusData['urls_crawled'] ?? $ultimo_job->pages_count ?? 0,
-            'urls_found' => $statusData['urls_found'] ?? $ultimo_job->pages_count ?? 0,
+            'urls_crawled' => $statusData['urls_crawled'] ?? $ultimo_job->urls_crawled ?? $ultimo_job->pages_count ?? 0,
+            'urls_found' => $statusData['result']['total_urls'] ?? $statusData['urls_found'] ?? $ultimo_job->urls_found ?? $ultimo_job->pages_count ?? 0,
+            'urls_excluded' => $statusData['urls_excluded'] ?? $ultimo_job->urls_excluded ?? 0,
             'images_count' => $ultimo_job->images_count ?? 0,
             'videos_count' => $ultimo_job->videos_count ?? 0,
             'artifacts' => $ultimo_job->artifacts,

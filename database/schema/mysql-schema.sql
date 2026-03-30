@@ -266,6 +266,9 @@ CREATE TABLE `sitemap_jobs` (
   `status` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'queued',
   `progress` double NOT NULL DEFAULT '0',
   `pages_count` int NOT NULL DEFAULT '0',
+  `urls_found` int DEFAULT NULL,
+  `urls_crawled` int DEFAULT NULL,
+  `urls_excluded` int DEFAULT NULL,
   `images_count` int NOT NULL DEFAULT '0',
   `videos_count` int NOT NULL DEFAULT '0',
   `artifacts` json DEFAULT NULL,
@@ -398,3 +401,4 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (20,'2026_03_23_200
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (21,'2026_03_24_160500_alter_projects_url_length',10);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (22,'2026_03_26_141827_add_media_permissions_to_plans_table',11);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (23,'2026_03_27_143412_add_api_callback_url_to_users_table',12);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (24,'2026_03_30_120000_add_crawl_metrics_to_sitemap_jobs_table',13);

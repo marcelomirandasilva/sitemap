@@ -1,8 +1,7 @@
 <script setup>
 import AppLayout from '@/Layouts/AppLayout.vue';
-import { Head, useForm, router, usePage } from '@inertiajs/vue3';
+import { Head, router, usePage } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
-import { trans } from 'laravel-vue-i18n';
 
 const page = usePage();
 const appName = computed(() => page.props.appName || 'PRO Sitemaps');
@@ -15,211 +14,143 @@ const props = defineProps({
     podeAcessarApi: { type: Boolean, default: false },
 });
 
-// Controle de abas
 const activeTab = ref('reference');
-
-// --------------------
-// SETUP API
-// --------------------
 const selectedProjeto = ref('');
-const callbackForm = useForm({ callback_url: props.callbackUrl || '' });
+const resetando = ref(false);
+const exemploJobId = '550e8400-e29b-41d4-a716-446655440000';
 
-const resetando   = ref(false);
-const chaveCriada = ref(null);
-const chaveAtual  = computed(() => chaveCriada.value ?? props.apiKey);
+const chaveAtual = computed(() => props.apiKey);
+const apiKeyDisplay = computed(() => chaveAtual.value || 'YOUR_API_KEY_HERE');
+const authorizationHeader = computed(() => `Bearer ${apiKeyDisplay.value}`);
+const endpointBase = computed(() => `${props.endpointUrl}/sitemaps`);
+
+const projetoSelecionado = computed(() => {
+    if (!selectedProjeto.value || !props.projetos.length) {
+        return null;
+    }
+
+    return props.projetos.find((projeto) => projeto.id == selectedProjeto.value) || null;
+});
+
+const exemploProjId = computed(() => projetoSelecionado.value?.id || '4673908');
+const exemploProjUrl = computed(() => projetoSelecionado.value?.url || 'https://www.yourdomain.com/');
+const outputDirectory = computed(() => `sitemaps/projects/${exemploProjId.value}`);
+
+const indice = [
+    {
+        label: '1. Fluxo do job',
+        children: [
+            { id: 'create_job', label: '1.1 Criar job de sitemap' },
+            { id: 'get_status', label: '1.2 Consultar status do job' },
+        ],
+    },
+    {
+        label: '2. Artefatos e controle',
+        children: [
+            { id: 'list_artifacts', label: '2.1 Listar artefatos' },
+            { id: 'download_artifact', label: '2.2 Baixar artefato' },
+            { id: 'cancel_job', label: '2.3 Cancelar job' },
+        ],
+    },
+];
+
+const endpoints = computed(() => [
+    {
+        id: 'create_job',
+        titulo: 'POST /sitemaps',
+        requestParams: [
+            { param: 'Authorization', desc: 'Header HTTP com sua API Key no formato Bearer.', value: authorizationHeader.value },
+            { param: 'Content-Type', desc: 'Envie o payload em JSON.', value: 'application/json' },
+            { param: 'start_urls', desc: 'Lista de URLs iniciais do rastreamento.', value: `["${exemploProjUrl.value}"]` },
+            { param: 'max_depth', desc: 'Profundidade maxima do crawl.', value: '5' },
+            { param: 'max_pages', desc: 'Quantidade maxima de paginas a processar.', value: '500' },
+            { param: 'include_images', desc: 'Inclui sitemap de imagens.', value: 'true' },
+            { param: 'include_videos', desc: 'Inclui sitemap de videos.', value: 'true' },
+            { param: 'massive_processing', desc: 'Ativa o modo massivo de processamento.', value: 'true' },
+            { param: 'output_directory', desc: 'Diretorio de saida opcional.', value: outputDirectory.value },
+        ],
+        responseParams: [
+            { param: 'job_id', desc: 'Identificador do job criado.', value: exemploJobId },
+            { param: 'status', desc: 'Status inicial do job.', value: 'queued' },
+            { param: 'message', desc: 'Mensagem de retorno da API.', value: 'Job criado e sera processado em breve' },
+            { param: 'created_at', desc: 'Data de criacao do job.', value: '2026-03-27T11:00:23Z' },
+            { param: 'estimated_duration_seconds', desc: 'Estimativa opcional de duracao.', value: '300' },
+        ],
+    },
+    {
+        id: 'get_status',
+        titulo: 'GET /sitemaps/{job_id}',
+        requestParams: [
+            { param: 'job_id', desc: 'ID do job retornado na criacao.', value: exemploJobId },
+            { param: 'Authorization (recommended)', desc: 'Use sua API Key para manter o fluxo autenticado.', value: authorizationHeader.value },
+        ],
+        responseParams: [
+            { param: 'job_id', desc: 'Identificador do job.', value: exemploJobId },
+            { param: 'status', desc: 'queued, running, completed, failed ou cancelled.', value: 'running' },
+            { param: 'progress', desc: 'Percentual de progresso do job.', value: '45.5' },
+            { param: 'message', desc: 'Mensagem atual do processamento.', value: 'Crawling em progresso' },
+            {
+                param: 'result',
+                desc: 'Dados finais quando o job terminar.',
+                value: null,
+                json: `{\n  "job_id": "${exemploJobId}",\n  "status": "completed",\n  "progress": 100,\n  "message": "Processamento concluido",\n  "phase": "done",\n  "urls_found": 1250,\n  "urls_crawled": 568,\n  "images_found": 234,\n  "videos_found": 12,\n  "result": {\n    "main_sitemap_path": "${outputDirectory.value}/sitemap.xml",\n    "image_sitemap_path": "${outputDirectory.value}/sitemap_images.xml"\n  }\n}`,
+            },
+        ],
+    },
+    {
+        id: 'list_artifacts',
+        titulo: 'GET /sitemaps/{job_id}/artifacts',
+        requestParams: [
+            { param: 'Authorization', desc: 'Header HTTP com sua API Key no formato Bearer.', value: authorizationHeader.value },
+            { param: 'job_id', desc: 'ID do job concluido.', value: exemploJobId },
+        ],
+        responseParams: [
+            {
+                param: 'artifacts',
+                desc: 'Lista de arquivos gerados.',
+                value: null,
+                json: `{\n  "artifacts": [\n    {\n      "name": "sitemap.xml",\n      "type": "main",\n      "size_bytes": 245760,\n      "created_at": "2026-03-27T11:05:00Z",\n      "download_url": "/api/v1/sitemaps/${exemploJobId}/artifacts/sitemap.xml"\n    },\n    {\n      "name": "sitemap_images.xml",\n      "type": "images",\n      "size_bytes": 98211,\n      "created_at": "2026-03-27T11:05:00Z",\n      "download_url": "/api/v1/sitemaps/${exemploJobId}/artifacts/sitemap_images.xml"\n    }\n  ]\n}`,
+            },
+        ],
+    },
+    {
+        id: 'download_artifact',
+        titulo: 'GET /sitemaps/{job_id}/artifacts/{name}',
+        isRaw: true,
+        requestParams: [
+            { param: 'Authorization', desc: 'Header HTTP com sua API Key no formato Bearer.', value: authorizationHeader.value },
+            { param: 'job_id', desc: 'ID do job concluido.', value: exemploJobId },
+            { param: 'name', desc: 'Nome do arquivo retornado pela listagem de artefatos.', value: 'sitemap.xml' },
+        ],
+        responseParams: [],
+    },
+    {
+        id: 'cancel_job',
+        titulo: 'POST /sitemaps/{job_id}/cancel',
+        requestParams: [
+            { param: 'Authorization', desc: 'Header HTTP com sua API Key no formato Bearer.', value: authorizationHeader.value },
+            { param: 'job_id', desc: 'ID de um job queued ou running.', value: exemploJobId },
+        ],
+        responseParams: [
+            { param: 'message', desc: 'Mensagem de cancelamento.', value: 'Job cancelado com sucesso' },
+            { param: 'job_id', desc: 'Identificador do job cancelado.', value: exemploJobId },
+            { param: 'cancelled_at', desc: 'Data de cancelamento.', value: '2026-03-27T11:03:10Z' },
+        ],
+    },
+]);
 
 const resetarChave = () => {
-    if (!confirm('Isso invalidará sua chave atual. Continuar?')) return;
+    if (!confirm('Isso invalidara sua chave atual. Continuar?')) return;
+
     resetando.value = true;
     router.post(route('account.api.reset-key'), {}, {
         preserveScroll: true,
         onFinish: () => { resetando.value = false; },
-        onSuccess: (page) => {
-            // A nova chave vem via flash ou reload — recarregamos a página
+        onSuccess: () => {
             router.reload({ only: ['apiKey'] });
         },
     });
 };
-
-const salvarCallback = () => {
-    callbackForm.post(route('account.api.callback-url'), { preserveScroll: true });
-};
-
-// --------------------
-// API REFERENCE — dados dos endpoints
-// --------------------
-const exemploProjId = computed(() => {
-    if (selectedProjeto.value && props.projetos.length) {
-        const p = props.projetos.find(p => p.id == selectedProjeto.value);
-        return p ? p.id : '4673908';
-    }
-    return '4673908';
-});
-
-const exemploProjUrl = computed(() => {
-    if (selectedProjeto.value && props.projetos.length) {
-        const p = props.projetos.find(p => p.id == selectedProjeto.value);
-        return p ? p.url : 'https://www.yourdomain.com/';
-    }
-    return 'https://www.yourdomain.com/';
-});
-
-const apiKeyDisplay = computed(() => chaveAtual.value || 'ps_IfphlsHs.IQBliAaHJV7iX8hzHsabhWLONyz7cnP8r8sSxVpFAVigMEh6');
-
-const endpoints = computed(() => [
-    {
-        id:     'site_add',
-        titulo: trans('api.ref.ep.site_add'),
-        requestParams: [
-            { param: 'method',  desc: trans('api.ref.param.method'), value: 'site_add' },
-            { param: 'api_key', desc: trans('api.ref.param.api_key'), value: apiKeyDisplay.value },
-            { param: 'uri',     desc: trans('api.ref.param.uri'), value: exemploProjUrl.value },
-        ],
-        responseParams: [
-            { param: 'api_success', desc: trans('api.ref.resp.api_success'), value: 'true/false' },
-            { param: 'time',        desc: trans('api.ref.resp.time'),         value: '2026-03-27T11:00:23+00:00' },
-            { param: 'result',      desc: trans('api.ref.resp.result'), value: null, json: `{\n  "result": [\n    {\n      "new_site_id": integer,\n      "new_url": "${exemploProjUrl.value}",\n      "url": "${exemploProjUrl.value}",\n      "messages": [ ... ],\n      "errors": [\n        "Entry for this domain already exists in your account"\n      ]\n    }\n  ]\n}` },
-            { param: 'result_desc', desc: trans('api.ref.resp.result_desc'), value: '' },
-        ],
-    },
-    {
-        id:     'sites_list',
-        titulo: trans('api.ref.ep.sites_list'),
-        requestParams: [
-            { param: 'method',  desc: trans('api.ref.param.method'),  value: 'sites_list' },
-            { param: 'api_key', desc: trans('api.ref.param.api_key'), value: apiKeyDisplay.value },
-        ],
-        responseParams: [
-            { param: 'api_success', desc: trans('api.ref.resp.api_success'), value: 'true/false' },
-            { param: 'time',        desc: trans('api.ref.resp.time'),         value: '2026-03-27T11:00:23+00:00' },
-            { param: 'result',      desc: trans('api.ref.resp.result'), value: null, json: `{\n  "entries": [\n    {\n      "id": "38275",\n      "url": "${exemploProjUrl.value}",\n      "created": 1515046557,\n      "pro_account": true/false,\n      "sitemap_updated": 1515046557,\n      "pages_indexed": 20\n    },\n    ...\n  ],\n  "total_entries": 80\n}` },
-            { param: 'result_desc', desc: trans('api.ref.resp.result_desc'), value: '' },
-        ],
-    },
-    {
-        id:     'get_sitemap',
-        titulo: trans('api.ref.ep.get_sitemap'),
-        requestParams: [
-            { param: 'method',  desc: trans('api.ref.param.method'),  value: 'get_sitemap' },
-            { param: 'api_key', desc: trans('api.ref.param.api_key'), value: apiKeyDisplay.value },
-            { param: 'site_id', desc: trans('api.ref.param.site_id'), value: exemploProjId.value },
-        ],
-        responseParams: [
-            { param: 'api_success', desc: trans('api.ref.resp.api_success'), value: 'true/false' },
-            { param: 'time',        desc: trans('api.ref.resp.time'),         value: '2026-03-27T11:00:23+00:00' },
-            { param: 'site_id',     desc: trans('api.ref.resp.site_id'),      value: exemploProjId.value },
-            { param: 'result',      desc: trans('api.ref.resp.result'), value: null, json: `{\n  "sitemap_updated": "2026-03-27T11:00:23+00:00",\n  "sitemap_pages": "500",\n  "sitemap_urls": [\n    "https://a560342.sitemaphosting7.com/${exemploProjId.value}/sitemap_${exemploProjId.value}.xml"\n  ]\n}` },
-            { param: 'result_desc', desc: trans('api.ref.resp.result_desc'), value: '' },
-        ],
-    },
-    {
-        id:     'download_sitemap',
-        titulo: trans('api.ref.ep.download_sitemap'),
-        isRaw:  true,
-        requestParams: [
-            { param: 'method',                   desc: trans('api.ref.param.method'),            value: 'download_sitemap' },
-            { param: 'api_key',                  desc: trans('api.ref.param.api_key'),           value: apiKeyDisplay.value },
-            { param: 'site_id',                  desc: trans('api.ref.param.site_id'),           value: exemploProjId.value },
-            { param: 'sitemap_self_uri',          desc: trans('api.ref.param.sitemap_self_uri'),  value: 'https://www.yourwebsite.com/your-script.php' },
-            { param: 'sitemap_self_path (optional)', desc: trans('api.ref.param.sitemap_self_path'), value: 'https://www.yourwebsite.com/sitemap/' },
-            { param: 'sitemap_id (optional)',        desc: trans('api.ref.param.sitemap_id'),        value: 'sitemap_images.xml' },
-        ],
-        responseParams: [],
-    },
-    {
-        id:     'download_sitemap_all',
-        titulo: trans('api.ref.ep.download_sitemap_all'),
-        isZip:  true,
-        requestParams: [
-            { param: 'method',  desc: trans('api.ref.param.method'),  value: 'download_sitemap_all' },
-            { param: 'api_key', desc: trans('api.ref.param.api_key'), value: apiKeyDisplay.value },
-            { param: 'site_id', desc: trans('api.ref.param.site_id'), value: exemploProjId.value },
-        ],
-        responseParams: [],
-    },
-    {
-        id:     'site_history',
-        titulo: trans('api.ref.ep.site_history'),
-        requestParams: [
-            { param: 'method',          desc: trans('api.ref.param.method'),  value: 'site_history' },
-            { param: 'api_key',         desc: trans('api.ref.param.api_key'), value: apiKeyDisplay.value },
-            { param: 'site_id',         desc: trans('api.ref.param.site_id'), value: exemploProjId.value },
-            { param: 'from (optional)', desc: trans('api.ref.param.from'),    value: '0' },
-        ],
-        responseParams: [
-            { param: 'api_success', desc: trans('api.ref.resp.api_success'), value: 'true/false' },
-            { param: 'time',        desc: trans('api.ref.resp.time'),         value: '2026-03-27T11:00:23+00:00' },
-            { param: 'site_id',     desc: trans('api.ref.resp.site_id'),      value: exemploProjId.value },
-            { param: 'result',      desc: trans('api.ref.resp.result'), value: null, json: `{\n  "entries": [\n    {\n      "id": "38275",\n      "time": 1515046557,\n      "pages_indexed": 97,\n      "pages_crawled": 117,\n      "pages_skipped": 20,\n      "pages_fetched": 114,\n      "pages_added": 0,\n      "pages_removed": 0,\n      "image_count": 8,\n      "video_count": 17,\n      "rss_count": 1,\n      "news_count": null,\n      "broken_links": 18,\n      "processing_time": 4.0925,\n      "processing_bandwidth": 928411\n    },\n    ...\n  ],\n  "total_entries": 80\n}` },
-            { param: 'result_desc', desc: trans('api.ref.resp.result_desc'), value: '' },
-        ],
-    },
-    {
-        id:     'site_history_detail',
-        titulo: trans('api.ref.ep.site_history_detail'),
-        requestParams: [
-            { param: 'method',   desc: trans('api.ref.param.method'),   value: 'site_history' },
-            { param: 'api_key',  desc: trans('api.ref.param.api_key'),  value: apiKeyDisplay.value },
-            { param: 'site_id',  desc: trans('api.ref.param.site_id'),  value: exemploProjId.value },
-            { param: 'entry_id', desc: trans('api.ref.param.entry_id'), value: 'number' },
-        ],
-        responseParams: [
-            { param: 'api_success', desc: trans('api.ref.resp.api_success'), value: 'true/false' },
-            { param: 'time',        desc: trans('api.ref.resp.time'),         value: '2026-03-27T11:00:23+00:00' },
-            { param: 'site_id',     desc: trans('api.ref.resp.site_id'),      value: exemploProjId.value },
-            { param: 'result',      desc: trans('api.ref.resp.result'), value: null, json: `{\n  "entry_details": {\n    "info": {\n      "id": "38275",\n      "time": 1515046557,\n      "pages_indexed": 97,\n      "pages_crawled": 117,\n      "pages_skipped": 20\n      // ...\n    },\n    "new_urls": ["url1", "url2"],\n    "removed_urls": ["url1", "url2"],\n    "skipped_urls": [{ "url1", "skip_reason1" }],\n    "new_images": [{ "page_url1", "image_url1" }],\n    "removed_images": [{ "page_url1", "image_url1" }],\n    "new_videos": [{ "page_url1", "video_url1" }],\n    "removed_videos": [{ "page_url1", "video_url1" }],\n    "broken_links": [{ "url1", "referringpage1" }]\n  }\n}` },
-        ],
-    },
-    {
-        id:     'request_update',
-        titulo: trans('api.ref.ep.request_update'),
-        requestParams: [
-            { param: 'method',  desc: trans('api.ref.param.method'),  value: 'request_sitemap_update' },
-            { param: 'api_key', desc: trans('api.ref.param.api_key'), value: apiKeyDisplay.value },
-            { param: 'site_id', desc: trans('api.ref.param.site_id'), value: exemploProjId.value },
-        ],
-        responseParams: [
-            { param: 'api_success', desc: trans('api.ref.resp.api_success'), value: 'true/false' },
-            { param: 'time',        desc: trans('api.ref.resp.time'),         value: '2026-03-27T11:00:23+00:00' },
-            { param: 'site_id',     desc: trans('api.ref.resp.site_id'),      value: exemploProjId.value },
-            { param: 'result',      desc: trans('api.ref.resp.result'), value: null, json: `{\n  "update_scheduled": true/false,\n  "message": "Sitemap update has been scheduled."\n}` },
-            { param: 'result_desc', desc: trans('api.ref.resp.result_desc'), value: '' },
-        ],
-    },
-    {
-        id:     'set_notification',
-        titulo: trans('api.ref.ep.set_notification'),
-        requestParams: [
-            { param: 'method',       desc: trans('api.ref.param.method'),  value: 'set_notification' },
-            { param: 'api_key',      desc: trans('api.ref.param.api_key'), value: apiKeyDisplay.value },
-            { param: 'site_id',      desc: trans('api.ref.param.site_id'), value: exemploProjId.value },
-            { param: 'callback_url', desc: trans('api.ref.param.callback_url_desc'), value: 'https://yoursite.com/my-callback/' },
-        ],
-        responseParams: [
-            { param: 'api_success', desc: trans('api.ref.resp.api_success'), value: 'true/false' },
-            { param: 'time',        desc: trans('api.ref.resp.time'),         value: '2026-03-27T11:00:23+00:00' },
-            { param: 'result',      desc: trans('api.ref.resp.result'), value: null, json: `{\n  "notification_set": true/false\n}` },
-            { param: 'result_desc', desc: trans('api.ref.resp.result_desc'), value: '' },
-        ],
-    },
-]);
-
-// Índice navegável — reativo para responder à troca de idioma
-const indice = computed(() => [
-    { label: trans('api.ref.section1'), children: [
-        { id: 'site_add',   label: trans('api.ref.method1') },
-        { id: 'sites_list', label: trans('api.ref.method2') },
-    ]},
-    { label: trans('api.ref.section2'), children: [
-        { id: 'get_sitemap',          label: trans('api.ref.method3') },
-        { id: 'download_sitemap',     label: trans('api.ref.method4') },
-        { id: 'download_sitemap_all', label: trans('api.ref.method5') },
-        { id: 'site_history',         label: trans('api.ref.method6') },
-        { id: 'site_history_detail',  label: trans('api.ref.method7') },
-        { id: 'request_update',       label: trans('api.ref.method8') },
-        { id: 'set_notification',     label: trans('api.ref.method9') },
-    ]},
-]);
 
 const scrollTo = (id) => {
     const el = document.getElementById(id);
@@ -238,13 +169,10 @@ const scrollTo = (id) => {
         <div class="py-8">
             <div class="max-w-5xl mx-auto sm:px-6 lg:px-8">
                 <div class="bg-white shadow overflow-hidden sm:rounded-lg">
-
-                    <!-- Título -->
                     <div class="text-center py-4 border-b border-gray-200">
-                        <h1 class="text-lg font-bold text-gray-700 uppercase tracking-wide">{{ $t('api.title_internal', { appName }) }}</h1>
+                        <h1 class="text-lg font-bold text-gray-700 uppercase tracking-wide">{{ appName }} API</h1>
                     </div>
 
-                    <!-- Abas -->
                     <div class="border-b border-gray-200">
                         <nav class="-mb-px flex">
                             <button
@@ -256,7 +184,7 @@ const scrollTo = (id) => {
                                     'w-1/2 py-3 px-1 text-center border-b-2 font-semibold text-sm tracking-wide transition-colors duration-200'
                                 ]"
                             >
-                                {{ $t('api.tab_reference') }}
+                                Referencia REST
                             </button>
                             <button
                                 @click="activeTab = 'setup'"
@@ -267,23 +195,24 @@ const scrollTo = (id) => {
                                     'w-1/2 py-3 px-1 text-center border-b-2 font-semibold text-sm tracking-wide transition-colors duration-200'
                                 ]"
                             >
-                                {{ $t('api.tab_setup') }}
+                                Setup API
                             </button>
                         </nav>
                     </div>
 
-                    <!-- ==================== ABA: API REFERENCE ==================== -->
                     <div v-show="activeTab === 'reference'" class="p-6">
-
-                        <!-- Intro -->
-                        <p class="text-sm text-gray-700 mb-2">{{ $t('api.ref.intro', { appName }) }}</p>
-                        <p class="text-sm text-gray-600 mb-4">
-                            {{ $t('api.ref.visit_setup') }}
-                            <button @click="activeTab = 'setup'" class="text-accent-600 font-semibold hover:underline">{{ $t('api.ref.setup_link') }}</button>
-                            {{ $t('api.ref.setup_suffix') }}
+                        <p class="text-sm text-gray-700 mb-3">
+                            A API atual do {{ appName }} e REST e orientada a jobs. Voce autentica com sua API Key em
+                            <span class="font-mono">Authorization: Bearer ...</span>, cria um job de sitemap, consulta o status,
+                            lista os artefatos gerados e baixa os arquivos finais.
                         </p>
 
-                        <!-- Índice Navegável -->
+                        <div class="mb-6 rounded border border-gray-200 bg-gray-50 p-3 text-xs text-gray-600 space-y-1">
+                            <p><span class="font-semibold text-gray-700">Base URL:</span> <span class="font-mono">{{ endpointBase }}</span></p>
+                            <p><span class="font-semibold text-gray-700">Auth:</span> <span class="font-mono">Authorization: {{ authorizationHeader }}</span></p>
+                            <p><span class="font-semibold text-gray-700">Formato:</span> JSON para criacao e cancelamento, JSON para status/listagem e download binario nos artefatos.</p>
+                        </div>
+
                         <div class="mb-6 text-sm">
                             <div v-for="grupo in indice" :key="grupo.label" class="mb-2">
                                 <p class="font-semibold text-gray-600 mb-1">{{ grupo.label }}</p>
@@ -300,49 +229,36 @@ const scrollTo = (id) => {
                             </div>
                         </div>
 
-                        <!-- Seletor de Projeto (site-specific) -->
                         <div v-if="projetos.length > 0" class="mb-6 p-3 border border-gray-200 rounded bg-gray-50 text-sm">
-                            <p class="text-gray-600 mb-2">{{ $t('api.setup.switch_site') }}</p>
+                            <p class="text-gray-600 mb-2">Selecione um projeto para preencher exemplos de URL e diretorio de saida.</p>
                             <select
                                 v-model="selectedProjeto"
                                 class="border border-gray-300 rounded px-3 py-1.5 text-sm w-72 focus:outline-none focus:ring-1 focus:ring-primary-400"
                             >
-                                <option value="">{{ $t('api.setup.select_site') }}</option>
+                                <option value="">Selecione um site</option>
                                 <option v-for="p in projetos" :key="p.id" :value="p.id">{{ p.url }}</option>
                             </select>
                         </div>
 
-                        <!-- Endpoints -->
                         <div class="space-y-0">
                             <div v-for="ep in endpoints" :key="ep.id" :id="ep.id" class="border border-gray-200 rounded mb-4">
-
-                                <!-- Cabeçalho do endpoint -->
-                                <div class="flex items-center justify-between px-4 py-2 bg-gray-50 border-b border-gray-200">
+                                <div class="flex items-center justify-between px-4 py-2 bg-gray-50 border-b border-gray-200 gap-4">
                                     <span class="text-sm font-semibold text-gray-700">{{ ep.titulo }}</span>
-                                    <button
-                                        @click="activeTab = 'setup'"
-                                        class="flex items-center gap-1 text-xs text-accent-600 hover:underline"
-                                    >
-                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                                        </svg>
-                                        {{ $t('api.ref.launch_testing') }}
-                                    </button>
+                                    <span class="text-[11px] font-mono text-gray-500">{{ endpointBase }}</span>
                                 </div>
 
-                                <!-- Request -->
                                 <div class="border-b border-gray-100">
                                     <div class="px-4 py-2 bg-blue-50 text-xs text-gray-600 border-b border-blue-100 flex items-center gap-2">
-                                        <span class="text-blue-500 font-bold">→</span>
-                                        {{ $t('api.ref.request_params') }}
+                                        <span class="text-blue-500 font-bold">-&gt;</span>
+                                        Parametros da requisicao
                                     </div>
                                     <div class="overflow-x-auto">
                                         <table class="w-full text-xs">
                                             <thead>
                                                 <tr class="border-b border-gray-100 bg-gray-50">
-                                                    <th class="text-left px-4 py-2 font-semibold text-gray-600 w-1/4">{{ $t('api.ref.col_param') }}</th>
-                                                    <th class="text-left px-4 py-2 font-semibold text-gray-600 w-1/3">{{ $t('api.ref.col_desc') }}</th>
-                                                    <th class="text-left px-4 py-2 font-semibold text-gray-600">{{ $t('api.ref.col_value') }}</th>
+                                                    <th class="text-left px-4 py-2 font-semibold text-gray-600 w-1/4">Nome</th>
+                                                    <th class="text-left px-4 py-2 font-semibold text-gray-600 w-1/3">Descricao</th>
+                                                    <th class="text-left px-4 py-2 font-semibold text-gray-600">Valor de exemplo</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -350,8 +266,7 @@ const scrollTo = (id) => {
                                                     <td class="px-4 py-2 font-mono text-gray-700 align-top">{{ p.param }}</td>
                                                     <td class="px-4 py-2 text-gray-500 align-top">{{ p.desc }}</td>
                                                     <td class="px-4 py-2 text-gray-700 align-top break-all">
-                                                        <span v-if="p.param === 'api_key'" class="font-mono text-[10px] break-all">{{ p.value }}</span>
-                                                        <span v-else>{{ p.value }}</span>
+                                                        <span class="font-mono text-[10px] break-all">{{ p.value }}</span>
                                                     </td>
                                                 </tr>
                                             </tbody>
@@ -359,27 +274,22 @@ const scrollTo = (id) => {
                                     </div>
                                 </div>
 
-                                <!-- Response -->
                                 <div v-if="ep.isRaw" class="px-4 py-3 text-xs text-gray-600 bg-blue-50 flex items-center gap-2">
-                                    <span class="text-blue-500 font-bold">←</span>
-                                    {{ $t('api.ref.raw_response') }}
-                                </div>
-                                <div v-else-if="ep.isZip" class="px-4 py-3 text-xs text-gray-600 bg-blue-50 flex items-center gap-2">
-                                    <span class="text-blue-500 font-bold">←</span>
-                                    {{ $t('api.ref.zip_response') }}
+                                    <span class="text-blue-500 font-bold">&lt;-</span>
+                                    A resposta sera o arquivo binario solicitado.
                                 </div>
                                 <div v-else-if="ep.responseParams && ep.responseParams.length">
                                     <div class="px-4 py-2 bg-blue-50 text-xs text-gray-600 border-b border-blue-100 flex items-center gap-2">
-                                        <span class="text-blue-500 font-bold">←</span>
-                                        {{ $t('api.ref.response_params') }}
+                                        <span class="text-blue-500 font-bold">&lt;-</span>
+                                        Campos principais da resposta
                                     </div>
                                     <div class="overflow-x-auto">
                                         <table class="w-full text-xs">
                                             <thead>
                                                 <tr class="border-b border-gray-100 bg-gray-50">
-                                                    <th class="text-left px-4 py-2 font-semibold text-gray-600 w-1/4">{{ $t('api.ref.col_param') }}</th>
-                                                    <th class="text-left px-4 py-2 font-semibold text-gray-600 w-1/3">{{ $t('api.ref.col_desc') }}</th>
-                                                    <th class="text-left px-4 py-2 font-semibold text-gray-600">{{ $t('api.ref.col_value') }}</th>
+                                                    <th class="text-left px-4 py-2 font-semibold text-gray-600 w-1/4">Nome</th>
+                                                    <th class="text-left px-4 py-2 font-semibold text-gray-600 w-1/3">Descricao</th>
+                                                    <th class="text-left px-4 py-2 font-semibold text-gray-600">Valor de exemplo</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -388,7 +298,6 @@ const scrollTo = (id) => {
                                                     <td class="px-4 py-2 text-gray-500 align-top">{{ p.desc }}</td>
                                                     <td class="px-4 py-2 align-top">
                                                         <pre v-if="p.json" class="bg-blue-50 text-blue-800 rounded p-2 text-[10px] overflow-x-auto whitespace-pre-wrap font-mono leading-relaxed">{{ p.json }}</pre>
-                                                        <span v-else-if="p.param === 'result_desc'" class="text-accent-600 italic">{{ p.desc }}</span>
                                                         <span v-else class="text-gray-700">{{ p.value }}</span>
                                                     </td>
                                                 </tr>
@@ -400,49 +309,38 @@ const scrollTo = (id) => {
                         </div>
                     </div>
 
-                    <!-- ==================== ABA: SETUP API ==================== -->
                     <div v-show="activeTab === 'setup'" class="p-6 space-y-6">
-
-                        <!-- Upgrade notice -->
                         <div v-if="!podeAcessarApi" class="bg-amber-50 border border-amber-200 rounded p-4 text-sm text-amber-800">
-                            {{ $t('api.setup.upgrade_notice') }}
+                            Seu plano atual nao inclui acesso a API. Faca um upgrade para usar esta funcionalidade.
                         </div>
 
-                        <!-- Intro -->
                         <div class="text-sm text-gray-700 space-y-1">
-                            <p>{{ $t('api.setup.intro1') }}</p>
-                            <p>
-                                {{ $t('api.setup.intro2') }}
-                                <button @click="activeTab = 'reference'" class="text-accent-600 font-semibold underline">{{ $t('api.setup.guide_link') }}</button>
-                                {{ $t('api.setup.intro2_suffix') }}
-                            </p>
+                            <p>As requisicoes externas devem enviar sua API Key no header Authorization, no formato Bearer <span class="font-mono">&lt;sua_api_key&gt;</span>, e usar payload JSON nos endpoints REST.</p>
+                            <p>Use a aba de referencia para ver o contrato real de criacao de jobs, consulta de status, artefatos e cancelamento.</p>
                         </div>
 
-                        <!-- Nota -->
                         <div class="text-center text-sm py-3 border border-gray-200 rounded bg-gray-50 text-gray-600">
-                            {{ $t('api.setup.note_plans') }}
+                            O acesso externo a API so esta disponivel para contas com plano avancado e assinatura ativa.
                         </div>
 
-                        <!-- Switch to site-specific -->
                         <div class="border border-gray-200 rounded">
                             <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 text-sm text-gray-600">
-                                {{ $t('api.setup.switch_site') }}
+                                Exemplos por projeto
                             </div>
                             <div class="px-4 py-3">
                                 <select
                                     v-model="selectedProjeto"
                                     class="border border-gray-300 rounded px-3 py-1.5 text-sm w-80 focus:outline-none focus:ring-1 focus:ring-primary-400"
                                 >
-                                    <option value="">{{ $t('api.setup.select_site') }}</option>
+                                    <option value="">Selecione um site</option>
                                     <option v-for="p in projetos" :key="p.id" :value="p.id">{{ p.url }}</option>
                                 </select>
                             </div>
                         </div>
 
-                        <!-- Chave de API -->
                         <div class="border border-gray-200 rounded">
                             <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 text-sm font-semibold text-gray-700">
-                                {{ $t('api.setup.your_key') }}
+                                Sua chave de API
                             </div>
                             <div class="px-4 py-4 space-y-3">
                                 <div v-if="chaveAtual">
@@ -458,81 +356,41 @@ const scrollTo = (id) => {
                                             :disabled="resetando"
                                             class="text-accent-600 font-bold hover:underline disabled:opacity-50"
                                         >
-                                            {{ $t('api.setup.reset_link') }}
+                                            Clique aqui
                                         </button>
-                                        {{ $t('api.setup.reset_text') }}
+                                        se quiser redefinir sua chave de API.
                                     </p>
-                                    <p class="text-xs text-gray-500 mt-1">{{ $t('api.setup.reset_warning') }}</p>
+                                    <p class="text-xs text-gray-500 mt-1">Ao redefinir, a chave atual deixa de funcionar e todas as chamadas futuras devem usar a nova chave.</p>
                                 </div>
                                 <div v-else>
-                                    <p class="text-sm text-gray-500 mb-3">{{ $t('api.setup.no_key') }}</p>
+                                    <p class="text-sm text-gray-500 mb-3">Voce ainda nao possui uma chave de API.</p>
                                     <button
                                         @click="resetarChave"
                                         :disabled="resetando"
                                         class="bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold py-2 px-4 rounded uppercase tracking-wider transition disabled:opacity-50"
                                     >
-                                        {{ resetando ? $t('api.setup.generating') : $t('api.setup.generate_key') }}
+                                        {{ resetando ? 'GERANDO...' : 'GERAR CHAVE DE API' }}
                                     </button>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Endpoint URL -->
                         <div class="border border-gray-200 rounded">
                             <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 text-sm font-semibold text-gray-700">
-                                {{ $t('api.setup.endpoint_title', { appName }) }}
+                                URL base da API {{ appName }}
                             </div>
                             <div class="px-4 py-4 space-y-2 text-sm text-gray-700">
-                                <p>
-                                    {{ $t('api.setup.endpoint_info1', { appName }) }}
-                                    <strong class="text-accent-700">POST</strong>
-                                </p>
-                                <p>
-                                    {{ $t('api.setup.endpoint_info2') }}
-                                    <strong>application/x-www-form-urlencoded</strong>
-                                    content-type
-                                </p>
-                                <p>{{ $t('api.setup.endpoint_info3') }}</p>
+                                <p>- use GET ou POST conforme o endpoint REST documentado na aba de referencia</p>
+                                <p>- para endpoints com body, envie JSON com <strong>application/json</strong></p>
+                                <p>- monte as rotas a partir desta base:</p>
                                 <div class="border border-gray-200 rounded px-3 py-2 font-mono text-xs bg-gray-50 text-gray-600">
                                     {{ endpointUrl }}
                                 </div>
+                                <div class="border border-gray-200 rounded px-3 py-2 font-mono text-xs bg-gray-50 text-gray-600">
+                                    Authorization: {{ authorizationHeader }}
+                                </div>
                             </div>
                         </div>
-
-                        <!-- Callback URL -->
-                        <div class="border border-gray-200 rounded">
-                            <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 text-sm font-semibold text-gray-700">
-                                {{ $t('api.setup.callback_title') }}
-                            </div>
-                            <div class="px-4 py-4 space-y-3">
-                                <p class="text-sm text-gray-600">
-                                    {{ $t('api.setup.callback_desc') }}
-                                    <strong>{{ $t('api.setup.callback_bold') }}</strong>
-                                    {{ $t('api.setup.callback_suffix') }}
-                                </p>
-                                <form @submit.prevent="salvarCallback">
-                                    <input
-                                        v-model="callbackForm.callback_url"
-                                        type="url"
-                                        :placeholder="$t('api.setup.callback_placeholder')"
-                                        class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary-400 mb-3"
-                                    />
-                                    <div class="flex items-center gap-4">
-                                        <button
-                                            type="submit"
-                                            :disabled="callbackForm.processing"
-                                            class="bg-primary-700 hover:bg-primary-800 text-white text-xs font-bold py-2.5 px-5 rounded uppercase tracking-wider transition disabled:opacity-50"
-                                        >
-                                            {{ callbackForm.processing ? $t('api.setup.saving') : $t('api.setup.save_callback') }}
-                                        </button>
-                                        <Transition enter-active-class="transition ease-in-out" enter-from-class="opacity-0" leave-active-class="transition ease-in-out" leave-to-class="opacity-0">
-                                            <p v-if="callbackForm.recentlySuccessful" class="text-sm text-green-600">{{ $t('api.setup.saved') }}</p>
-                                        </Transition>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-
                     </div>
                 </div>
             </div>

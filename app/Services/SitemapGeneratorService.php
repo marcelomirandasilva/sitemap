@@ -43,18 +43,18 @@ class SitemapGeneratorService
     /**
      * Inicia um novo Job de Sitemap para o projeto.
      */
-    public function startJob(Projeto $projeto, int $maxPages = 500): ?string
+    public function startJob(Projeto $projeto, ?int $maxPages = null): ?string
     {
         $userId = $projeto->user_id;
 
         $payload = [
             'start_urls' => [$projeto->url],
-            'max_depth' => $projeto->max_depth ?? 5,
-            'max_pages' => $maxPages, // Enforced by plan limit in RastreadorController
+            'max_depth' => $projeto->max_depth ?? 3,
+            'max_pages' => $maxPages ?? ($projeto->max_pages ?? 1000),
             'include_images' => (bool) $projeto->check_images,
             'include_videos' => (bool) $projeto->check_videos,
             'delay_between_requests' => (float) ($projeto->delay_between_requests ?? 1.0),
-            'max_concurrent_requests' => (int) ($projeto->max_concurrent_requests ?? 10),
+            'max_concurrent_requests' => (int) ($projeto->max_concurrent_requests ?? 2),
             'massive_processing' => true,
             'output_directory' => 'sitemaps/projects/' . $projeto->id,
         ];

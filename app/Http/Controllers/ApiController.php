@@ -33,7 +33,7 @@ class ApiController extends Controller
 
         return Inertia::render('Account/Api', [
             'apiKey' => $chaveAtiva ? $chaveAtiva->key : null,
-            'endpointUrl' => config('app.url') . '/api/v1/',
+            'endpointUrl' => rtrim(config('services.sitemap_generator.base_url'), '/') . '/api/v1',
             'callbackUrl' => $user->api_callback_url,
             'projetos' => $projetos,
             'podeAcessarApi' => $user->plano && $user->plano->has_advanced_features,

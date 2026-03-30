@@ -75,6 +75,18 @@ const arquivosMapeados = computed(() => {
     return lista;
 });
 
+const paginasAdicionadas = computed(() => {
+    if (!tarefa.value) return 0;
+    return tarefa.value.pages_count ?? tarefa.value.urls_found ?? 0;
+});
+
+const paginasPuladas = computed(() => {
+    if (!tarefa.value) return 0;
+    return tarefa.value.urls_excluded ?? 0;
+});
+
+const paginasDescobertas = computed(() => paginasAdicionadas.value + paginasPuladas.value);
+
 const statusColor = computed(() => {
     switch (tarefa.value.status) {
         case 'completed': return 'text-green-600 bg-green-50 border-green-200';
@@ -283,14 +295,16 @@ const toggleFeature = (feature) => {
                             $t('project.pages_discovered') }}</div>
                         <div class="p-6 flex justify-between items-center">
                             <div>
-                                <span class="text-4xl font-bold text-primary-800">{{ tarefa.pages_count || 0 }}</span>
+                                <span class="text-4xl font-bold text-primary-800">{{ paginasAdicionadas }}</span>
                                 <div class="text-xs font-bold text-gray-400 uppercase mt-1">{{
                                     $t('project.total_indexed') }}</div>
                             </div>
                             <div class="text-right text-xs text-gray-600 space-y-1">
-                                <div><span class="font-bold">{{ (tarefa.pages_count || 0) + 12 }}</span> {{
+                                <div><span class="font-bold">{{ paginasDescobertas }}</span> {{
                                     $t('project.stat_discovered') }}</div>
-                                <div class="text-green-600"><span class="font-bold">{{ tarefa.pages_count || 0 }}</span>
+                                <div class="text-danger-400"><span class="font-bold">{{ paginasPuladas }}</span> {{
+                                    $t('crawler.skipped') }}</div>
+                                <div class="text-green-600"><span class="font-bold">{{ paginasAdicionadas }}</span>
                                     {{ $t('project.new_added') }}</div>
                             </div>
                         </div>
@@ -392,7 +406,7 @@ const toggleFeature = (feature) => {
                                     </div>
                                     
                                     <div class="text-sm text-gray-700 leading-relaxed mb-4">
-                                        <p>{{ $t('crawler.pages_processed') }}: <strong>{{ tarefa.pages_count || 0 }}</strong> (<span class="text-accent-600">{{ tarefa.pages_count || 0 }} {{ $t('crawler.added_sitemap') }}</span>)</p>
+                                        <p>{{ $t('crawler.pages_processed') }}: <strong>{{ tarefa.urls_crawled || paginasAdicionadas }}</strong> (<span class="text-accent-600">{{ paginasAdicionadas }} {{ $t('crawler.added_sitemap') }}</span>)</p>
                                         <p v-if="tarefa.current_url" class="truncate max-w-lg mx-auto mb-1">
                                             {{ $t('crawler.current_page') }}: <span class="text-xs text-primary-600 font-mono">{{ tarefa.current_url }}</span>
                                         </p>
