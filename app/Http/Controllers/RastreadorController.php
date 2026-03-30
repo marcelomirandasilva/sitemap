@@ -2,10 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Pagina;
 use App\Models\Projeto;
 use App\Models\TarefaSitemap;
-use App\Models\Pagina;
-
 use App\Services\SitemapGeneratorService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -19,64 +18,226 @@ class RastreadorController extends Controller
         $this->sitemapService = $sitemapService;
     }
 
+    protected function findActiveJob(Projeto $projeto): ?TarefaSitemap
+    {
+        return $projeto->tarefasSitemap()
+            ->whereIn('status', ['queued', 'running'])
+            ->latest()
+            ->first();
+    }
+
+    protected function syncJobFromStatus(TarefaSitemap $job, array $statusData): TarefaSitemap
+    {
+        $job->update([
+            'status' => $statusData['status'] ?? $job->status,
+            'progress' => $statusData['progress'] ?? $job->progress,
+            'pages_count' => $statusData['result']['total_urls']
+                ?? $statusData['urls_found']
+                ?? $statusData['pages_count']
+                ?? $job->pages_count,
+            'urls_found' => $statusData['result']['total_urls']
+                ?? $statusData['urls_found']
+                ?? $statusData['pages_count']
+                ?? $job->urls_found,
+            'urls_crawled' => $statusData['urls_crawled'] ?? $job->urls_crawled,
+            'urls_excluded' => $statusData['urls_excluded'] ?? $job->urls_excluded,
+            'images_count' => $statusData['result']['total_images']
+                ?? $statusData['images_found']
+                ?? $job->images_count,
+            'videos_count' => $statusData['result']['total_videos']
+                ?? $statusData['videos_found']
+                ?? $job->videos_count,
+            'message' => $statusData['message'] ?? $statusData['error_message'] ?? $job->message,
+            'artifacts' => $statusData['artifacts'] ?? $job->artifacts ?? [],
+            'started_at' => $statusData['started_at'] ?? $job->started_at,
+            'completed_at' => $statusData['completed_at'] ?? $job->completed_at,
+        ]);
+
+        return $job->refresh();
+    }
+
+    protected function finalizeCompletedJob(Projeto $projeto, TarefaSitemap $job): void
+    {
+        if (!$job->completed_at) {
+            $job->update(['completed_at' => now()]);
+            $job->refresh();
+        }
+
+        $updates = [
+            'last_crawled_at' => $job->completed_at ?? now(),
+            'status' => 'active',
+        ];
+
+        if ($projeto->current_crawler_job_id === $job->external_job_id) {
+            $updates['current_crawler_job_id'] = null;
+        }
+
+        $projeto->update($updates);
+    }
+
+    protected function finalizeTerminalJob(Projeto $projeto, TarefaSitemap $job): void
+    {
+        if ($projeto->current_crawler_job_id === $job->external_job_id) {
+            $projeto->update(['current_crawler_job_id' => null]);
+        }
+    }
+
     /**
      * Inicia um novo processo de rastreamento para o projeto.
      */
     public function store(Request $request, Projeto $projeto)
     {
-        // Autorização básica (idealmente usar Policies)
         if ($projeto->user_id !== auth()->id()) {
             abort(403);
         }
 
         try {
-            // Calcula o limite efetivo de páginas respeitando o plano do usuário
+            $jobAtivo = $this->findActiveJob($projeto);
+
+            if ($jobAtivo) {
+                $statusData = $this->sitemapService->checkStatus($jobAtivo->external_job_id, auth()->id());
+
+                if ($statusData) {
+                    $statusAnterior = $jobAtivo->status;
+                    $jobAtivo = $this->syncJobFromStatus($jobAtivo, $statusData);
+
+                    if ($jobAtivo->status === 'completed') {
+                        if (empty($jobAtivo->artifacts)) {
+                            $jobAtivo->update([
+                                'artifacts' => $this->sitemapService->getArtifacts($jobAtivo->external_job_id, auth()->id()),
+                            ]);
+                            $jobAtivo->refresh();
+                        }
+
+                        if ($statusAnterior !== 'completed') {
+                            \App\Jobs\ProcessSitemapArtifactsJob::dispatch($jobAtivo);
+                        }
+
+                        $this->finalizeCompletedJob($projeto, $jobAtivo);
+                    } elseif (in_array($jobAtivo->status, ['failed', 'cancelled'])) {
+                        $this->finalizeTerminalJob($projeto, $jobAtivo);
+                    }
+                }
+            }
+
+            $jobAtivo = $this->findActiveJob($projeto);
+
+            if ($jobAtivo) {
+                return response()->json([
+                    'message' => 'Ja existe um rastreamento em andamento para este projeto.',
+                    'job_id' => $jobAtivo->external_job_id,
+                    'status' => $jobAtivo->status,
+                ], 409);
+            }
+
             $usuario = auth()->user()->load('plano');
-            $limitePlano = $usuario->plano?->max_pages ?? 500; // Plano Free como fallback seguro
+            $limitePlano = $usuario->plano?->max_pages ?? 500;
             $limiteEfetivo = min($projeto->max_pages ?? $limitePlano, $limitePlano);
 
-            Log::info("RastreadorController: Iniciando job com limite de {$limiteEfetivo} páginas (plano: {$limitePlano}, projeto: {$projeto->max_pages})");
+            Log::info("RastreadorController: Iniciando job com limite de {$limiteEfetivo} paginas (plano: {$limitePlano}, projeto: {$projeto->max_pages})");
 
-            // Validação de Segurança: Garante que o usuário não burlou o limite do plano para mídia
             $permiteImagens = (bool) ($usuario->plano?->permite_imagens);
             $permiteVideos = (bool) ($usuario->plano?->permite_videos);
 
             if ($projeto->check_images && !$permiteImagens) {
                 $projeto->update(['check_images' => false]);
-                Log::warning("RastreadorController: Rastreamento de imagens desativado (não permitido no plano)");
+                Log::warning('RastreadorController: Rastreamento de imagens desativado (nao permitido no plano)');
             }
 
             if ($projeto->check_videos && !$permiteVideos) {
                 $projeto->update(['check_videos' => false]);
-                Log::warning("RastreadorController: Rastreamento de vídeos desativado (não permitido no plano)");
+                Log::warning('RastreadorController: Rastreamento de videos desativado (nao permitido no plano)');
             }
 
             $externalJobId = $this->sitemapService->startJob($projeto, $limiteEfetivo);
 
             if (!$externalJobId) {
-                return response()->json(['message' => 'Falha ao iniciar o serviço de crawler. Tente novamente.'], 500);
+                return response()->json(['message' => 'Falha ao iniciar o servico de crawler. Tente novamente.'], 500);
             }
 
-            // Registrar o Job localmente
-            $job = $projeto->tarefasSitemap()->create([
+            $projeto->tarefasSitemap()->create([
                 'external_job_id' => $externalJobId,
                 'status' => 'queued',
                 'started_at' => now(),
+                'message' => 'Job criado e aguardando processamento.',
             ]);
 
             return response()->json([
                 'message' => 'Rastreamento iniciado!',
-                'job_id' => $externalJobId
+                'job_id' => $externalJobId,
+                'status' => 'queued',
             ], 201);
-
         } catch (\Exception $e) {
-            Log::error('Erro no CrawlerController@store', ['error' => $e->getMessage()]);
-            return response()->json(['message' => 'Ocorreu um erro interno ao iniciar o rastreamento. Tente novamente em instantes.'], 500);
+            Log::error('Erro no RastreadorController@store', ['error' => $e->getMessage()]);
+
+            return response()->json([
+                'message' => 'Ocorreu um erro interno ao iniciar o rastreamento. Tente novamente em instantes.',
+            ], 500);
         }
     }
 
     /**
-     * Verifica e atualiza o status do último job do projeto.
+     * Cancela o job ativo do projeto.
+     */
+    public function cancel(Projeto $projeto)
+    {
+        if ($projeto->user_id !== auth()->id()) {
+            abort(403);
+        }
+
+        $jobAtivo = $this->findActiveJob($projeto);
+
+        if (!$jobAtivo) {
+            return response()->json([
+                'message' => 'Nao ha rastreamento ativo para cancelar.',
+            ], 422);
+        }
+
+        $resultado = $this->sitemapService->cancelJob(
+            $jobAtivo->external_job_id,
+            auth()->id(),
+            $projeto->id
+        );
+
+        if (!$resultado['success']) {
+            $statusData = $this->sitemapService->checkStatus($jobAtivo->external_job_id, auth()->id());
+
+            if ($statusData) {
+                $jobAtivo = $this->syncJobFromStatus($jobAtivo, $statusData);
+
+                if ($jobAtivo->status === 'completed') {
+                    $this->finalizeCompletedJob($projeto, $jobAtivo);
+                } elseif (in_array($jobAtivo->status, ['failed', 'cancelled'])) {
+                    $this->finalizeTerminalJob($projeto, $jobAtivo);
+                }
+            }
+
+            return response()->json([
+                'message' => $resultado['message'] ?? 'Nao foi possivel cancelar o rastreamento.',
+                'status' => $jobAtivo->status,
+                'job_id' => $jobAtivo->external_job_id,
+            ], 409);
+        }
+
+        $jobAtivo->update([
+            'status' => 'cancelled',
+            'message' => $resultado['message'] ?? 'Rastreamento cancelado com sucesso.',
+            'completed_at' => $resultado['cancelled_at'] ?? now(),
+        ]);
+        $jobAtivo->refresh();
+
+        $this->finalizeTerminalJob($projeto, $jobAtivo);
+
+        return response()->json([
+            'message' => $jobAtivo->message,
+            'status' => $jobAtivo->status,
+            'job_id' => $jobAtivo->external_job_id,
+            'completed_at' => $jobAtivo->completed_at?->toISOString(),
+        ]);
+    }
+
+    /**
+     * Verifica e atualiza o status do ultimo job do projeto.
      */
     public function getStatus(Projeto $projeto)
     {
@@ -84,105 +245,92 @@ class RastreadorController extends Controller
             abort(403);
         }
 
-        $ultimo_job = $projeto->tarefasSitemap()->latest()->first();
+        $ultimoJob = $projeto->tarefasSitemap()->latest()->first();
 
-        if (!$ultimo_job) {
+        if (!$ultimoJob) {
             return response()->json([
                 'status' => null,
                 'progress' => 0,
-                'message' => 'Nenhum rastreamento iniciado ainda.'
-            ], 200);
+                'message' => 'Nenhum rastreamento iniciado ainda.',
+            ]);
         }
 
-
-        // Consultar API externa para atualização somente se necessário
-        // (Podemos otimizar futuramente para não chamar API se acabou de completar)
-        $shouldCheckApi = !in_array($ultimo_job->status, ['completed', 'failed', 'cancelled'])
-            || empty($ultimo_job->artifacts)
-            || is_null($ultimo_job->urls_found)
-            || is_null($ultimo_job->urls_crawled)
-            || is_null($ultimo_job->urls_excluded);
+        $shouldCheckApi = !in_array($ultimoJob->status, ['completed', 'failed', 'cancelled'])
+            || empty($ultimoJob->artifacts)
+            || is_null($ultimoJob->urls_found)
+            || is_null($ultimoJob->urls_crawled)
+            || is_null($ultimoJob->urls_excluded);
 
         $statusData = [];
 
         if ($shouldCheckApi) {
-            Log::info("CrawlerController: Consultando API para Job {$ultimo_job->external_job_id}");
-            $statusData = $this->sitemapService->checkStatus($ultimo_job->external_job_id, auth()->id());
+            Log::info("RastreadorController: Consultando API para job {$ultimoJob->external_job_id}");
+            $statusData = $this->sitemapService->checkStatus($ultimoJob->external_job_id, auth()->id());
 
             if ($statusData) {
-                Log::info("CrawlerController: Resposta recebida da API", $statusData);
+                Log::info('RastreadorController: Resposta recebida da API', $statusData);
 
-                $ultimo_job->update([
-                    'status' => $statusData['status'] ?? $ultimo_job->status,
-                    'progress' => $statusData['progress'] ?? $ultimo_job->progress,
-                    'pages_count' => $statusData['result']['total_urls'] ?? $statusData['urls_found'] ?? $statusData['pages_count'] ?? $ultimo_job->pages_count ?? 0,
-                    'urls_found' => $statusData['result']['total_urls'] ?? $statusData['urls_found'] ?? $statusData['pages_count'] ?? $ultimo_job->urls_found,
-                    'urls_crawled' => $statusData['urls_crawled'] ?? $ultimo_job->urls_crawled,
-                    'urls_excluded' => $statusData['urls_excluded'] ?? $ultimo_job->urls_excluded,
-                    'images_count' => $statusData['result']['total_images'] ?? $statusData['images_found'] ?? 0,
-                    'videos_count' => $statusData['result']['total_videos'] ?? $statusData['videos_found'] ?? 0,
-                    'message' => $statusData['message'] ?? null,
-                    'artifacts' => $statusData['artifacts'] ?? $ultimo_job->artifacts ?? [],
-                ]);
+                $statusAnterior = $ultimoJob->status;
+                $ultimoJob = $this->syncJobFromStatus($ultimoJob, $statusData);
 
-                // IMPORTANTE: Recarregar o modelo para refletir as alterações do banco
-                $ultimo_job->refresh();
+                if ($ultimoJob->status === 'completed') {
+                    if (empty($ultimoJob->artifacts)) {
+                        $artifacts = $this->sitemapService->getArtifacts($ultimoJob->external_job_id, auth()->id());
 
-                Log::info("CrawlerController: Job atualizado no BD", ['id' => $ultimo_job->id, 'status' => $ultimo_job->status, 'progress' => $ultimo_job->progress]);
-
-                // Se completou agora e ainda não temos artifacts (fallback), buscar artefatos
-                if ($ultimo_job->status === 'completed') {
-                    if (empty($ultimo_job->artifacts)) {
-                        Log::info("CrawlerController: Buscando artefatos explicitamente...");
-                        $artifacts = $this->sitemapService->getArtifacts($ultimo_job->external_job_id, auth()->id());
-                        $ultimo_job->update([
+                        $ultimoJob->update([
                             'artifacts' => $artifacts,
                         ]);
-                        $ultimo_job->refresh();
+                        $ultimoJob->refresh();
                     }
 
-                    // Atualizar status do Job e timestamp
-                    $ultimo_job->update(['completed_at' => now()]);
+                    $this->finalizeCompletedJob($projeto, $ultimoJob);
 
-                    // Atualizar o PROJETO pai
-                    $projeto->update([
-                        'last_crawled_at' => now(),
-                        'status' => 'active' // Ativa o projeto se estava pendente
-                    ]);
-
-                    // IMPORTANTE: Dispara a ingestão de páginas para preencher a base de dados
-                    \App\Jobs\ProcessSitemapArtifactsJob::dispatch($ultimo_job);
+                    if ($statusAnterior !== 'completed') {
+                        \App\Jobs\ProcessSitemapArtifactsJob::dispatch($ultimoJob);
+                    }
+                } elseif (in_array($ultimoJob->status, ['failed', 'cancelled'])) {
+                    $this->finalizeTerminalJob($projeto, $ultimoJob);
                 }
             }
         }
 
+        if ($ultimoJob->status === 'completed') {
+            $this->finalizeCompletedJob($projeto, $ultimoJob);
+        } elseif (in_array($ultimoJob->status, ['failed', 'cancelled'])) {
+            $this->finalizeTerminalJob($projeto, $ultimoJob);
+        }
+
         $previewUrls = [];
-        if ($ultimo_job->status === 'completed') {
-            $previewUrls = $this->sitemapService->getPreviewUrls($ultimo_job->artifacts ?? [], $ultimo_job->external_job_id);
-            Log::info("CrawlerController: Gerado preview para Job {$ultimo_job->external_job_id}. Total URLs: " . count($previewUrls));
+
+        if ($ultimoJob->status === 'completed') {
+            $previewUrls = $this->sitemapService->getPreviewUrls($ultimoJob->artifacts ?? [], $ultimoJob->external_job_id);
+            Log::info("RastreadorController: Gerado preview para job {$ultimoJob->external_job_id}. Total URLs: " . count($previewUrls));
         }
 
         return response()->json([
-            'status' => $ultimo_job->status,
-            'progress' => $ultimo_job->progress,
-            'message' => $ultimo_job->message ?? null,
-            'pages_count' => $ultimo_job->pages_count,
-            'urls_crawled' => $statusData['urls_crawled'] ?? $ultimo_job->urls_crawled ?? $ultimo_job->pages_count ?? 0,
-            'urls_found' => $statusData['result']['total_urls'] ?? $statusData['urls_found'] ?? $ultimo_job->urls_found ?? $ultimo_job->pages_count ?? 0,
-            'urls_excluded' => $statusData['urls_excluded'] ?? $ultimo_job->urls_excluded ?? 0,
-            'images_count' => $ultimo_job->images_count ?? 0,
-            'videos_count' => $ultimo_job->videos_count ?? 0,
-            'artifacts' => $ultimo_job->artifacts,
+            'external_job_id' => $ultimoJob->external_job_id,
+            'status' => $ultimoJob->status,
+            'progress' => $ultimoJob->progress,
+            'message' => $ultimoJob->message ?? null,
+            'pages_count' => $ultimoJob->pages_count,
+            'urls_crawled' => $statusData['urls_crawled'] ?? $ultimoJob->urls_crawled ?? $ultimoJob->pages_count ?? 0,
+            'urls_found' => $statusData['result']['total_urls'] ?? $statusData['urls_found'] ?? $ultimoJob->urls_found ?? $ultimoJob->pages_count ?? 0,
+            'urls_excluded' => $statusData['urls_excluded'] ?? $ultimoJob->urls_excluded ?? 0,
+            'images_count' => $ultimoJob->images_count ?? 0,
+            'videos_count' => $ultimoJob->videos_count ?? 0,
+            'artifacts' => $ultimoJob->artifacts,
             'preview_urls' => $previewUrls,
             'recent_pages' => $statusData['recent_pages'] ?? [],
             'current_url' => $statusData['current_url'] ?? null,
             'current_depth' => $statusData['current_depth'] ?? 0,
             'queue_size' => $statusData['queue_size'] ?? 0,
+            'started_at' => $ultimoJob->started_at?->toISOString(),
+            'completed_at' => $ultimoJob->completed_at?->toISOString(),
         ]);
     }
 
     /**
-     * Retorna paginated URLs a partir do arquivo sitemap/txt
+     * Retorna paginated URLs a partir do arquivo sitemap/txt.
      */
     public function getUrls(Request $request, Projeto $projeto)
     {
@@ -195,7 +343,6 @@ class RastreadorController extends Controller
             $perPage = $request->input('per_page', 50);
             $search = $request->input('q');
 
-            // Lê diretamente da tabela pages (Pagina)
             $query = Pagina::where('project_id', $projeto->id);
 
             if ($search) {
@@ -207,16 +354,16 @@ class RastreadorController extends Controller
                 ->skip(($page - 1) * $perPage)
                 ->take($perPage)
                 ->get()
-                ->map(function ($p) {
+                ->map(function ($pagina) {
                     return [
-                        'url' => $p->url,
-                        'title' => $p->title,
-                        'status_code' => $p->status_code,
-                        'content_type' => $p->content_type,
-                        'size_bytes' => $p->size_bytes,
-                        'lastMod' => $p->updated_at->toIso8601String(),
-                        'priority' => $p->priority ?? '0.5',
-                        'changeFreq' => $p->change_frequency ?? 'monthly',
+                        'url' => $pagina->url,
+                        'title' => $pagina->title,
+                        'status_code' => $pagina->status_code,
+                        'content_type' => $pagina->content_type,
+                        'size_bytes' => $pagina->size_bytes,
+                        'lastMod' => $pagina->updated_at->toIso8601String(),
+                        'priority' => $pagina->priority ?? '0.5',
+                        'changeFreq' => $pagina->change_frequency ?? 'monthly',
                     ];
                 });
 
@@ -227,16 +374,15 @@ class RastreadorController extends Controller
                 ]);
             }
 
-            // Fallback: se banco vazio, tenta ler do XML
-            $ultimo_job = $projeto->tarefasSitemap()->latest()->first();
+            $ultimoJob = $projeto->tarefasSitemap()->latest()->first();
 
-            if (!$ultimo_job || empty($ultimo_job->artifacts)) {
+            if (!$ultimoJob || empty($ultimoJob->artifacts)) {
                 return response()->json(['data' => [], 'total' => 0]);
             }
 
-            $artifacts = collect($ultimo_job->artifacts);
-            $targetArtifact = $artifacts->firstWhere(fn($a) => isset($a['name']) && str_ends_with($a['name'], 'sitemap.xml'))
-                ?? $artifacts->firstWhere(fn($a) => isset($a['name']) && str_ends_with($a['name'], '.txt'));
+            $artifacts = collect($ultimoJob->artifacts);
+            $targetArtifact = $artifacts->firstWhere(fn($artifact) => isset($artifact['name']) && str_ends_with($artifact['name'], 'sitemap.xml'))
+                ?? $artifacts->firstWhere(fn($artifact) => isset($artifact['name']) && str_ends_with($artifact['name'], '.txt'));
 
             if (!$targetArtifact) {
                 return response()->json(['data' => [], 'total' => 0]);
@@ -244,14 +390,15 @@ class RastreadorController extends Controller
 
             $paths = [
                 base_path('../api-sitemap/sitemaps/projects/' . $projeto->id . '/' . $targetArtifact['name']),
-                base_path('../api-sitemap/sitemaps/' . $ultimo_job->external_job_id . '/' . $targetArtifact['name']),
+                base_path('../api-sitemap/sitemaps/' . $ultimoJob->external_job_id . '/' . $targetArtifact['name']),
             ];
 
             clearstatcache();
             $validPath = null;
-            foreach ($paths as $p) {
-                if (file_exists($p)) {
-                    $validPath = $p;
+
+            foreach ($paths as $path) {
+                if (file_exists($path)) {
+                    $validPath = $path;
                     break;
                 }
             }
@@ -264,12 +411,11 @@ class RastreadorController extends Controller
             $result = $reader->getPaginatedUrls($validPath, $page, $perPage, $search);
 
             return response()->json($result);
-
         } catch (\Throwable $e) {
             return response()->json([
                 'error' => $e->getMessage(),
                 'file' => $e->getFile(),
-                'line' => $e->getLine()
+                'line' => $e->getLine(),
             ], 500);
         }
     }

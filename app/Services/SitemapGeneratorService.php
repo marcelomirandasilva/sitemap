@@ -163,6 +163,46 @@ class SitemapGeneratorService
     }
 
     /**
+     * Cancela um job remoto em execucao ou na fila.
+     */
+    public function cancelJob(string $jobId, int $userId, ?int $projectId = null): array
+    {
+        try {
+            $response = Http::withHeaders($this->internalHeaders($userId, $projectId))
+                ->timeout($this->timeout)
+                ->post("{$this->baseUrl}/api/v1/sitemaps/{$jobId}/cancel");
+
+            if ($response->successful()) {
+                return [
+                    'success' => true,
+                    'job_id' => $response->json('job_id', $jobId),
+                    'message' => $response->json('message', 'Job cancelado com sucesso.'),
+                    'cancelled_at' => $response->json('cancelled_at'),
+                ];
+            }
+
+            return [
+                'success' => false,
+                'status' => $response->status(),
+                'message' => $response->json('detail')
+                    ?? $response->json('message')
+                    ?? 'Nao foi possivel cancelar o job remoto.',
+            ];
+        } catch (\Exception $e) {
+            Log::error("Erro ao cancelar job remoto {$jobId}: " . $e->getMessage(), [
+                'job_id' => $jobId,
+                'user_id' => $userId,
+                'project_id' => $projectId,
+            ]);
+
+            return [
+                'success' => false,
+                'message' => 'Falha na comunicacao com o servico de rastreamento.',
+            ];
+        }
+    }
+
+    /**
      * Recupera a lista de artefatos (arquivos) gerados pelo job.
      */
     public function getArtifacts(string $jobId, int $userId): array

@@ -28,6 +28,8 @@ const props = defineProps({
 
 const abaAtiva = ref("details");
 const carregando = ref(false);
+const reexecutando = ref(false);
+const cancelando = ref(false);
 
 // Estado reativo inicializado com props (cache/ssr)
 const tarefa = ref(props.ultimo_job || {});
@@ -86,11 +88,14 @@ const paginasPuladas = computed(() => {
 });
 
 const paginasDescobertas = computed(() => paginasAdicionadas.value + paginasPuladas.value);
+const jobAtivo = computed(() => ['queued', 'running'].includes(tarefa.value?.status));
+const acaoEmAndamento = computed(() => reexecutando.value || cancelando.value);
 
 const statusColor = computed(() => {
     switch (tarefa.value.status) {
         case 'completed': return 'text-green-600 bg-green-50 border-green-200';
         case 'failed': return 'text-danger-600 bg-danger-50 border-danger-200';
+        case 'cancelled': return 'text-amber-700 bg-amber-50 border-amber-200';
         case 'running': return 'text-primary-600 bg-primary-50 border-primary-200';
         default: return 'text-gray-600 bg-gray-50 border-gray-200';
     }
@@ -131,6 +136,7 @@ const buscarDetalhesJob = async () => {
 };
 
 const iniciarPolling = () => {
+    if (pollingInterval) clearInterval(pollingInterval);
     pollingInterval = setInterval(() => {
         buscarDetalhesJob();
     }, 5000); // Poll a cada 5s
@@ -167,6 +173,92 @@ const confirmarExclusao = () => {
             router.delete(route('projects.destroy', { projeto: props.projeto.id }));
         }
     })
+};
+
+const iniciarNovoCrawler = async () => {
+    if (acaoEmAndamento.value) return;
+
+    reexecutando.value = true;
+
+    try {
+        const response = await axios.post(route('projects.crawl', { projeto: props.projeto.id }));
+
+        tarefa.value = {
+            ...tarefa.value,
+            status: response.data.status ?? 'queued',
+            external_job_id: response.data.job_id ?? null,
+            progress: 0,
+            message: response.data.message ?? null,
+            completed_at: null,
+        };
+        listaUrls.value = [];
+        iniciarPolling();
+    } catch (error) {
+        if (error.response?.status === 409) {
+            await buscarDetalhesJob();
+
+            await Swal.fire({
+                title: t('crawler.update_in_progress'),
+                text: error.response?.data?.message ?? t('crawler.in_progress_desc'),
+                icon: 'info',
+            });
+        } else {
+            await Swal.fire({
+                title: t('common.error'),
+                text: error.response?.data?.message ?? t('crawler.error_generic'),
+                icon: 'error',
+            });
+        }
+    } finally {
+        reexecutando.value = false;
+    }
+};
+
+const cancelarCrawler = async () => {
+    if (acaoEmAndamento.value || !jobAtivo.value) return;
+
+    const result = await Swal.fire({
+        title: t('crawler.cancel_confirm_title'),
+        text: t('crawler.cancel_confirm_text'),
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d97706',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: t('crawler.cancel'),
+        cancelButtonText: t('project.delete_cancel_btn'),
+    });
+
+    if (!result.isConfirmed) {
+        return;
+    }
+
+    cancelando.value = true;
+
+    try {
+        const response = await axios.post(route('projects.crawl.cancel', { projeto: props.projeto.id }));
+
+        tarefa.value = {
+            ...tarefa.value,
+            status: response.data.status ?? 'cancelled',
+            message: response.data.message ?? null,
+            completed_at: response.data.completed_at ?? null,
+        };
+
+        if (pollingInterval) {
+            clearInterval(pollingInterval);
+            pollingInterval = null;
+        }
+    } catch (error) {
+        await buscarDetalhesJob();
+
+        await Swal.fire({
+            title: t('common.error'),
+            text: error.response?.data?.message ?? t('crawler.error_generic'),
+            icon: 'error',
+        });
+    } finally {
+        cancelando.value = false;
+    }
 };
 
 
@@ -244,7 +336,7 @@ const toggleFeature = (feature) => {
                                 <span v-else class="w-2 h-2 rounded-full bg-current"></span>
                                 {{ tarefa.status ? $t('crawler.status.' + tarefa.status) : 'No Job' }}
                             </span>
-                            <DangerButton @click="confirmarExclusao">
+                            <DangerButton @click="confirmarExclusao" :disabled="acaoEmAndamento">
                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
@@ -253,13 +345,22 @@ const toggleFeature = (feature) => {
                                 {{ $t('project.delete') }}
                             </DangerButton>
                             
-                            <PrimaryButton type="button">
+                            <DangerButton v-if="jobAtivo" type="button" @click="cancelarCrawler" :disabled="acaoEmAndamento">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M10 9v6m4-6v6m5-3a9 9 0 11-18 0 9 9 0 0118 0z">
+                                    </path>
+                                </svg>
+                                {{ cancelando ? $t('crawler.cancelling') : $t('crawler.cancel') }}
+                            </DangerButton>
+
+                            <PrimaryButton v-else type="button" @click="iniciarNovoCrawler" :disabled="acaoEmAndamento">
                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
                                     </path>
                                 </svg>
-                                {{ $t('project.recrawl') }}
+                                {{ reexecutando ? $t('crawler.starting') : $t('project.recrawl') }}
                             </PrimaryButton>
                         </div>
                     </div>
@@ -282,6 +383,23 @@ const toggleFeature = (feature) => {
                             <p class="text-sm text-danger-700">
                                 {{ $t('project.crawling_failed') }}. <span v-if="tarefa.message">{{ tarefa.message
                                     }}</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="tarefa.status === 'cancelled'" class="mb-6 bg-amber-50 border-l-4 border-amber-500 p-4">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-amber-500" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd"
+                                    d="M18 10A8 8 0 112 10a8 8 0 0116 0zm-9-4a1 1 0 112 0v4a1 1 0 11-2 0V6zm1 8a1.25 1.25 0 100-2.5A1.25 1.25 0 0010 14z"
+                                    clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-amber-800">
+                                {{ $t('project.crawling_cancelled') }}. <span v-if="tarefa.message">{{ tarefa.message }}</span>
                             </p>
                         </div>
                     </div>
@@ -399,9 +517,9 @@ const toggleFeature = (feature) => {
                                 <div class="max-w-xl mx-auto border-t border-b border-gray-200 py-6">
                                     <div class="flex items-center justify-center gap-3 mb-4">
                                         <span class="text-gray-700">{{ $t('crawler.update_in_progress') }}</span>
-                                        <button class="bg-warning-500 hover:bg-warning-600 text-white text-xs font-bold uppercase px-3 py-1 rounded flex items-center gap-1 transition-colors">
+                                        <button @click="cancelarCrawler" :disabled="acaoEmAndamento" class="bg-warning-500 hover:bg-warning-600 disabled:opacity-60 text-white text-xs font-bold uppercase px-3 py-1 rounded flex items-center gap-1 transition-colors">
                                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                            {{ $t('crawler.pause') }}
+                                            {{ cancelando ? $t('crawler.cancelling') : $t('crawler.cancel') }}
                                         </button>
                                     </div>
                                     

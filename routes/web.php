@@ -42,6 +42,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/projects/{projeto}/crawl', [RastreadorController::class, 'store'])
         ->middleware('throttle:crawlers')
         ->name('projects.crawl');
+    Route::post('/projects/{projeto}/crawl/cancel', [RastreadorController::class, 'cancel'])
+        ->middleware('throttle:crawlers')
+        ->name('projects.crawl.cancel');
     Route::get('/projects/{projeto}/status', [RastreadorController::class, 'getStatus'])->name('projects.status');
     Route::get('/projects/{projeto}/preview', [RastreadorController::class, 'getPreviewUrls'])->name('projects.preview');
     Route::get('/projects/{projeto}/urls', [RastreadorController::class, 'getUrls'])->name('projects.urls');
