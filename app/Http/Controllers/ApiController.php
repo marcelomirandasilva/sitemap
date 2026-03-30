@@ -8,12 +8,27 @@ use Inertia\Inertia;
 
 class ApiController extends Controller
 {
+    protected function userHasExternalApiAccess($user): bool
+    {
+        $user->loadMissing('plano');
+
+        $subscription = $user->subscription('default');
+        $subscriptionActive = $subscription && in_array($subscription->stripe_status, ['active', 'trialing'], true);
+        $trialActive = method_exists($user, 'onTrial') ? (bool) $user->onTrial() : false;
+
+        return (bool) ($user->plano?->has_advanced_features) && ($subscriptionActive || $trialActive);
+    }
     /**
      * Exibe a página de API do usuário.
      */
     public function index(Request $request)
     {
         $user = $request->user();
+        $user->loadMissing('plano');
+
+        $subscription = $user->subscription('default');
+        $subscriptionActive = $subscription && in_array($subscription->stripe_status, ['active', 'trialing'], true);
+        $trialActive = method_exists($user, 'onTrial') ? (bool) $user->onTrial() : false;
 
         // Busca a chave ativa mais recente (sem expiração ou ainda válida)
         $chaveAtiva = $user->chavesApi()
@@ -27,7 +42,7 @@ class ApiController extends Controller
 
         // Lista de projetos para o dropdown "Site-specific"
         $projetos = $user->projetos()
-            ->select('id', 'url')
+            ->select('id', 'url', 'max_depth', 'max_pages', 'check_images', 'check_videos', 'delay_between_requests', 'max_concurrent_requests')
             ->orderBy('url')
             ->get();
 
@@ -36,7 +51,9 @@ class ApiController extends Controller
             'endpointUrl' => rtrim(config('services.sitemap_generator.base_url'), '/') . '/api/v1',
             'callbackUrl' => $user->api_callback_url,
             'projetos' => $projetos,
-            'podeAcessarApi' => $user->plano && $user->plano->has_advanced_features,
+            'podeAcessarApi' => $this->userHasExternalApiAccess($user),
+            'temPlanoApi' => (bool) ($user->plano?->has_advanced_features),
+            'assinaturaAtivaApi' => $subscriptionActive || $trialActive,
         ]);
     }
 
@@ -48,6 +65,10 @@ class ApiController extends Controller
         $user = $request->user();
 
         // Revoga todas as chaves ativas sem expiração (chave principal)
+        if (!$this->userHasExternalApiAccess($user)) {
+            abort(403, 'Seu plano ou assinatura atual nao permite o uso da API externa.');
+        }
+
         $user->chavesApi()
             ->where('is_active', true)
             ->whereNull('expires_at')
@@ -69,6 +90,10 @@ class ApiController extends Controller
      */
     public function saveCallbackUrl(Request $request)
     {
+        if (!$this->userHasExternalApiAccess($request->user())) {
+            abort(403, 'Seu plano ou assinatura atual nao permite o uso da API externa.');
+        }
+
         $request->validate([
             'callback_url' => 'nullable|url|max:500',
         ]);

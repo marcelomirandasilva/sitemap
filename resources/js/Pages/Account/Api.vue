@@ -1,6 +1,6 @@
 <script setup>
 import AppLayout from '@/Layouts/AppLayout.vue';
-import { Head, router, usePage } from '@inertiajs/vue3';
+import { Head, router, useForm, usePage } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 
 const page = usePage();
@@ -12,6 +12,8 @@ const props = defineProps({
     callbackUrl:    { type: String, default: '' },
     projetos:       { type: Array,  default: () => [] },
     podeAcessarApi: { type: Boolean, default: false },
+    temPlanoApi:    { type: Boolean, default: false },
+    assinaturaAtivaApi: { type: Boolean, default: false },
 });
 
 const activeTab = ref('reference');
@@ -23,6 +25,9 @@ const chaveAtual = computed(() => props.apiKey);
 const apiKeyDisplay = computed(() => chaveAtual.value || 'YOUR_API_KEY_HERE');
 const authorizationHeader = computed(() => `Bearer ${apiKeyDisplay.value}`);
 const endpointBase = computed(() => `${props.endpointUrl}/sitemaps`);
+const callbackForm = useForm({
+    callback_url: props.callbackUrl || '',
+});
 
 const projetoSelecionado = computed(() => {
     if (!selectedProjeto.value || !props.projetos.length) {
@@ -34,7 +39,71 @@ const projetoSelecionado = computed(() => {
 
 const exemploProjId = computed(() => projetoSelecionado.value?.id || '4673908');
 const exemploProjUrl = computed(() => projetoSelecionado.value?.url || 'https://www.yourdomain.com/');
+const exemploMaxDepth = computed(() => String(projetoSelecionado.value?.max_depth ?? 3));
+const exemploMaxPages = computed(() => String(projetoSelecionado.value?.max_pages ?? 1000));
+const exemploIncludeImages = computed(() => String(projetoSelecionado.value?.check_images ?? true));
+const exemploIncludeVideos = computed(() => String(projetoSelecionado.value?.check_videos ?? true));
+const exemploDelay = computed(() => String(projetoSelecionado.value?.delay_between_requests ?? 1));
+const exemploConcorrencia = computed(() => String(projetoSelecionado.value?.max_concurrent_requests ?? 2));
 const outputDirectory = computed(() => `sitemaps/projects/${exemploProjId.value}`);
+const statusUrlExemplo = computed(() => `${endpointBase.value}/${exemploJobId}`);
+const artifactsUrlExemplo = computed(() => `${endpointBase.value}/${exemploJobId}/artifacts`);
+const accessStatus = computed(() => {
+    if (props.podeAcessarApi) {
+        return {
+            tone: 'emerald',
+            title: 'API externa habilitada',
+            text: 'Sua conta atende as mesmas regras verificadas pela API Python: plano com recurso de API e assinatura/trial ativo.',
+        };
+    }
+
+    if (!props.temPlanoApi) {
+        return {
+            tone: 'amber',
+            title: 'Plano sem acesso a API',
+            text: 'Seu plano atual nao inclui o recurso de API externa. A tela continua disponivel para referencia, mas a chave nao sera aceita pela API.',
+        };
+    }
+
+    return {
+        tone: 'amber',
+        title: 'Assinatura inativa para API',
+        text: 'Seu plano suporta API, mas a API Python valida assinatura ativa ou trial antes de aceitar a chave.',
+    };
+});
+const callbackPayloadExample = computed(() => JSON.stringify({
+    event: 'sitemap.job.completed',
+    job_id: exemploJobId,
+    status: 'completed',
+    message: 'Geracao concluida com sucesso',
+    project: {
+        id: exemploProjId.value,
+        url: exemploProjUrl.value,
+    },
+    counts: {
+        pages_count: 500,
+        urls_found: 500,
+        urls_crawled: 500,
+        urls_excluded: 1757,
+        images_count: 466,
+        videos_count: 2,
+    },
+    links: {
+        status: statusUrlExemplo.value,
+        artifacts: artifactsUrlExemplo.value,
+    },
+    artifacts: [
+        {
+            name: 'sitemap.xml',
+            download_url: `${artifactsUrlExemplo.value}/sitemap.xml`,
+        },
+        {
+            name: 'sitemap_images.xml',
+            download_url: `${artifactsUrlExemplo.value}/sitemap_images.xml`,
+        },
+    ],
+    completed_at: '2026-03-30T14:10:00Z',
+}, null, 2));
 
 const indice = [
     {
@@ -62,10 +131,12 @@ const endpoints = computed(() => [
             { param: 'Authorization', desc: 'Header HTTP com sua API Key no formato Bearer.', value: authorizationHeader.value },
             { param: 'Content-Type', desc: 'Envie o payload em JSON.', value: 'application/json' },
             { param: 'start_urls', desc: 'Lista de URLs iniciais do rastreamento.', value: `["${exemploProjUrl.value}"]` },
-            { param: 'max_depth', desc: 'Profundidade maxima do crawl.', value: '5' },
-            { param: 'max_pages', desc: 'Quantidade maxima de paginas a processar.', value: '500' },
-            { param: 'include_images', desc: 'Inclui sitemap de imagens.', value: 'true' },
-            { param: 'include_videos', desc: 'Inclui sitemap de videos.', value: 'true' },
+            { param: 'max_depth', desc: 'Profundidade maxima do crawl.', value: exemploMaxDepth.value },
+            { param: 'max_pages', desc: 'Quantidade maxima de paginas a processar.', value: exemploMaxPages.value },
+            { param: 'include_images', desc: 'Inclui sitemap de imagens.', value: exemploIncludeImages.value },
+            { param: 'include_videos', desc: 'Inclui sitemap de videos.', value: exemploIncludeVideos.value },
+            { param: 'delay_between_requests', desc: 'Intervalo entre requisicoes.', value: exemploDelay.value },
+            { param: 'max_concurrent_requests', desc: 'Concorrencia maxima do crawler.', value: exemploConcorrencia.value },
             { param: 'massive_processing', desc: 'Ativa o modo massivo de processamento.', value: 'true' },
             { param: 'output_directory', desc: 'Diretorio de saida opcional.', value: outputDirectory.value },
         ],
@@ -82,7 +153,7 @@ const endpoints = computed(() => [
         titulo: 'GET /sitemaps/{job_id}',
         requestParams: [
             { param: 'job_id', desc: 'ID do job retornado na criacao.', value: exemploJobId },
-            { param: 'Authorization (recommended)', desc: 'Use sua API Key para manter o fluxo autenticado.', value: authorizationHeader.value },
+            { param: 'Authorization', desc: 'Header HTTP com sua API Key no formato Bearer.', value: authorizationHeader.value },
         ],
         responseParams: [
             { param: 'job_id', desc: 'Identificador do job.', value: exemploJobId },
@@ -93,7 +164,7 @@ const endpoints = computed(() => [
                 param: 'result',
                 desc: 'Dados finais quando o job terminar.',
                 value: null,
-                json: `{\n  "job_id": "${exemploJobId}",\n  "status": "completed",\n  "progress": 100,\n  "message": "Processamento concluido",\n  "phase": "done",\n  "urls_found": 1250,\n  "urls_crawled": 568,\n  "images_found": 234,\n  "videos_found": 12,\n  "result": {\n    "main_sitemap_path": "${outputDirectory.value}/sitemap.xml",\n    "image_sitemap_path": "${outputDirectory.value}/sitemap_images.xml"\n  }\n}`,
+                json: `{\n  "job_id": "${exemploJobId}",\n  "status": "completed",\n  "progress": 100,\n  "message": "Processamento concluido",\n  "phase": "done",\n  "urls_found": 500,\n  "urls_crawled": 500,\n  "urls_excluded": 1757,\n  "images_found": 466,\n  "videos_found": 2,\n  "result": {\n    "main_sitemap_path": "${outputDirectory.value}/sitemap.xml",\n    "image_sitemap_path": "${outputDirectory.value}/sitemap_images.xml"\n  }\n}`,
             },
         ],
     },
@@ -149,6 +220,13 @@ const resetarChave = () => {
         onSuccess: () => {
             router.reload({ only: ['apiKey'] });
         },
+    });
+};
+
+const salvarCallbackUrl = () => {
+    callbackForm.post(route('account.api.callback-url'), {
+        preserveScroll: true,
+        preserveState: true,
     });
 };
 
@@ -310,37 +388,69 @@ const scrollTo = (id) => {
                     </div>
 
                     <div v-show="activeTab === 'setup'" class="p-6 space-y-6">
-                        <div v-if="!podeAcessarApi" class="bg-amber-50 border border-amber-200 rounded p-4 text-sm text-amber-800">
-                            Seu plano atual nao inclui acesso a API. Faca um upgrade para usar esta funcionalidade.
+                        <div class="text-sm text-gray-700 space-y-3">
+                            <p>Toda requisicao externa deve enviar a API Key no header <span class="font-mono">Authorization: Bearer &lt;sua_api_key&gt;</span>.</p>
+                            <p>A aba de referencia mostra o contrato REST real da sua API Python: criacao de job, consulta de status, artefatos, download e cancelamento.</p>
+                            <button
+                                type="button"
+                                @click="activeTab = 'reference'"
+                                class="text-accent-600 font-semibold hover:underline"
+                            >
+                                Abrir referencia REST
+                            </button>
                         </div>
 
-                        <div class="text-sm text-gray-700 space-y-1">
-                            <p>As requisicoes externas devem enviar sua API Key no header Authorization, no formato Bearer <span class="font-mono">&lt;sua_api_key&gt;</span>, e usar payload JSON nos endpoints REST.</p>
-                            <p>Use a aba de referencia para ver o contrato real de criacao de jobs, consulta de status, artefatos e cancelamento.</p>
-                        </div>
-
-                        <div class="text-center text-sm py-3 border border-gray-200 rounded bg-gray-50 text-gray-600">
-                            O acesso externo a API so esta disponivel para contas com plano avancado e assinatura ativa.
+                        <div
+                            :class="[
+                                accessStatus.tone === 'emerald'
+                                    ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+                                    : 'border-amber-200 bg-amber-50 text-amber-800',
+                                'rounded border p-4 text-sm'
+                            ]"
+                        >
+                            <p class="font-semibold mb-1">{{ accessStatus.title }}</p>
+                            <p>{{ accessStatus.text }}</p>
                         </div>
 
                         <div class="border border-gray-200 rounded">
-                            <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 text-sm text-gray-600">
-                                Exemplos por projeto
+                            <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 text-sm text-gray-700">
+                                Detalhes especificos por site
                             </div>
-                            <div class="px-4 py-3">
+                            <div class="px-4 py-4 space-y-4">
+                                <p class="text-sm text-gray-600">Selecione um site para preencher exemplos reais de <span class="font-mono">start_urls</span>, limites e diretorio de saida. A selecao serve para a documentacao; a API externa nao exige um projeto Laravel preexistente.</p>
+
                                 <select
                                     v-model="selectedProjeto"
-                                    class="border border-gray-300 rounded px-3 py-1.5 text-sm w-80 focus:outline-none focus:ring-1 focus:ring-primary-400"
+                                    class="border border-gray-300 rounded px-3 py-2 text-sm w-full md:w-96 focus:outline-none focus:ring-1 focus:ring-primary-400"
                                 >
                                     <option value="">Selecione um site</option>
                                     <option v-for="p in projetos" :key="p.id" :value="p.id">{{ p.url }}</option>
                                 </select>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-gray-600">
+                                    <div class="border border-gray-200 rounded p-3 bg-gray-50">
+                                        <div class="font-semibold text-gray-700 mb-1">start_urls</div>
+                                        <div class="font-mono break-all">["{{ exemploProjUrl }}"]</div>
+                                    </div>
+                                    <div class="border border-gray-200 rounded p-3 bg-gray-50">
+                                        <div class="font-semibold text-gray-700 mb-1">output_directory</div>
+                                        <div class="font-mono break-all">{{ outputDirectory }}</div>
+                                    </div>
+                                    <div class="border border-gray-200 rounded p-3 bg-gray-50">
+                                        <div class="font-semibold text-gray-700 mb-1">max_depth / max_pages</div>
+                                        <div class="font-mono">{{ exemploMaxDepth }} / {{ exemploMaxPages }}</div>
+                                    </div>
+                                    <div class="border border-gray-200 rounded p-3 bg-gray-50">
+                                        <div class="font-semibold text-gray-700 mb-1">media e concorrencia</div>
+                                        <div class="font-mono">images={{ exemploIncludeImages }}, videos={{ exemploIncludeVideos }}, delay={{ exemploDelay }}, concurrent={{ exemploConcorrencia }}</div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
                         <div class="border border-gray-200 rounded">
                             <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 text-sm font-semibold text-gray-700">
-                                Sua chave de API
+                                Sua chave principal de API
                             </div>
                             <div class="px-4 py-4 space-y-3">
                                 <div v-if="chaveAtual">
@@ -353,23 +463,23 @@ const scrollTo = (id) => {
                                     <p class="text-xs text-gray-600 mt-2">
                                         <button
                                             @click="resetarChave"
-                                            :disabled="resetando"
+                                            :disabled="resetando || !podeAcessarApi"
                                             class="text-accent-600 font-bold hover:underline disabled:opacity-50"
                                         >
                                             Clique aqui
                                         </button>
-                                        se quiser redefinir sua chave de API.
+                                        para redefinir a chave principal.
                                     </p>
-                                    <p class="text-xs text-gray-500 mt-1">Ao redefinir, a chave atual deixa de funcionar e todas as chamadas futuras devem usar a nova chave.</p>
+                                    <p class="text-xs text-gray-500 mt-1">Ao redefinir, a chave principal atual deixa de funcionar. Outras chaves criadas separadamente em gerenciamento de API Keys nao sao alteradas por esta acao.</p>
                                 </div>
                                 <div v-else>
-                                    <p class="text-sm text-gray-500 mb-3">Voce ainda nao possui uma chave de API.</p>
+                                    <p class="text-sm text-gray-500 mb-3">Voce ainda nao possui uma chave principal de API.</p>
                                     <button
                                         @click="resetarChave"
-                                        :disabled="resetando"
+                                        :disabled="resetando || !podeAcessarApi"
                                         class="bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold py-2 px-4 rounded uppercase tracking-wider transition disabled:opacity-50"
                                     >
-                                        {{ resetando ? 'GERANDO...' : 'GERAR CHAVE DE API' }}
+                                        {{ resetando ? 'GERANDO...' : 'GERAR CHAVE PRINCIPAL' }}
                                     </button>
                                 </div>
                             </div>
@@ -377,17 +487,71 @@ const scrollTo = (id) => {
 
                         <div class="border border-gray-200 rounded">
                             <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 text-sm font-semibold text-gray-700">
-                                URL base da API {{ appName }}
+                                URL base e headers da API
                             </div>
-                            <div class="px-4 py-4 space-y-2 text-sm text-gray-700">
-                                <p>- use GET ou POST conforme o endpoint REST documentado na aba de referencia</p>
-                                <p>- para endpoints com body, envie JSON com <strong>application/json</strong></p>
-                                <p>- monte as rotas a partir desta base:</p>
+                            <div class="px-4 py-4 space-y-3 text-sm text-gray-700">
+                                <p>- use <strong>POST</strong> para criar e cancelar jobs</p>
+                                <p>- use <strong>GET</strong> para consultar status, listar artefatos e baixar arquivos</p>
+                                <p>- envie <strong>application/json</strong> nos endpoints com body</p>
                                 <div class="border border-gray-200 rounded px-3 py-2 font-mono text-xs bg-gray-50 text-gray-600">
                                     {{ endpointUrl }}
                                 </div>
                                 <div class="border border-gray-200 rounded px-3 py-2 font-mono text-xs bg-gray-50 text-gray-600">
                                     Authorization: {{ authorizationHeader }}
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                                    <div class="border border-gray-200 rounded px-3 py-2 bg-gray-50 text-gray-600">
+                                        <span class="font-semibold text-gray-700 block mb-1">Status endpoint</span>
+                                        <span class="font-mono break-all">{{ statusUrlExemplo }}</span>
+                                    </div>
+                                    <div class="border border-gray-200 rounded px-3 py-2 bg-gray-50 text-gray-600">
+                                        <span class="font-semibold text-gray-700 block mb-1">Artifacts endpoint</span>
+                                        <span class="font-mono break-all">{{ artifactsUrlExemplo }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="border border-gray-200 rounded">
+                            <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 text-sm font-semibold text-gray-700">
+                                Callback URL de notificacoes
+                            </div>
+                            <div class="px-4 py-4 space-y-4">
+                                <p class="text-sm text-gray-600">Quando configurado, o Laravel envia um <strong>POST JSON</strong> para esta URL sempre que um job do seu usuario mudar para <span class="font-mono">completed</span>, <span class="font-mono">failed</span> ou <span class="font-mono">cancelled</span>.</p>
+
+                                <form @submit.prevent="salvarCallbackUrl" class="space-y-3">
+                                    <input
+                                        v-model="callbackForm.callback_url"
+                                        type="url"
+                                        placeholder="https://seudominio.com/seu-endpoint"
+                                        class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary-400 disabled:bg-gray-100"
+                                        :disabled="!podeAcessarApi || callbackForm.processing"
+                                    />
+
+                                    <p v-if="callbackForm.errors.callback_url" class="text-xs text-danger-600">
+                                        {{ callbackForm.errors.callback_url }}
+                                    </p>
+
+                                    <div class="flex items-center gap-3">
+                                        <button
+                                            type="submit"
+                                            :disabled="!podeAcessarApi || callbackForm.processing"
+                                            class="bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold py-2 px-4 rounded uppercase tracking-wider transition disabled:opacity-50"
+                                        >
+                                            {{ callbackForm.processing ? 'SALVANDO...' : 'SALVAR CALLBACK URL' }}
+                                        </button>
+
+                                        <p v-if="callbackForm.recentlySuccessful" class="text-xs text-emerald-600">
+                                            Callback salvo com sucesso.
+                                        </p>
+                                    </div>
+                                </form>
+
+                                <div class="border border-gray-200 rounded bg-gray-50">
+                                    <div class="px-4 py-2 border-b border-gray-200 text-xs font-semibold uppercase tracking-wide text-gray-600">
+                                        Exemplo do payload enviado
+                                    </div>
+                                    <pre class="p-4 text-[11px] leading-relaxed text-gray-700 overflow-x-auto whitespace-pre-wrap font-mono">{{ callbackPayloadExample }}</pre>
                                 </div>
                             </div>
                         </div>
