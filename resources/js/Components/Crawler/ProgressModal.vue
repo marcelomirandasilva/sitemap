@@ -341,13 +341,10 @@ onUnmounted(() => {
 
                     <div class="flex items-center gap-4 text-xs text-gray-600 mb-2">
                         <span class="font-bold border-b-2 border-transparent hover:border-accent-600 pb-2">{{ $t('modal.my_sitemap') }}</span>
-                        <span class="border-b-2 border-transparent hover:border-accent-600 pb-2">{{ $t('modal.settings') }}</span>
                         <Link :href="route('subscription.index')" class="font-bold text-green-600 border-b-2 border-transparent pb-2">{{ $t('modal.upgrade') }}</Link>
                         <span class="font-bold text-gray-800 border-b-2 border-transparent border-t border-l border-r rounded-t bg-white px-2 py-1 -mb-2.5 relative top-0.5 z-10">
                             {{ $t('modal.update_sitemap') }}
                         </span>
-                        <span class="border-b-2 border-transparent hover:border-accent-600 pb-2">{{ $t('modal.submit') }}</span>
-                        <span class="border-b-2 border-transparent hover:border-accent-600 pb-2">{{ $t('modal.reports') }}</span>
                     </div>
                 </div>
             </div>

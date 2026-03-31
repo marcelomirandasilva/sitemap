@@ -62,6 +62,22 @@ const mensagemErroSanitizada = computed(() => {
     return msg || t('crawler.error_unknown') || 'Erro desconhecido.';
 });
 
+const rotuloAcao = computed(() => {
+    if (iniciando.value) {
+        return t('crawler.starting');
+    }
+
+    if (tarefa.value && ['queued', 'running'].includes(tarefa.value.status)) {
+        return t('crawler.processing');
+    }
+
+    if (tarefa.value && ['completed', 'failed', 'cancelled'].includes(tarefa.value.status)) {
+        return t('project.recrawl');
+    }
+
+    return t('crawler.start_button');
+});
+
 const iniciarRastreador = async () => {
     if (iniciando.value) return;
     
@@ -185,15 +201,13 @@ onUnmounted(() => {
                 </span>
             </div>
             <div v-else></div> <!-- Placeholder para flex spread -->
-           <PrimaryButton 
+            <PrimaryButton 
                 @click="iniciarRastreador"
                 :processing="iniciando"
                 :disabled="tarefa && ['queued', 'running'].includes(tarefa.status)"
                 class="!px-3 !py-1.5 !text-[11px]" 
             >
-                <span v-if="iniciando">{{ $t('crawler.starting') }}</span>
-                <span v-else-if="tarefa && ['queued', 'running'].includes(tarefa.status)">{{ $t('crawler.processing') }}</span>
-                <span v-else>{{ $t('crawler.resume_button') }}</span>
+                <span>{{ rotuloAcao }}</span>
             </PrimaryButton>
         </div>
 
