@@ -244,7 +244,7 @@ const projetosFiltrados = computed(() => {
 
                 <!-- Modal de Progresso -->
                 <ModalProgressoRastreador v-if="projetoSelecionado" :show="mostrarModalProgresso"
-                    :projeto="projetoSelecionado" @close="mostrarModalProgresso = false"
+                    :projeto="projetoSelecionado" :user-plan="userPlan" @close="mostrarModalProgresso = false"
                     @update:job="atualizarJobProjeto" />
 
             </div>

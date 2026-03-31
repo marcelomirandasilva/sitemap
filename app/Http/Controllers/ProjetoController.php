@@ -5,8 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Projeto;
 use App\Services\SitemapGeneratorService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
 
 class ProjetoController extends Controller
@@ -17,26 +17,72 @@ class ProjetoController extends Controller
     {
         $this->sitemapService = $sitemapService;
     }
+
+    protected function normalizePlanFrequency(?string $frequency): string
+    {
+        $normalized = mb_strtolower(trim((string) $frequency));
+
+        return match (true) {
+            str_contains($normalized, 'manual') => 'manual',
+            str_contains($normalized, 'di') => 'diario',
+            str_contains($normalized, 'seman') => 'semanal',
+            str_contains($normalized, 'quinzen') => 'quinzenal',
+            str_contains($normalized, 'mens') => 'mensal',
+            str_contains($normalized, 'anual') => 'anual',
+            default => 'manual',
+        };
+    }
+
+    protected function allowedFrequenciesForPlan(?string $planFrequency): array
+    {
+        $levels = [
+            'manual' => 0,
+            'anual' => 1,
+            'mensal' => 2,
+            'quinzenal' => 3,
+            'semanal' => 4,
+            'diario' => 5,
+        ];
+
+        $displayOrder = ['manual', 'diario', 'semanal', 'quinzenal', 'mensal', 'anual'];
+        $normalizedPlanFrequency = $this->normalizePlanFrequency($planFrequency);
+        $planLevel = $levels[$normalizedPlanFrequency] ?? 0;
+
+        return array_values(array_filter($displayOrder, function ($value) use ($levels, $planLevel) {
+            return ($levels[$value] ?? 0) <= $planLevel || $value === 'manual';
+        }));
+    }
+
+    protected function buildProjectFeatures($usuario): array
+    {
+        $plano = $usuario->plano;
+
+        return [
+            'permite_imagens' => $plano ? (bool) $plano->permite_imagens : false,
+            'permite_videos' => $plano ? (bool) $plano->permite_videos : false,
+            'advanced_settings_enabled' => $plano ? (bool) $plano->has_advanced_features : false,
+            'plan_max_pages' => $plano?->max_pages ?? 500,
+            'plan_update_frequency' => $this->normalizePlanFrequency($plano?->update_frequency),
+            'allowed_frequencies' => $this->allowedFrequenciesForPlan($plano?->update_frequency),
+            'max_depth_limit' => 10,
+            'max_concurrent_requests_limit' => 10,
+            'delay_between_requests_min' => 0,
+            'delay_between_requests_max' => 10,
+        ];
+    }
+
     public function store(Request $request)
     {
-        // 1. Valida
         $validated = $request->validate([
             'url' => 'required|url|active_url',
         ]);
 
-        // 2. Extrai o nome do site (ex: google.com)
         $parsed = parse_url($validated['url']);
         $name = $parsed['host'] ?? $validated['url'];
 
-        // 3. Verifica limites do plano (OPCIONAL - Faremos depois)
-        // ...
-
-        // 4. Verifica se usuário tem plano PRO (com features avançadas)
         $user = $request->user();
         $user->load('plano');
-        $temRecursosAvancados = $user->plano && $user->plano->has_advanced_features;
 
-        // 5. Cria o projeto com configurações baseadas no plano
         $projeto = $user->projetos()->create([
             'name' => $name,
             'url' => $validated['url'],
@@ -46,13 +92,10 @@ class ProjetoController extends Controller
             'check_videos' => (bool) ($user->plano?->permite_videos),
         ]);
 
-        // Recarrega defaults do banco para iniciar o job com a mesma configuração
-        // usada pelo fluxo de "retomar / iniciar".
         $projeto->refresh();
         $limitePlano = $user->plano?->max_pages ?? 500;
         $limiteEfetivo = min($projeto->max_pages ?? $limitePlano, $limitePlano);
 
-        // 6. Inicia o Crawler Automaticamente
         try {
             $externalJobId = $this->sitemapService->startJob($projeto, $limiteEfetivo);
 
@@ -65,10 +108,8 @@ class ProjetoController extends Controller
             } else {
                 Log::warning("Falha ao iniciar crawler no startJob para o projeto {$projeto->id}");
             }
-
         } catch (\Exception $e) {
-            // Não falha a criação do projeto, mas loga o erro
-            Log::error('Erro ao iniciar crawler na criação: ' . $e->getMessage());
+            Log::error('Erro ao iniciar crawler na criacao: ' . $e->getMessage());
         }
 
         return Redirect::back()->with('success', 'Website added successfully!');
@@ -80,29 +121,23 @@ class ProjetoController extends Controller
             abort(403);
         }
 
-        // Carrega apenas o último job do banco de dados (rápido)
-        $projeto->load([
-            'tarefasSitemap' => function ($query) {
-                $query->latest()->limit(1);
-            }
-        ]);
+        $jobHistory = $projeto->tarefasSitemap()
+            ->latest()
+            ->limit(10)
+            ->get()
+            ->values();
 
-        $ultimo_job = $projeto->tarefasSitemap->first();
+        $ultimoJob = $jobHistory->first();
 
-        // Eager load do plano para verificar permissões
         $usuario = auth()->user();
         $usuario->load('plano');
 
-        $funcionalidades = [
-            'permite_imagens' => $usuario->plano ? (bool) $usuario->plano->permite_imagens : false,
-            'permite_videos' => $usuario->plano ? (bool) $usuario->plano->permite_videos : false,
-        ];
-
         return Inertia::render('App/Projects/Show', [
             'projeto' => $projeto,
-            'ultimo_job' => $ultimo_job,
-            'preview_urls' => [], // Frontend busca via AJAX
-            'features' => $funcionalidades
+            'ultimo_job' => $ultimoJob,
+            'job_history' => $jobHistory,
+            'preview_urls' => [],
+            'features' => $this->buildProjectFeatures($usuario),
         ]);
     }
 
@@ -114,13 +149,22 @@ class ProjetoController extends Controller
 
         $usuario = auth()->user();
         $usuario->load('plano');
+        $features = $this->buildProjectFeatures($usuario);
+        $planMaxPages = $features['plan_max_pages'];
+        $allowedFrequencies = $features['allowed_frequencies'];
+        $advancedEnabled = $features['advanced_settings_enabled'];
 
         $validated = $request->validate([
-            'check_images' => 'boolean',
-            'check_videos' => 'boolean',
+            'check_images' => 'sometimes|boolean',
+            'check_videos' => 'sometimes|boolean',
+            'frequency' => 'sometimes|string|in:manual,diario,semanal,quinzenal,mensal,anual',
+            'max_pages' => 'sometimes|integer|min:1',
+            'max_depth' => 'sometimes|integer|min:1|max:10',
+            'max_concurrent_requests' => 'sometimes|integer|min:1|max:10',
+            'delay_between_requests' => 'sometimes|numeric|min:0|max:10',
+            'user_agent_custom' => 'sometimes|nullable|string|max:255',
         ]);
 
-        // Validação extra: não permitir ativar se o plano não permitir
         if (isset($validated['check_images']) && $validated['check_images'] && !($usuario->plano?->permite_imagens)) {
             $validated['check_images'] = false;
         }
@@ -129,9 +173,32 @@ class ProjetoController extends Controller
             $validated['check_videos'] = false;
         }
 
+        if (isset($validated['frequency']) && !in_array($validated['frequency'], $allowedFrequencies, true)) {
+            $validated['frequency'] = in_array($projeto->frequency, $allowedFrequencies, true)
+                ? $projeto->frequency
+                : ($features['plan_update_frequency'] ?? 'manual');
+        }
+
+        if (isset($validated['max_pages'])) {
+            $validated['max_pages'] = min((int) $validated['max_pages'], (int) $planMaxPages);
+        }
+
+        if (!$advancedEnabled) {
+            unset(
+                $validated['max_depth'],
+                $validated['max_concurrent_requests'],
+                $validated['delay_between_requests'],
+                $validated['user_agent_custom']
+            );
+        }
+
+        if (array_key_exists('user_agent_custom', $validated)) {
+            $validated['user_agent_custom'] = trim((string) ($validated['user_agent_custom'] ?? '')) ?: null;
+        }
+
         $projeto->update($validated);
 
-        return Redirect::back()->with('success', 'Configurações atualizadas!');
+        return Redirect::back()->with('success', 'Configuracoes atualizadas!');
     }
 
     public function destroy(Projeto $projeto)
@@ -142,6 +209,6 @@ class ProjetoController extends Controller
 
         $projeto->delete();
 
-        return Redirect::route('dashboard')->with('success', 'Projeto excluído com sucesso.');
+        return Redirect::route('dashboard')->with('success', 'Projeto excluido com sucesso.');
     }
 }

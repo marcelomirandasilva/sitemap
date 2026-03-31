@@ -13,6 +13,10 @@ const props = defineProps({
     projeto: {
         type: Object,
         required: true
+    },
+    userPlan: {
+        type: Object,
+        default: null
     }
 });
 
@@ -27,6 +31,15 @@ const processandoAcao = ref(false);
 let intervaloCronometro = null;
 
 const statusAtivo = computed(() => ['queued', 'running'].includes(tarefa.value?.status));
+const limitePlano = computed(() => props.userPlan?.max_pages ?? props.projeto?.max_pages ?? 500);
+const limiteEfetivoProjeto = computed(() => {
+    const limiteProjeto = props.projeto?.max_pages ?? limitePlano.value;
+    return Math.min(limiteProjeto, limitePlano.value);
+});
+const badgePlano = computed(() => {
+    const nomePlano = props.userPlan?.name ?? 'Plano';
+    return `${nomePlano} ${limitePlano.value}`;
+});
 
 const larguraBarra = computed(() => {
     if (!tarefa.value) return 0;
@@ -35,7 +48,7 @@ const larguraBarra = computed(() => {
 
 const paginasAdicionadas = computed(() => {
     if (!tarefa.value) return 0;
-    return tarefa.value.pages_count ?? tarefa.value.urls_found ?? 0;
+    return tarefa.value.pages_count ?? (tarefa.value.status === 'completed' ? (tarefa.value.urls_found ?? 0) : 0);
 });
 
 const paginasPuladas = computed(() => {
@@ -43,7 +56,26 @@ const paginasPuladas = computed(() => {
     return tarefa.value.urls_excluded ?? 0;
 });
 
-const paginasDescobertas = computed(() => paginasAdicionadas.value + paginasPuladas.value);
+const paginasDescobertasAtuais = computed(() => {
+    if (!tarefa.value) return 0;
+    if (statusAtivo.value) return tarefa.value.urls_found ?? 0;
+    return paginasAdicionadas.value + paginasPuladas.value;
+});
+
+const paginasDescobertas = computed(() => paginasDescobertasAtuais.value);
+const contarUrlsPorArtefato = (artifactName) => {
+    const normalized = (artifactName || '').toLowerCase();
+
+    if (normalized.includes('image')) {
+        return tarefa.value?.images_count ?? 0;
+    }
+
+    if (normalized.includes('video')) {
+        return tarefa.value?.videos_count ?? 0;
+    }
+
+    return paginasAdicionadas.value;
+};
 
 const progressoPercentual = computed(() => {
     if (!tarefa.value) return 0;
@@ -56,7 +88,7 @@ const arquivosMapeados = computed(() => {
     return tarefa.value.artifacts.map((arquivo) => ({
         name: arquivo.name,
         type: arquivo.name?.split('.').pop()?.toUpperCase() || 'FILE',
-        count: tarefa.value.pages_count ?? tarefa.value.urls_found ?? 0,
+        count: contarUrlsPorArtefato(arquivo.name),
         url: arquivo.download_url,
     }));
 });
@@ -301,7 +333,7 @@ onUnmounted(() => {
                     </h2>
 
                     <div class="flex items-center gap-2 mb-3">
-                        <span class="px-2 py-0.5 bg-white border border-gray-300 text-[10px] font-bold text-gray-500 uppercase">Free 500</span>
+                        <span class="px-2 py-0.5 bg-white border border-gray-300 text-[10px] font-bold text-gray-500 uppercase">{{ badgePlano }}</span>
                         <Link :href="route('subscription.index')" class="text-[10px] font-bold text-green-600 uppercase hover:underline">
                             {{ $t('project.upgrade') }}
                         </Link>
@@ -360,8 +392,14 @@ onUnmounted(() => {
                         <div class="p-4 bg-[#d9edf7] text-center text-primary-800 text-sm leading-relaxed">
                             <div>
                                 {{ $t('crawler.time_elapsed') }}: <span class="font-bold">{{ tempoDecorrido }}</span>,
-                                {{ $t('crawler.pages_processed') }}: <span class="font-bold">{{ tarefa?.urls_crawled || paginasAdicionadas }}</span>
-                                ({{ paginasAdicionadas }} {{ $t('crawler.added_sitemap') }})
+                                {{ $t('crawler.pages_processed') }}: <span class="font-bold">{{ tarefa?.urls_crawled || 0 }}</span>
+                            </div>
+                            <div class="text-xs opacity-75 mt-1">
+                                {{ $t('crawler.urls_discovered') }}: <span class="font-bold">{{ paginasDescobertasAtuais }}</span>,
+                                {{ $t('crawler.project_limit') }}: <span class="font-bold">{{ limiteEfetivoProjeto }}</span>
+                            </div>
+                            <div v-if="paginasDescobertasAtuais > limiteEfetivoProjeto" class="text-xs text-primary-700 mt-1">
+                                {{ $t('crawler.limit_notice', { count: limiteEfetivoProjeto }) }}
                             </div>
                             <div class="text-xs opacity-75 mt-1">
                                 {{ $t('crawler.queued') }}: <span class="font-bold">{{ tarefa?.queue_size || 0 }}</span>,
@@ -456,7 +494,11 @@ onUnmounted(() => {
                         <span class="font-bold">{{ $t('crawler.note_label') }}</span> {{ $t('crawler.note_text') }}
                     </div>
 
-                    <div class="space-y-3">
+                    <div v-if="arquivosMapeados.length === 0" class="rounded-lg border border-dashed border-gray-300 bg-gray-50 px-6 py-10 text-center text-sm text-gray-500">
+                        {{ $t('project.no_generated_files') }}
+                    </div>
+
+                    <div v-else class="space-y-3">
                         <div v-for="arquivo in arquivosMapeados" :key="arquivo.name" class="flex items-center justify-between border border-gray-200 rounded p-4">
                             <div class="flex items-center gap-3">
                                 <div class="w-12 h-12 rounded bg-gray-100 border border-gray-200 flex items-center justify-center text-xs font-bold text-gray-500">

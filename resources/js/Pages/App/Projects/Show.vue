@@ -1,7 +1,7 @@
 <script setup>
 import AppLayout from "@/Layouts/AppLayout.vue";
 import { Head, Link, router } from "@inertiajs/vue3";
-import { computed, ref, onMounted, onUnmounted } from "vue";
+import { computed, reactive, ref, onMounted, onUnmounted, watch } from "vue";
 import Swal from 'sweetalert2';
 import { trans as t } from "laravel-vue-i18n";
 import axios from 'axios';
@@ -16,13 +16,27 @@ const props = defineProps({
         type: Object,
         default: null,
     },
+    job_history: {
+        type: Array,
+        default: () => []
+    },
     preview_urls: {
         type: Array,
         default: () => []
     },
     features: {
         type: Object,
-        default: () => ({ permite_imagens: false, permite_videos: false })
+        default: () => ({
+            permite_imagens: false,
+            permite_videos: false,
+            advanced_settings_enabled: false,
+            plan_max_pages: 500,
+            allowed_frequencies: ['manual'],
+            max_depth_limit: 10,
+            max_concurrent_requests_limit: 10,
+            delay_between_requests_min: 0,
+            delay_between_requests_max: 10,
+        })
     }
 });
 
@@ -33,53 +47,93 @@ const cancelando = ref(false);
 
 // Estado reativo inicializado com props (cache/ssr)
 const tarefa = ref(props.ultimo_job || {});
+const historicoJobs = ref([]);
 const listaUrls = ref(props.preview_urls || []);
+const salvandoConfiguracoes = ref(false);
+const configForm = reactive({
+    frequency: props.projeto.frequency || 'manual',
+    max_pages: props.projeto.max_pages ?? props.features.plan_max_pages ?? 500,
+    max_depth: props.projeto.max_depth ?? 3,
+    max_concurrent_requests: props.projeto.max_concurrent_requests ?? 2,
+    delay_between_requests: props.projeto.delay_between_requests ?? 1,
+    user_agent_custom: props.projeto.user_agent_custom ?? '',
+});
 
 // Computado para exibir (usa o estado reativo)
 const urlsPreview = computed(() => listaUrls.value);
 
+const contarUrlsPorArtefato = (artifactName) => {
+    const normalized = (artifactName || '').toLowerCase();
+
+    if (normalized.includes('image')) {
+        return tarefa.value?.images_count ?? 0;
+    }
+
+    if (normalized.includes('video')) {
+        return tarefa.value?.videos_count ?? 0;
+    }
+
+    return tarefa.value?.pages_count ?? 0;
+};
+
+const ordenarJobsPorData = (jobs = []) => {
+    return [...jobs].sort((jobA, jobB) => {
+        const dataA = new Date(jobA?.started_at || jobA?.created_at || jobA?.completed_at || 0).getTime();
+        const dataB = new Date(jobB?.started_at || jobB?.created_at || jobB?.completed_at || 0).getTime();
+        return dataB - dataA;
+    });
+};
+
+const normalizarJobHistorico = (job) => ({
+    ...job,
+    artifacts: Array.isArray(job?.artifacts) ? job.artifacts : [],
+});
+
+const substituirHistoricoJobs = (jobs = []) => {
+    historicoJobs.value = ordenarJobsPorData(jobs.map(normalizarJobHistorico)).slice(0, 10);
+};
+
+const sincronizarJobNoHistorico = (job) => {
+    if (!job) return;
+
+    const normalizado = normalizarJobHistorico(job);
+    const historicoAtual = [...historicoJobs.value];
+    const index = historicoAtual.findIndex((item) => {
+        if (normalizado.id && item.id) {
+            return item.id === normalizado.id;
+        }
+
+        return item.external_job_id && item.external_job_id === normalizado.external_job_id;
+    });
+
+    if (index >= 0) {
+        historicoAtual[index] = {
+            ...historicoAtual[index],
+            ...normalizado,
+        };
+    } else {
+        historicoAtual.unshift(normalizado);
+    }
+
+    historicoJobs.value = ordenarJobsPorData(historicoAtual).slice(0, 10);
+};
+
+substituirHistoricoJobs(props.job_history ?? []);
+
 const arquivosMapeados = computed(() => {
-    if (!tarefa.value || !tarefa.value.artifacts) return [];
+    if (!Array.isArray(tarefa.value?.artifacts)) return [];
+    return tarefa.value.artifacts.map((arquivo) => ({
+        name: arquivo.name,
+        type: arquivo.name?.split('.').pop()?.toUpperCase() || 'FILE',
+        count: contarUrlsPorArtefato(arquivo.name),
+        url: arquivo.download_url,
+    }));
 
-    // Mapeamento idêntico ao anterior...
-    const xml = tarefa.value.artifacts.find((a) => a.name && a.name.endsWith(".xml"));
-    const txt = tarefa.value.artifacts.find((a) => a.name && a.name.endsWith(".txt"));
-
-    const lista = [];
-    if (xml) {
-        lista.push({
-            name: xml.name,
-            type: "xml",
-            count: tarefa.value.pages_count,
-            url: xml.download_url,
-        });
-        lista.push({
-            name: xml.name.replace(".xml", ".html"),
-            type: "html",
-            count: tarefa.value.pages_count,
-            url: xml.download_url,
-        });
-        lista.push({
-            name: xml.name + '.gz',
-            type: 'gz',
-            count: tarefa.value.pages_count,
-            url: xml.download_url
-        });
-    }
-    if (txt) {
-        lista.push({
-            name: txt.name,
-            type: "txt",
-            count: tarefa.value.pages_count,
-            url: txt.download_url,
-        });
-    }
-    return lista;
 });
 
 const paginasAdicionadas = computed(() => {
     if (!tarefa.value) return 0;
-    return tarefa.value.pages_count ?? tarefa.value.urls_found ?? 0;
+    return tarefa.value.pages_count ?? (tarefa.value.status === 'completed' ? (tarefa.value.urls_found ?? 0) : 0);
 });
 
 const paginasPuladas = computed(() => {
@@ -87,9 +141,105 @@ const paginasPuladas = computed(() => {
     return tarefa.value.urls_excluded ?? 0;
 });
 
-const paginasDescobertas = computed(() => paginasAdicionadas.value + paginasPuladas.value);
 const jobAtivo = computed(() => ['queued', 'running'].includes(tarefa.value?.status));
 const acaoEmAndamento = computed(() => reexecutando.value || cancelando.value);
+const canEditAdvancedSettings = computed(() => !!props.features.advanced_settings_enabled);
+const planMaxPages = computed(() => props.features.plan_max_pages ?? 500);
+const allowedFrequencyOptions = computed(() => props.features.allowed_frequencies ?? ['manual']);
+const limiteEfetivoProjeto = computed(() => Math.min(props.projeto.max_pages ?? planMaxPages.value, planMaxPages.value));
+const paginasDescobertasAtuais = computed(() => {
+    if (!tarefa.value) return 0;
+    if (jobAtivo.value) return tarefa.value.urls_found ?? 0;
+    return paginasAdicionadas.value + paginasPuladas.value;
+});
+const paginasDescobertas = computed(() => paginasDescobertasAtuais.value);
+const historicoJobsVisiveis = computed(() => historicoJobs.value);
+
+const statusLabelJob = (status) => {
+    const labels = {
+        queued: t('project.history_status_queued'),
+        running: t('project.history_status_running'),
+        completed: t('project.history_status_completed'),
+        failed: t('project.history_status_failed'),
+        cancelled: t('project.history_status_cancelled'),
+    };
+
+    return labels[status] ?? status ?? '-';
+};
+
+const statusClasseJob = (status) => {
+    const classes = {
+        queued: 'bg-amber-50 text-amber-700 border-amber-200',
+        running: 'bg-primary-50 text-primary-700 border-primary-200',
+        completed: 'bg-green-50 text-green-700 border-green-200',
+        failed: 'bg-danger-50 text-danger-700 border-danger-200',
+        cancelled: 'bg-gray-100 text-gray-600 border-gray-200',
+    };
+
+    return classes[status] ?? 'bg-gray-100 text-gray-600 border-gray-200';
+};
+
+const urlsIndexadasDoJob = (job) => {
+    if (!job) return 0;
+    return job.pages_count ?? (job.status === 'completed' ? (job.urls_found ?? 0) : 0);
+};
+
+const urlsDescobertasDoJob = (job) => {
+    if (!job) return 0;
+
+    if (['queued', 'running'].includes(job.status)) {
+        return job.urls_found ?? 0;
+    }
+
+    return urlsIndexadasDoJob(job) + (job.urls_excluded ?? 0);
+};
+
+const formatarDataHora = (value) => {
+    if (!value) return t('project.history_not_finished');
+
+    return new Date(value).toLocaleString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+    });
+};
+
+const formatarDuracaoJob = (job) => {
+    if (!job?.started_at) return '-';
+
+    const inicio = new Date(job.started_at).getTime();
+    const fim = job.completed_at ? new Date(job.completed_at).getTime() : Date.now();
+
+    if (Number.isNaN(inicio) || Number.isNaN(fim) || fim <= inicio) {
+        return '-';
+    }
+
+    const segundos = Math.floor((fim - inicio) / 1000);
+    const horas = Math.floor(segundos / 3600);
+    const minutos = Math.floor((segundos % 3600) / 60);
+    const restoSegundos = segundos % 60;
+
+    if (horas > 0) {
+        return `${horas}h ${minutos}m`;
+    }
+
+    if (minutos > 0) {
+        return `${minutos}m ${restoSegundos}s`;
+    }
+
+    return `${restoSegundos}s`;
+};
+
+const jobMaisRecente = (job, index) => {
+    if (!job) return false;
+    if (tarefa.value?.external_job_id) {
+        return job.external_job_id === tarefa.value.external_job_id;
+    }
+
+    return index === 0;
+};
 
 const statusColor = computed(() => {
     switch (tarefa.value.status) {
@@ -114,6 +264,7 @@ const buscarDetalhesJob = async () => {
 
         // Atualiza estado local de forma reativa e completa
         tarefa.value = { ...tarefa.value, ...data };
+        sincronizarJobNoHistorico(tarefa.value);
         
         // Garante que métricas específicas sejam preservadas
         if (data.current_url) tarefa.value.current_url = data.current_url;
@@ -158,6 +309,36 @@ onUnmounted(() => {
     if (pollingInterval) clearInterval(pollingInterval);
 });
 
+const resetConfigForm = () => {
+    configForm.frequency = props.projeto.frequency || 'manual';
+    configForm.max_pages = props.projeto.max_pages ?? planMaxPages.value;
+    configForm.max_depth = props.projeto.max_depth ?? 3;
+    configForm.max_concurrent_requests = props.projeto.max_concurrent_requests ?? 2;
+    configForm.delay_between_requests = props.projeto.delay_between_requests ?? 1;
+    configForm.user_agent_custom = props.projeto.user_agent_custom ?? '';
+};
+
+watch(() => props.projeto, () => {
+    resetConfigForm();
+}, { deep: true });
+
+watch(() => props.job_history, (jobs) => {
+    substituirHistoricoJobs(jobs ?? []);
+}, { deep: true });
+
+const frequencyLabel = (value) => {
+    const map = {
+        manual: t('freq.manual'),
+        diario: t('freq.daily'),
+        semanal: t('freq.weekly'),
+        quinzenal: t('freq.biweekly'),
+        mensal: t('freq.monthly'),
+        anual: t('freq.yearly'),
+    };
+
+    return map[value] ?? value;
+};
+
 const confirmarExclusao = () => {
     Swal.fire({
         title: t('project.delete_confirm_title'),
@@ -188,9 +369,16 @@ const iniciarNovoCrawler = async () => {
             status: response.data.status ?? 'queued',
             external_job_id: response.data.job_id ?? null,
             progress: 0,
+            pages_count: 0,
+            urls_found: 0,
+            urls_crawled: 0,
+            urls_excluded: 0,
             message: response.data.message ?? null,
+            started_at: new Date().toISOString(),
             completed_at: null,
+            artifacts: [],
         };
+        sincronizarJobNoHistorico(tarefa.value);
         listaUrls.value = [];
         iniciarPolling();
     } catch (error) {
@@ -243,6 +431,7 @@ const cancelarCrawler = async () => {
             message: response.data.message ?? null,
             completed_at: response.data.completed_at ?? null,
         };
+        sincronizarJobNoHistorico(tarefa.value);
 
         if (pollingInterval) {
             clearInterval(pollingInterval);
@@ -268,6 +457,52 @@ const downloadUrl = computed(() => {
                      tarefa.value.artifacts.find(a => a.name && a.name.endsWith('.txt'));
     return artifact ? artifact.download_url : null;
 });
+
+const salvarConfiguracoes = () => {
+    if (salvandoConfiguracoes.value) return;
+
+    salvandoConfiguracoes.value = true;
+
+    router.patch(route('projects.update', { projeto: props.projeto.id }), {
+        frequency: configForm.frequency,
+        max_pages: configForm.max_pages,
+        max_depth: configForm.max_depth,
+        max_concurrent_requests: configForm.max_concurrent_requests,
+        delay_between_requests: configForm.delay_between_requests,
+        user_agent_custom: configForm.user_agent_custom,
+    }, {
+        preserveScroll: true,
+        onSuccess: () => {
+            props.projeto.frequency = configForm.frequency;
+            props.projeto.max_pages = configForm.max_pages;
+            props.projeto.max_depth = configForm.max_depth;
+            props.projeto.max_concurrent_requests = configForm.max_concurrent_requests;
+            props.projeto.delay_between_requests = configForm.delay_between_requests;
+            props.projeto.user_agent_custom = configForm.user_agent_custom;
+
+            Swal.fire({
+                title: t('project.settings_saved'),
+                icon: 'success',
+                timer: 1800,
+                showConfirmButton: false,
+            });
+        },
+        onError: (errors) => {
+            const firstError = Object.values(errors)[0];
+
+            Swal.fire({
+                title: t('common.error'),
+                text: Array.isArray(firstError) ? firstError[0] : (firstError || t('project.update_error')),
+                icon: 'error',
+            });
+
+            resetConfigForm();
+        },
+        onFinish: () => {
+            salvandoConfiguracoes.value = false;
+        }
+    });
+};
 
 const toggleFeature = (feature) => {
     const newValue = !props.projeto[feature];
@@ -492,8 +727,16 @@ const toggleFeature = (feature) => {
                             <span class="mr-2">⁕</span> {{ $t('project.sitemap_overview') }}
                         </button>
                         <button @click="abaAtiva = 'files'"
-                            :class="['px-6 py-3 text-sm font-bold uppercase border-t border-l border-r rounded-t-lg transition-all translate-y-[1px]', abaAtiva === 'files' ? 'bg-white text-accent-600 border-gray-200 border-b-white shadow-sm' : 'bg-gray-100 text-gray-500 border-transparent hover:bg-white/50']">
+                            :class="['px-6 py-3 text-sm font-bold uppercase border-t border-l border-r rounded-t-lg transition-all mr-1 translate-y-[1px]', abaAtiva === 'files' ? 'bg-white text-accent-600 border-gray-200 border-b-white shadow-sm' : 'bg-gray-100 text-gray-500 border-transparent hover:bg-white/50']">
                             <span class="mr-2">☁</span> {{ $t('project.download_files') }}
+                        </button>
+                        <button @click="abaAtiva = 'history'"
+                            :class="['px-6 py-3 text-sm font-bold uppercase border-t border-l border-r rounded-t-lg transition-all mr-1 translate-y-[1px]', abaAtiva === 'history' ? 'bg-white text-accent-600 border-gray-200 border-b-white shadow-sm' : 'bg-gray-100 text-gray-500 border-transparent hover:bg-white/50']">
+                            <span class="mr-2">◷</span> {{ $t('project.history_tab') }}
+                        </button>
+                        <button @click="abaAtiva = 'settings'"
+                            :class="['px-6 py-3 text-sm font-bold uppercase border-t border-l border-r rounded-t-lg transition-all translate-y-[1px]', abaAtiva === 'settings' ? 'bg-white text-accent-600 border-gray-200 border-b-white shadow-sm' : 'bg-gray-100 text-gray-500 border-transparent hover:bg-white/50']">
+                            <span class="mr-2">⚙</span> {{ $t('project.settings_tab') }}
                         </button>
                     </div>
 
@@ -524,7 +767,9 @@ const toggleFeature = (feature) => {
                                     </div>
                                     
                                     <div class="text-sm text-gray-700 leading-relaxed mb-4">
-                                        <p>{{ $t('crawler.pages_processed') }}: <strong>{{ tarefa.urls_crawled || paginasAdicionadas }}</strong> (<span class="text-accent-600">{{ paginasAdicionadas }} {{ $t('crawler.added_sitemap') }}</span>)</p>
+                                        <p>{{ $t('crawler.pages_processed') }}: <strong>{{ tarefa.urls_crawled || 0 }}</strong></p>
+                                        <p>{{ $t('crawler.urls_discovered') }}: <strong>{{ paginasDescobertasAtuais }}</strong> • {{ $t('crawler.project_limit') }}: <strong>{{ limiteEfetivoProjeto }}</strong></p>
+                                        <p v-if="paginasDescobertasAtuais > limiteEfetivoProjeto" class="text-primary-600 font-medium">{{ $t('crawler.limit_notice', { count: limiteEfetivoProjeto }) }}</p>
                                         <p v-if="tarefa.current_url" class="truncate max-w-lg mx-auto mb-1">
                                             {{ $t('crawler.current_page') }}: <span class="text-xs text-primary-600 font-mono">{{ tarefa.current_url }}</span>
                                         </p>
@@ -587,7 +832,11 @@ const toggleFeature = (feature) => {
                             <h3 class="text-lg font-bold text-gray-700 mb-4">{{ $t('project.available_downloads') }}
                             </h3>
 
-                            <div class="grid grid-cols-1 gap-4">
+                            <div v-if="arquivosMapeados.length === 0" class="rounded-lg border border-dashed border-gray-300 bg-gray-50 px-6 py-10 text-center text-sm text-gray-500">
+                                {{ $t('project.no_generated_files') }}
+                            </div>
+
+                            <div v-else class="grid grid-cols-1 gap-4">
                                 <div v-for="arq in arquivosMapeados" :key="arq.name"
                                     class="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-primary-300 hover:shadow-md transition bg-white group">
                                     <div class="flex items-center gap-4">
@@ -624,6 +873,159 @@ const toggleFeature = (feature) => {
                                         </a>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+
+                        <div v-else-if="abaAtiva === 'history'" class="space-y-6">
+                            <div class="bg-primary-50 border border-primary-100 rounded-lg p-5">
+                                <h3 class="text-lg font-bold text-primary-900 mb-2">{{ $t('project.history_title') }}</h3>
+                                <p class="text-sm text-primary-800">{{ $t('project.history_intro') }}</p>
+                            </div>
+
+                            <div v-if="historicoJobsVisiveis.length === 0" class="rounded-lg border border-dashed border-gray-300 bg-gray-50 px-6 py-10 text-center text-sm text-gray-500">
+                                {{ $t('project.history_empty') }}
+                            </div>
+
+                            <div v-else class="space-y-4">
+                                <article v-for="(job, index) in historicoJobsVisiveis" :key="job.id ?? job.external_job_id ?? index" class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+                                    <div class="flex flex-col gap-4 border-b border-gray-100 px-5 py-4 lg:flex-row lg:items-start lg:justify-between">
+                                        <div class="min-w-0">
+                                            <div class="flex flex-wrap items-center gap-2">
+                                                <span :class="['inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-wide', statusClasseJob(job.status)]">
+                                                    {{ statusLabelJob(job.status) }}
+                                                </span>
+                                                <span v-if="jobMaisRecente(job, index)" class="inline-flex items-center rounded-full border border-primary-200 bg-primary-50 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-primary-700">
+                                                    {{ $t('project.history_latest') }}
+                                                </span>
+                                            </div>
+                                            <div class="mt-3 text-xs font-bold uppercase tracking-wide text-gray-500">{{ $t('project.history_job_id') }}</div>
+                                            <div class="mt-1 break-all text-sm font-semibold text-gray-800">{{ job.external_job_id || '-' }}</div>
+                                            <p class="mt-2 text-sm text-gray-500">{{ job.message || $t('project.history_no_message') }}</p>
+                                        </div>
+
+                                        <div class="grid grid-cols-1 gap-4 text-sm text-gray-600 sm:grid-cols-3 lg:min-w-[420px]">
+                                            <div>
+                                                <div class="text-[11px] font-bold uppercase tracking-wide text-gray-400">{{ $t('project.history_started_at') }}</div>
+                                                <div class="mt-1 font-medium text-gray-800">{{ formatarDataHora(job.started_at) }}</div>
+                                            </div>
+                                            <div>
+                                                <div class="text-[11px] font-bold uppercase tracking-wide text-gray-400">{{ $t('project.history_completed_at') }}</div>
+                                                <div class="mt-1 font-medium text-gray-800">{{ formatarDataHora(job.completed_at) }}</div>
+                                            </div>
+                                            <div>
+                                                <div class="text-[11px] font-bold uppercase tracking-wide text-gray-400">{{ $t('project.history_duration') }}</div>
+                                                <div class="mt-1 font-medium text-gray-800">{{ formatarDuracaoJob(job) }}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="grid grid-cols-2 gap-3 px-5 py-4 lg:grid-cols-4">
+                                        <div class="rounded-lg border border-gray-100 bg-gray-50 p-3">
+                                            <div class="text-[11px] font-bold uppercase tracking-wide text-gray-400">{{ $t('project.total_indexed') }}</div>
+                                            <div class="mt-1 text-xl font-bold text-gray-800">{{ urlsIndexadasDoJob(job) }}</div>
+                                        </div>
+                                        <div class="rounded-lg border border-gray-100 bg-gray-50 p-3">
+                                            <div class="text-[11px] font-bold uppercase tracking-wide text-gray-400">{{ $t('project.pages_discovered') }}</div>
+                                            <div class="mt-1 text-xl font-bold text-gray-800">{{ urlsDescobertasDoJob(job) }}</div>
+                                        </div>
+                                        <div class="rounded-lg border border-gray-100 bg-gray-50 p-3">
+                                            <div class="text-[11px] font-bold uppercase tracking-wide text-gray-400">{{ $t('crawler.skipped') }}</div>
+                                            <div class="mt-1 text-xl font-bold text-gray-800">{{ job.urls_excluded ?? 0 }}</div>
+                                        </div>
+                                        <div class="rounded-lg border border-gray-100 bg-gray-50 p-3">
+                                            <div class="text-[11px] font-bold uppercase tracking-wide text-gray-400">{{ $t('crawler.pages_processed') }}</div>
+                                            <div class="mt-1 text-xl font-bold text-gray-800">{{ job.urls_crawled ?? 0 }}</div>
+                                        </div>
+                                    </div>
+
+                                    <div v-if="job.artifacts?.length" class="border-t border-gray-100 px-5 py-4">
+                                        <div class="text-[11px] font-bold uppercase tracking-wide text-gray-400">{{ $t('project.history_artifacts') }}</div>
+                                        <div class="mt-3 flex flex-wrap gap-2">
+                                            <a v-for="artifact in job.artifacts" :key="`${job.external_job_id}-${artifact.name}`" :href="artifact.download_url" target="_blank" class="inline-flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:border-primary-300 hover:text-primary-700">
+                                                <span class="rounded bg-gray-100 px-2 py-0.5 text-[10px] font-bold uppercase text-gray-500">{{ artifact.name?.split('.').pop() }}</span>
+                                                <span>{{ artifact.name }}</span>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </article>
+                            </div>
+                        </div>
+
+                        <div v-else-if="abaAtiva === 'settings'" class="space-y-8">
+                            <div class="bg-primary-50 border border-primary-100 rounded-lg p-5">
+                                <h3 class="text-lg font-bold text-primary-900 mb-2">{{ $t('project.settings_title') }}</h3>
+                                <p class="text-sm text-primary-800">
+                                    {{ $t('project.settings_intro') }}
+                                </p>
+                            </div>
+
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                <div class="border border-gray-200 rounded-lg p-5 bg-white">
+                                    <h4 class="text-sm font-bold uppercase tracking-wide text-gray-700 mb-4">{{ $t('project.settings_basic_title') }}</h4>
+
+                                    <div class="space-y-5">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('project.field_frequency') }}</label>
+                                            <select v-model="configForm.frequency" class="w-full rounded-md border-gray-300 focus:border-primary-500 focus:ring-primary-500">
+                                                <option v-for="frequency in allowedFrequencyOptions" :key="frequency" :value="frequency">
+                                                    {{ frequencyLabel(frequency) }}
+                                                </option>
+                                            </select>
+                                            <p class="mt-2 text-xs text-gray-500">{{ $t('project.field_frequency_help') }}</p>
+                                        </div>
+
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('project.field_max_pages') }}</label>
+                                            <input v-model.number="configForm.max_pages" type="number" min="1" :max="planMaxPages" class="w-full rounded-md border-gray-300 focus:border-primary-500 focus:ring-primary-500" />
+                                            <p class="mt-2 text-xs text-gray-500">{{ $t('project.settings_plan_limit', { count: planMaxPages }) }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="border border-gray-200 rounded-lg p-5 bg-white">
+                                    <div class="flex items-center justify-between gap-3 mb-4">
+                                        <h4 class="text-sm font-bold uppercase tracking-wide text-gray-700">{{ $t('project.settings_advanced_title') }}</h4>
+                                        <span v-if="!canEditAdvancedSettings" class="text-[10px] uppercase font-bold px-2 py-1 rounded bg-gray-100 text-gray-500 border border-gray-200">
+                                            {{ $t('project.pro_feature') }}
+                                        </span>
+                                    </div>
+
+                                    <div v-if="!canEditAdvancedSettings" class="mb-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                                        {{ $t('project.settings_locked') }}
+                                    </div>
+
+                                    <div class="space-y-5">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('project.field_max_depth') }}</label>
+                                            <input v-model.number="configForm.max_depth" type="number" min="1" :max="features.max_depth_limit || 10" :disabled="!canEditAdvancedSettings" class="w-full rounded-md border-gray-300 focus:border-primary-500 focus:ring-primary-500 disabled:bg-gray-100 disabled:text-gray-500" />
+                                        </div>
+
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('project.field_concurrency') }}</label>
+                                            <input v-model.number="configForm.max_concurrent_requests" type="number" min="1" :max="features.max_concurrent_requests_limit || 10" :disabled="!canEditAdvancedSettings" class="w-full rounded-md border-gray-300 focus:border-primary-500 focus:ring-primary-500 disabled:bg-gray-100 disabled:text-gray-500" />
+                                        </div>
+
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('project.field_delay') }}</label>
+                                            <input v-model.number="configForm.delay_between_requests" type="number" step="0.1" :min="features.delay_between_requests_min ?? 0" :max="features.delay_between_requests_max ?? 10" :disabled="!canEditAdvancedSettings" class="w-full rounded-md border-gray-300 focus:border-primary-500 focus:ring-primary-500 disabled:bg-gray-100 disabled:text-gray-500" />
+                                        </div>
+
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('project.field_user_agent') }}</label>
+                                            <input v-model="configForm.user_agent_custom" type="text" maxlength="255" :disabled="!canEditAdvancedSettings" class="w-full rounded-md border-gray-300 focus:border-primary-500 focus:ring-primary-500 disabled:bg-gray-100 disabled:text-gray-500" :placeholder="$t('project.field_user_agent_placeholder')" />
+                                            <p class="mt-2 text-xs text-gray-500">{{ $t('project.field_user_agent_help') }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex justify-end">
+                                <button @click="salvarConfiguracoes" :disabled="salvandoConfiguracoes" class="inline-flex items-center gap-2 rounded-md bg-primary-600 px-5 py-3 text-sm font-bold uppercase tracking-wide text-white shadow-sm transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                    {{ salvandoConfiguracoes ? $t('project.settings_saving') : $t('project.settings_save') }}
+                                </button>
                             </div>
                         </div>
 
