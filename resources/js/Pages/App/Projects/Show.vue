@@ -24,6 +24,20 @@ const props = defineProps({
         type: Array,
         default: () => []
     },
+    search_engines: {
+        type: Object,
+        default: () => ({
+            suggested_sitemap_url: '',
+            published_sitemap_url: null,
+            google_site_property: null,
+            bing_site_url: null,
+            connections: {
+                google: { connected: false, email: null, connected_at: null },
+                bing: { connected: false, label: null, connected_at: null },
+            },
+            recent_submissions: [],
+        })
+    },
     features: {
         type: Object,
         default: () => ({
@@ -58,6 +72,26 @@ const configForm = reactive({
     delay_between_requests: props.projeto.delay_between_requests ?? 1,
     user_agent_custom: props.projeto.user_agent_custom ?? '',
 });
+const submitForm = reactive({
+    published_sitemap_url: props.search_engines?.published_sitemap_url ?? props.search_engines?.suggested_sitemap_url ?? '',
+    suggested_sitemap_url: props.search_engines?.suggested_sitemap_url ?? '',
+    google_site_property: props.search_engines?.google_site_property ?? '',
+    bing_site_url: props.search_engines?.bing_site_url ?? '',
+    bing_api_key: '',
+});
+const googleConnection = ref({ ...(props.search_engines?.connections?.google ?? { connected: false }) });
+const bingConnection = ref({ ...(props.search_engines?.connections?.bing ?? { connected: false }) });
+const submissionHistory = ref(props.search_engines?.recent_submissions ?? []);
+const googleSites = ref([]);
+const bingSites = ref([]);
+const carregandoGoogleSites = ref(false);
+const carregandoBingSites = ref(false);
+const salvandoUrlPublica = ref(false);
+const salvandoBingKey = ref(false);
+const desconectandoGoogle = ref(false);
+const removendoBing = ref(false);
+const enviandoGoogle = ref(false);
+const enviandoBing = ref(false);
 
 // Computado para exibir (usa o estado reativo)
 const urlsPreview = computed(() => listaUrls.value);
@@ -326,6 +360,30 @@ watch(() => props.job_history, (jobs) => {
     substituirHistoricoJobs(jobs ?? []);
 }, { deep: true });
 
+watch(() => props.search_engines, (value) => {
+    googleConnection.value = { ...(value?.connections?.google ?? { connected: false }) };
+    bingConnection.value = { ...(value?.connections?.bing ?? { connected: false }) };
+    submitForm.published_sitemap_url = value?.published_sitemap_url ?? value?.suggested_sitemap_url ?? '';
+    submitForm.suggested_sitemap_url = value?.suggested_sitemap_url ?? '';
+    submitForm.google_site_property = value?.google_site_property ?? '';
+    submitForm.bing_site_url = value?.bing_site_url ?? '';
+    sincronizarSubmissoes(value?.recent_submissions ?? []);
+}, { deep: true });
+
+watch(abaAtiva, (novaAba) => {
+    if (novaAba !== 'submit') {
+        return;
+    }
+
+    if (googleConnection.value?.connected && googleSites.value.length === 0) {
+        carregarGoogleSites();
+    }
+
+    if (bingConnection.value?.connected && bingSites.value.length === 0) {
+        carregarBingSites();
+    }
+});
+
 const frequencyLabel = (value) => {
     const map = {
         manual: t('freq.manual'),
@@ -337,6 +395,293 @@ const frequencyLabel = (value) => {
     };
 
     return map[value] ?? value;
+};
+
+const submissionStatusLabel = (status) => {
+    const labels = {
+        submitted: t('project.submit_status_submitted'),
+        failed: t('project.submit_status_failed'),
+    };
+
+    return labels[status] ?? status ?? '-';
+};
+
+const submissionStatusClass = (status) => {
+    if (status === 'submitted') {
+        return 'bg-green-50 text-green-700 border-green-200';
+    }
+
+    if (status === 'failed') {
+        return 'bg-danger-50 text-danger-700 border-danger-200';
+    }
+
+    return 'bg-gray-100 text-gray-600 border-gray-200';
+};
+
+const sincronizarSubmissoes = (submissions = []) => {
+    submissionHistory.value = [...submissions].sort((itemA, itemB) => {
+        const dataA = new Date(itemA?.submitted_at || 0).getTime();
+        const dataB = new Date(itemB?.submitted_at || 0).getTime();
+        return dataB - dataA;
+    });
+};
+
+const extrairMensagemErro = (error, fallbackKey = 'project.submit_error') => {
+    const fieldErrors = error?.response?.data?.errors;
+
+    if (fieldErrors && typeof fieldErrors === 'object') {
+        const firstError = Object.values(fieldErrors)[0];
+        if (Array.isArray(firstError)) {
+            return firstError[0];
+        }
+
+        if (typeof firstError === 'string') {
+            return firstError;
+        }
+    }
+
+    return error?.response?.data?.message ?? t(fallbackKey);
+};
+
+const carregarGoogleSites = async () => {
+    if (!googleConnection.value?.connected || carregandoGoogleSites.value) {
+        return;
+    }
+
+    carregandoGoogleSites.value = true;
+
+    try {
+        const response = await axios.get(route('projects.search-engines.google.sites', { projeto: props.projeto.id }));
+        googleSites.value = response.data?.sites ?? [];
+
+        if (!submitForm.google_site_property) {
+            submitForm.google_site_property = response.data?.recommended ?? '';
+        }
+    } catch (error) {
+        googleSites.value = [];
+        await Swal.fire({
+            title: t('common.error'),
+            text: extrairMensagemErro(error, 'project.submit_sites_error'),
+            icon: 'error',
+        });
+    } finally {
+        carregandoGoogleSites.value = false;
+    }
+};
+
+const carregarBingSites = async () => {
+    if (!bingConnection.value?.connected || carregandoBingSites.value) {
+        return;
+    }
+
+    carregandoBingSites.value = true;
+
+    try {
+        const response = await axios.get(route('projects.search-engines.bing.sites', { projeto: props.projeto.id }));
+        bingSites.value = response.data?.sites ?? [];
+
+        if (!submitForm.bing_site_url) {
+            submitForm.bing_site_url = response.data?.recommended ?? '';
+        }
+    } catch (error) {
+        bingSites.value = [];
+        await Swal.fire({
+            title: t('common.error'),
+            text: extrairMensagemErro(error, 'project.submit_sites_error'),
+            icon: 'error',
+        });
+    } finally {
+        carregandoBingSites.value = false;
+    }
+};
+
+const salvarUrlPublica = () => {
+    if (salvandoUrlPublica.value) return;
+
+    salvandoUrlPublica.value = true;
+
+    router.patch(route('projects.update', { projeto: props.projeto.id }), {
+        published_sitemap_url: submitForm.published_sitemap_url || null,
+    }, {
+        preserveScroll: true,
+        onSuccess: () => {
+            props.projeto.published_sitemap_url = submitForm.published_sitemap_url || null;
+            Swal.fire({
+                title: t('project.submit_url_saved'),
+                icon: 'success',
+                timer: 1800,
+                showConfirmButton: false,
+            });
+        },
+        onError: (errors) => {
+            const firstError = Object.values(errors)[0];
+
+            Swal.fire({
+                title: t('common.error'),
+                text: Array.isArray(firstError) ? firstError[0] : (firstError || t('project.update_error')),
+                icon: 'error',
+            });
+        },
+        onFinish: () => {
+            salvandoUrlPublica.value = false;
+        }
+    });
+};
+
+const conectarGoogleSearchConsole = () => {
+    window.location.href = route('search-engines.google.connect', { project: props.projeto.id });
+};
+
+const desconectarGoogleSearchConsole = async () => {
+    if (desconectandoGoogle.value) return;
+
+    desconectandoGoogle.value = true;
+
+    try {
+        await axios.delete(route('search-engines.google.disconnect'));
+        googleConnection.value = { connected: false, email: null, connected_at: null };
+        googleSites.value = [];
+        submitForm.google_site_property = '';
+        await Swal.fire({
+            title: t('project.submit_google_disconnected'),
+            icon: 'success',
+            timer: 1600,
+            showConfirmButton: false,
+        });
+    } catch (error) {
+        await Swal.fire({
+            title: t('common.error'),
+            text: extrairMensagemErro(error, 'project.submit_disconnect_error'),
+            icon: 'error',
+        });
+    } finally {
+        desconectandoGoogle.value = false;
+    }
+};
+
+const salvarBingWebmasterKey = async () => {
+    if (salvandoBingKey.value || !submitForm.bing_api_key) return;
+
+    salvandoBingKey.value = true;
+
+    try {
+        const response = await axios.post(route('search-engines.bing.store'), {
+            api_key: submitForm.bing_api_key,
+        });
+
+        bingConnection.value = response.data?.connection ?? { connected: true };
+        submitForm.bing_api_key = '';
+        await carregarBingSites();
+
+        await Swal.fire({
+            title: t('project.submit_bing_connected'),
+            text: t('project.submit_bing_connected_desc', { count: response.data?.sites_count ?? 0 }),
+            icon: 'success',
+        });
+    } catch (error) {
+        await Swal.fire({
+            title: t('common.error'),
+            text: extrairMensagemErro(error, 'project.submit_connect_error'),
+            icon: 'error',
+        });
+    } finally {
+        salvandoBingKey.value = false;
+    }
+};
+
+const removerBingWebmasterKey = async () => {
+    if (removendoBing.value) return;
+
+    removendoBing.value = true;
+
+    try {
+        await axios.delete(route('search-engines.bing.destroy'));
+        bingConnection.value = { connected: false, label: null, connected_at: null };
+        bingSites.value = [];
+        submitForm.bing_site_url = '';
+        await Swal.fire({
+            title: t('project.submit_bing_disconnected'),
+            icon: 'success',
+            timer: 1600,
+            showConfirmButton: false,
+        });
+    } catch (error) {
+        await Swal.fire({
+            title: t('common.error'),
+            text: extrairMensagemErro(error, 'project.submit_disconnect_error'),
+            icon: 'error',
+        });
+    } finally {
+        removendoBing.value = false;
+    }
+};
+
+const enviarSitemapGoogle = async () => {
+    if (enviandoGoogle.value) return;
+
+    enviandoGoogle.value = true;
+
+    try {
+        const response = await axios.post(route('projects.search-engines.google.submit', { projeto: props.projeto.id }), {
+            site_property: submitForm.google_site_property,
+            published_sitemap_url: submitForm.published_sitemap_url,
+        });
+
+        submitForm.published_sitemap_url = response.data?.published_sitemap_url ?? submitForm.published_sitemap_url;
+        submitForm.google_site_property = response.data?.google_site_property ?? submitForm.google_site_property;
+        props.projeto.published_sitemap_url = submitForm.published_sitemap_url;
+        sincronizarSubmissoes(response.data?.recent_submissions ?? []);
+
+        await Swal.fire({
+            title: t('project.submit_google_success'),
+            text: t('project.submit_success_desc'),
+            icon: 'success',
+        });
+    } catch (error) {
+        sincronizarSubmissoes(error.response?.data?.recent_submissions ?? submissionHistory.value);
+
+        await Swal.fire({
+            title: t('common.error'),
+            text: extrairMensagemErro(error, 'project.submit_error'),
+            icon: 'error',
+        });
+    } finally {
+        enviandoGoogle.value = false;
+    }
+};
+
+const enviarSitemapBing = async () => {
+    if (enviandoBing.value) return;
+
+    enviandoBing.value = true;
+
+    try {
+        const response = await axios.post(route('projects.search-engines.bing.submit', { projeto: props.projeto.id }), {
+            site_url: submitForm.bing_site_url,
+            published_sitemap_url: submitForm.published_sitemap_url,
+        });
+
+        submitForm.published_sitemap_url = response.data?.published_sitemap_url ?? submitForm.published_sitemap_url;
+        submitForm.bing_site_url = response.data?.bing_site_url ?? submitForm.bing_site_url;
+        props.projeto.published_sitemap_url = submitForm.published_sitemap_url;
+        sincronizarSubmissoes(response.data?.recent_submissions ?? []);
+
+        await Swal.fire({
+            title: t('project.submit_bing_success'),
+            text: t('project.submit_success_desc'),
+            icon: 'success',
+        });
+    } catch (error) {
+        sincronizarSubmissoes(error.response?.data?.recent_submissions ?? submissionHistory.value);
+
+        await Swal.fire({
+            title: t('common.error'),
+            text: extrairMensagemErro(error, 'project.submit_error'),
+            icon: 'error',
+        });
+    } finally {
+        enviandoBing.value = false;
+    }
 };
 
 const confirmarExclusao = () => {
@@ -730,6 +1075,10 @@ const toggleFeature = (feature) => {
                             :class="['px-6 py-3 text-sm font-bold uppercase border-t border-l border-r rounded-t-lg transition-all mr-1 translate-y-[1px]', abaAtiva === 'files' ? 'bg-white text-accent-600 border-gray-200 border-b-white shadow-sm' : 'bg-gray-100 text-gray-500 border-transparent hover:bg-white/50']">
                             <span class="mr-2">☁</span> {{ $t('project.download_files') }}
                         </button>
+                        <button @click="abaAtiva = 'submit'"
+                            :class="['px-6 py-3 text-sm font-bold uppercase border-t border-l border-r rounded-t-lg transition-all mr-1 translate-y-[1px]', abaAtiva === 'submit' ? 'bg-white text-accent-600 border-gray-200 border-b-white shadow-sm' : 'bg-gray-100 text-gray-500 border-transparent hover:bg-white/50']">
+                            <span class="mr-2">+</span> {{ $t('project.submit_tab') }}
+                        </button>
                         <button @click="abaAtiva = 'history'"
                             :class="['px-6 py-3 text-sm font-bold uppercase border-t border-l border-r rounded-t-lg transition-all mr-1 translate-y-[1px]', abaAtiva === 'history' ? 'bg-white text-accent-600 border-gray-200 border-b-white shadow-sm' : 'bg-gray-100 text-gray-500 border-transparent hover:bg-white/50']">
                             <span class="mr-2">◷</span> {{ $t('project.history_tab') }}
@@ -871,6 +1220,189 @@ const toggleFeature = (feature) => {
                                             </svg>
                                             {{ $t('project.download_action') }}
                                         </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div v-else-if="abaAtiva === 'submit'" class="space-y-8">
+                            <div class="bg-primary-50 border border-primary-100 rounded-lg p-5">
+                                <h3 class="text-lg font-bold text-primary-900 mb-2">{{ $t('project.submit_title') }}</h3>
+                                <p class="text-sm text-primary-800">{{ $t('project.submit_intro') }}</p>
+                            </div>
+
+                            <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm space-y-4">
+                                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                                    <div>
+                                        <h4 class="text-base font-bold text-gray-800">{{ $t('project.submit_public_url_title') }}</h4>
+                                        <p class="text-sm text-gray-500">{{ $t('project.submit_public_url_help') }}</p>
+                                    </div>
+                                    <button type="button"
+                                        class="text-xs font-bold uppercase tracking-wide text-primary-600 hover:text-primary-700"
+                                        @click="submitForm.published_sitemap_url = submitForm.suggested_sitemap_url">
+                                        {{ $t('project.submit_use_suggestion') }}
+                                    </button>
+                                </div>
+
+                                <div class="space-y-3">
+                                    <input
+                                        v-model="submitForm.published_sitemap_url"
+                                        type="url"
+                                        class="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                                        :placeholder="submitForm.suggested_sitemap_url || 'https://example.com/sitemap.xml'"
+                                    />
+
+                                    <div class="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+                                        <div class="text-xs text-gray-500">
+                                            {{ $t('project.submit_public_url_note') }}
+                                        </div>
+                                        <PrimaryButton type="button" @click="salvarUrlPublica" :disabled="salvandoUrlPublica">
+                                            {{ salvandoUrlPublica ? $t('project.submit_url_saving') : $t('project.submit_url_save') }}
+                                        </PrimaryButton>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                                <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm space-y-5">
+                                    <div class="flex items-start justify-between gap-4">
+                                        <div>
+                                            <h4 class="text-base font-bold text-gray-800">Google Search Console</h4>
+                                            <p class="text-sm text-gray-500">{{ $t('project.submit_google_help') }}</p>
+                                        </div>
+                                        <span :class="['inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-wide', googleConnection.connected ? 'border-green-200 bg-green-50 text-green-700' : 'border-gray-200 bg-gray-50 text-gray-500']">
+                                            {{ googleConnection.connected ? $t('project.submit_connected') : $t('project.submit_not_connected') }}
+                                        </span>
+                                    </div>
+
+                                    <div v-if="googleConnection.connected" class="space-y-4">
+                                        <div class="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
+                                            <strong class="text-gray-800">{{ googleConnection.email || 'Google' }}</strong>
+                                        </div>
+
+                                        <div class="space-y-2">
+                                            <div class="flex items-center justify-between">
+                                                <label class="text-xs font-bold uppercase tracking-wide text-gray-500">{{ $t('project.submit_google_property') }}</label>
+                                                <button type="button" class="text-xs font-bold uppercase tracking-wide text-primary-600 hover:text-primary-700" @click="carregarGoogleSites">
+                                                    {{ carregandoGoogleSites ? $t('project.submit_loading_sites') : $t('project.submit_refresh_sites') }}
+                                                </button>
+                                            </div>
+                                            <select
+                                                v-model="submitForm.google_site_property"
+                                                class="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                                            >
+                                                <option value="">{{ $t('project.submit_select_google_property') }}</option>
+                                                <option v-for="site in googleSites" :key="site.site_url" :value="site.site_url">
+                                                    {{ site.site_url }} ({{ site.permission_level }})
+                                                </option>
+                                            </select>
+                                        </div>
+
+                                        <div class="flex flex-col sm:flex-row gap-3">
+                                            <PrimaryButton type="button" @click="enviarSitemapGoogle" :disabled="enviandoGoogle || !submitForm.google_site_property">
+                                                {{ enviandoGoogle ? $t('project.submit_sending') : $t('project.submit_google_action') }}
+                                            </PrimaryButton>
+                                            <button type="button" class="inline-flex items-center justify-center rounded-md border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50" @click="desconectarGoogleSearchConsole" :disabled="desconectandoGoogle">
+                                                {{ desconectandoGoogle ? $t('project.submit_disconnecting') : $t('project.submit_google_disconnect') }}
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div v-else class="space-y-4">
+                                        <p class="text-sm text-gray-500">{{ $t('project.submit_google_connect_desc') }}</p>
+                                        <PrimaryButton type="button" @click="conectarGoogleSearchConsole">
+                                            {{ $t('project.submit_google_connect') }}
+                                        </PrimaryButton>
+                                    </div>
+                                </div>
+
+                                <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm space-y-5">
+                                    <div class="flex items-start justify-between gap-4">
+                                        <div>
+                                            <h4 class="text-base font-bold text-gray-800">Bing Webmaster Tools</h4>
+                                            <p class="text-sm text-gray-500">{{ $t('project.submit_bing_help') }}</p>
+                                        </div>
+                                        <span :class="['inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-wide', bingConnection.connected ? 'border-green-200 bg-green-50 text-green-700' : 'border-gray-200 bg-gray-50 text-gray-500']">
+                                            {{ bingConnection.connected ? $t('project.submit_connected') : $t('project.submit_not_connected') }}
+                                        </span>
+                                    </div>
+
+                                    <div v-if="bingConnection.connected" class="space-y-4">
+                                        <div class="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
+                                            <strong class="text-gray-800">{{ bingConnection.label }}</strong>
+                                        </div>
+
+                                        <div class="space-y-2">
+                                            <div class="flex items-center justify-between">
+                                                <label class="text-xs font-bold uppercase tracking-wide text-gray-500">{{ $t('project.submit_bing_site') }}</label>
+                                                <button type="button" class="text-xs font-bold uppercase tracking-wide text-primary-600 hover:text-primary-700" @click="carregarBingSites">
+                                                    {{ carregandoBingSites ? $t('project.submit_loading_sites') : $t('project.submit_refresh_sites') }}
+                                                </button>
+                                            </div>
+                                            <select
+                                                v-model="submitForm.bing_site_url"
+                                                class="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                                            >
+                                                <option value="">{{ $t('project.submit_select_bing_site') }}</option>
+                                                <option v-for="site in bingSites" :key="site.site_url" :value="site.site_url">
+                                                    {{ site.site_url }}
+                                                </option>
+                                            </select>
+                                        </div>
+
+                                        <div class="flex flex-col sm:flex-row gap-3">
+                                            <PrimaryButton type="button" @click="enviarSitemapBing" :disabled="enviandoBing || !submitForm.bing_site_url">
+                                                {{ enviandoBing ? $t('project.submit_sending') : $t('project.submit_bing_action') }}
+                                            </PrimaryButton>
+                                            <button type="button" class="inline-flex items-center justify-center rounded-md border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50" @click="removerBingWebmasterKey" :disabled="removendoBing">
+                                                {{ removendoBing ? $t('project.submit_disconnecting') : $t('project.submit_bing_disconnect') }}
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div v-else class="space-y-4">
+                                        <p class="text-sm text-gray-500">{{ $t('project.submit_bing_connect_desc') }}</p>
+                                        <input
+                                            v-model="submitForm.bing_api_key"
+                                            type="password"
+                                            class="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                                            :placeholder="$t('project.submit_bing_key_placeholder')"
+                                        />
+                                        <PrimaryButton type="button" @click="salvarBingWebmasterKey" :disabled="salvandoBingKey || !submitForm.bing_api_key">
+                                            {{ salvandoBingKey ? $t('project.submit_connecting') : $t('project.submit_bing_connect') }}
+                                        </PrimaryButton>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm space-y-4">
+                                <div>
+                                    <h4 class="text-base font-bold text-gray-800">{{ $t('project.submit_history_title') }}</h4>
+                                    <p class="text-sm text-gray-500">{{ $t('project.submit_history_intro') }}</p>
+                                </div>
+
+                                <div v-if="submissionHistory.length === 0" class="rounded-lg border border-dashed border-gray-300 bg-gray-50 px-6 py-8 text-center text-sm text-gray-500">
+                                    {{ $t('project.submit_history_empty') }}
+                                </div>
+
+                                <div v-else class="space-y-3">
+                                    <div v-for="submission in submissionHistory" :key="submission.id" class="rounded-lg border border-gray-200 px-4 py-4">
+                                        <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                                            <div class="space-y-1">
+                                                <div class="flex items-center gap-2">
+                                                    <span class="text-sm font-bold text-gray-800 uppercase">{{ submission.provider }}</span>
+                                                    <span :class="['inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide', submissionStatusClass(submission.status)]">
+                                                        {{ submissionStatusLabel(submission.status) }}
+                                                    </span>
+                                                </div>
+                                                <p class="text-sm text-gray-700">{{ submission.site_identifier }}</p>
+                                                <p class="text-xs text-gray-500 break-all">{{ submission.sitemap_url }}</p>
+                                                <p v-if="submission.message" class="text-xs text-gray-500">{{ submission.message }}</p>
+                                            </div>
+                                            <div class="text-xs font-medium uppercase tracking-wide text-gray-400">
+                                                {{ formatarDataHora(submission.submitted_at) }}
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

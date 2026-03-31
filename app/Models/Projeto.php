@@ -15,6 +15,9 @@ class Projeto extends Model
         'user_id',
         'name',
         'url',
+        'published_sitemap_url',
+        'google_site_property',
+        'bing_site_url',
         'status',
         'frequency',
         'user_agent_custom',
@@ -54,5 +57,10 @@ class Projeto extends Model
     public function tarefasSitemap()
     {
         return $this->hasMany(TarefaSitemap::class, 'project_id');
+    }
+
+    public function searchEngineSubmissions()
+    {
+        return $this->hasMany(SearchEngineSubmission::class, 'project_id');
     }
 }

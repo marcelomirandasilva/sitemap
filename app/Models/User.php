@@ -72,6 +72,16 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(ChaveApi::class);
     }
 
+    public function searchEngineConnections()
+    {
+        return $this->hasMany(SearchEngineConnection::class);
+    }
+
+    public function searchEngineSubmissions()
+    {
+        return $this->hasMany(SearchEngineSubmission::class);
+    }
+
     /**
      * Helper para saber se é Admin (útil para o futuro)
      */
@@ -93,4 +103,3 @@ class User extends Authenticatable implements MustVerifyEmail
         $this->notify(new \App\Notifications\WelcomeAndVerifyUser($token));
     }
 }
-

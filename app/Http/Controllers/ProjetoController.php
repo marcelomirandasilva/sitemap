@@ -71,6 +71,36 @@ class ProjetoController extends Controller
         ];
     }
 
+    protected function defaultPublishedSitemapUrl(?string $projectUrl): ?string
+    {
+        $host = parse_url((string) $projectUrl, PHP_URL_HOST);
+
+        if (!$host) {
+            return null;
+        }
+
+        $scheme = parse_url((string) $projectUrl, PHP_URL_SCHEME) ?: 'https';
+        $port = parse_url((string) $projectUrl, PHP_URL_PORT);
+        $origin = $scheme . '://' . $host;
+
+        if ($port) {
+            $origin .= ':' . $port;
+        }
+
+        return $origin . '/sitemap.xml';
+    }
+
+    protected function maskBingApiKey(?string $apiKey): ?string
+    {
+        if (!$apiKey) {
+            return null;
+        }
+
+        $visible = substr($apiKey, -6);
+
+        return str_repeat('*', max(strlen($apiKey) - 6, 8)) . $visible;
+    }
+
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -131,6 +161,7 @@ class ProjetoController extends Controller
 
         $usuario = auth()->user();
         $usuario->load('plano');
+        $searchConnections = $usuario->searchEngineConnections()->get()->keyBy('provider');
 
         return Inertia::render('App/Projects/Show', [
             'projeto' => $projeto,
@@ -138,6 +169,38 @@ class ProjetoController extends Controller
             'job_history' => $jobHistory,
             'preview_urls' => [],
             'features' => $this->buildProjectFeatures($usuario),
+            'search_engines' => [
+                'suggested_sitemap_url' => $this->defaultPublishedSitemapUrl($projeto->url),
+                'published_sitemap_url' => $projeto->published_sitemap_url,
+                'google_site_property' => $projeto->google_site_property,
+                'bing_site_url' => $projeto->bing_site_url,
+                'connections' => [
+                    'google' => [
+                        'connected' => $searchConnections->has('google'),
+                        'email' => $searchConnections->get('google')?->email,
+                        'connected_at' => optional($searchConnections->get('google')?->connected_at)->toISOString(),
+                    ],
+                    'bing' => [
+                        'connected' => $searchConnections->has('bing'),
+                        'label' => $this->maskBingApiKey($searchConnections->get('bing')?->api_key),
+                        'connected_at' => optional($searchConnections->get('bing')?->connected_at)->toISOString(),
+                    ],
+                ],
+                'recent_submissions' => $projeto->searchEngineSubmissions()
+                    ->latest('submitted_at')
+                    ->limit(10)
+                    ->get()
+                    ->map(fn ($submission) => [
+                        'id' => $submission->id,
+                        'provider' => $submission->provider,
+                        'site_identifier' => $submission->site_identifier,
+                        'sitemap_url' => $submission->sitemap_url,
+                        'status' => $submission->status,
+                        'message' => $submission->message,
+                        'submitted_at' => optional($submission->submitted_at)->toISOString(),
+                    ])
+                    ->values(),
+            ],
         ]);
     }
 
@@ -163,6 +226,9 @@ class ProjetoController extends Controller
             'max_concurrent_requests' => 'sometimes|integer|min:1|max:10',
             'delay_between_requests' => 'sometimes|numeric|min:0|max:10',
             'user_agent_custom' => 'sometimes|nullable|string|max:255',
+            'published_sitemap_url' => 'sometimes|nullable|url|max:2048',
+            'google_site_property' => 'sometimes|nullable|string|max:255',
+            'bing_site_url' => 'sometimes|nullable|url|max:2048',
         ]);
 
         if (isset($validated['check_images']) && $validated['check_images'] && !($usuario->plano?->permite_imagens)) {
@@ -194,6 +260,18 @@ class ProjetoController extends Controller
 
         if (array_key_exists('user_agent_custom', $validated)) {
             $validated['user_agent_custom'] = trim((string) ($validated['user_agent_custom'] ?? '')) ?: null;
+        }
+
+        if (array_key_exists('published_sitemap_url', $validated)) {
+            $validated['published_sitemap_url'] = trim((string) ($validated['published_sitemap_url'] ?? '')) ?: null;
+        }
+
+        if (array_key_exists('google_site_property', $validated)) {
+            $validated['google_site_property'] = trim((string) ($validated['google_site_property'] ?? '')) ?: null;
+        }
+
+        if (array_key_exists('bing_site_url', $validated)) {
+            $validated['bing_site_url'] = trim((string) ($validated['bing_site_url'] ?? '')) ?: null;
         }
 
         $projeto->update($validated);

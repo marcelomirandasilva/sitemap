@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\PerfilController;
+use App\Http\Controllers\ProjectSearchEngineController;
+use App\Http\Controllers\SearchEngineConnectionController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
@@ -48,6 +50,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/projects/{projeto}/status', [RastreadorController::class, 'getStatus'])->name('projects.status');
     Route::get('/projects/{projeto}/preview', [RastreadorController::class, 'getPreviewUrls'])->name('projects.preview');
     Route::get('/projects/{projeto}/urls', [RastreadorController::class, 'getUrls'])->name('projects.urls');
+    Route::get('/projects/{projeto}/search-engines/google/sites', [ProjectSearchEngineController::class, 'googleSites'])->name('projects.search-engines.google.sites');
+    Route::get('/projects/{projeto}/search-engines/bing/sites', [ProjectSearchEngineController::class, 'bingSites'])->name('projects.search-engines.bing.sites');
+    Route::post('/projects/{projeto}/search-engines/google/submit', [ProjectSearchEngineController::class, 'submitGoogle'])->name('projects.search-engines.google.submit');
+    Route::post('/projects/{projeto}/search-engines/bing/submit', [ProjectSearchEngineController::class, 'submitBing'])->name('projects.search-engines.bing.submit');
 
     // Rota de Download via Proxy
     Route::get('/downloads/{jobId}/{filename}', [\App\Http\Controllers\DownloadController::class, 'sitemap'])->name('downloads.sitemap');
@@ -97,6 +103,11 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/preferences/password', [App\Http\Controllers\PreferenciasController::class, 'updatePassword'])->name('preferences.password.update');
     Route::get('/preferences', [App\Http\Controllers\PreferenciasController::class, 'edit'])->name('preferences.edit');
     Route::delete('/preferences/deactivate', [App\Http\Controllers\PreferenciasController::class, 'deactivate'])->name('preferences.deactivate');
+    Route::get('/integrations/google/search-console/connect', [SearchEngineConnectionController::class, 'redirectToGoogle'])->name('search-engines.google.connect');
+    Route::get('/integrations/google/search-console/callback', [SearchEngineConnectionController::class, 'handleGoogleCallback'])->name('search-engines.google.callback');
+    Route::delete('/integrations/google/search-console', [SearchEngineConnectionController::class, 'disconnectGoogle'])->name('search-engines.google.disconnect');
+    Route::post('/integrations/bing/webmaster', [SearchEngineConnectionController::class, 'storeBingKey'])->name('search-engines.bing.store');
+    Route::delete('/integrations/bing/webmaster', [SearchEngineConnectionController::class, 'destroyBingKey'])->name('search-engines.bing.destroy');
 
     // Histórico de Pagamentos
     Route::get('/billing', [App\Http\Controllers\FaturamentoController::class, 'index'])->name('billing.index');

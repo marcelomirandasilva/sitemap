@@ -204,6 +204,9 @@ CREATE TABLE `projects` (
   `user_id` bigint unsigned NOT NULL,
   `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `url` varchar(2048) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `published_sitemap_url` text COLLATE utf8mb4_unicode_ci,
+  `google_site_property` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `bing_site_url` text COLLATE utf8mb4_unicode_ci,
   `user_agent_custom` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `delay_between_requests` double NOT NULL DEFAULT '1',
   `max_concurrent_requests` int NOT NULL DEFAULT '2',
@@ -239,6 +242,54 @@ CREATE TABLE `respostas_tickets` (
   KEY `respostas_tickets_user_id_foreign` (`user_id`),
   CONSTRAINT `respostas_tickets_ticket_id_foreign` FOREIGN KEY (`ticket_id`) REFERENCES `tickets` (`id`) ON DELETE CASCADE,
   CONSTRAINT `respostas_tickets_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `search_engine_connections`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `search_engine_connections` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` bigint unsigned NOT NULL,
+  `provider` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `provider_user_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `email` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `access_token` longtext COLLATE utf8mb4_unicode_ci,
+  `refresh_token` longtext COLLATE utf8mb4_unicode_ci,
+  `token_expires_at` timestamp NULL DEFAULT NULL,
+  `api_key` longtext COLLATE utf8mb4_unicode_ci,
+  `meta` json DEFAULT NULL,
+  `connected_at` timestamp NULL DEFAULT NULL,
+  `last_synced_at` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `search_engine_connections_user_id_provider_unique` (`user_id`,`provider`),
+  KEY `search_engine_connections_provider_index` (`provider`),
+  CONSTRAINT `search_engine_connections_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `search_engine_submissions`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `search_engine_submissions` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` bigint unsigned NOT NULL,
+  `project_id` bigint unsigned NOT NULL,
+  `provider` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `site_identifier` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `sitemap_url` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `status` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'submitted',
+  `message` text COLLATE utf8mb4_unicode_ci,
+  `response_payload` json DEFAULT NULL,
+  `submitted_at` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `search_engine_submissions_project_id_provider_index` (`project_id`,`provider`),
+  KEY `search_engine_submissions_user_id_provider_index` (`user_id`,`provider`),
+  KEY `search_engine_submissions_submitted_at_index` (`submitted_at`),
+  CONSTRAINT `search_engine_submissions_project_id_foreign` FOREIGN KEY (`project_id`) REFERENCES `projects` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `search_engine_submissions_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `sessions`;
@@ -402,3 +453,6 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (21,'2026_03_24_160
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (22,'2026_03_26_141827_add_media_permissions_to_plans_table',11);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (23,'2026_03_27_143412_add_api_callback_url_to_users_table',12);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (24,'2026_03_30_120000_add_crawl_metrics_to_sitemap_jobs_table',13);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (25,'2026_03_31_090000_add_search_submission_fields_to_projects_table',14);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (26,'2026_03_31_090100_create_search_engine_connections_table',14);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (27,'2026_03_31_090200_create_search_engine_submissions_table',14);
