@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\CentralNotificacoesService;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -31,6 +32,7 @@ class HandleInertiaRequests extends Middleware
     {
         $usuario = $request->user();
         $planoEfetivo = $usuario ? $usuario->planoEfetivo() : null;
+        $centralNotificacoes = app(CentralNotificacoesService::class);
 
         return [
             ...parent::share($request),
@@ -62,6 +64,15 @@ class HandleInertiaRequests extends Middleware
             'flash' => [
                 'success' => fn() => $request->session()->get('success'),
                 'error' => fn() => $request->session()->get('error'),
+            ],
+            'notificacoes' => $usuario ? [
+                'nao_lidas' => $usuario->unreadNotifications()->count(),
+                'itens' => $centralNotificacoes->serializarColecao(
+                    $usuario->notifications()->latest()->limit(8)->get()
+                ),
+            ] : [
+                'nao_lidas' => 0,
+                'itens' => [],
             ],
         ];
     }

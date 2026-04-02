@@ -55,6 +55,9 @@ const notifyForm = useForm({
     notification_preferences: {
         weekly_summary: props.user.notification_preferences?.weekly_summary ?? true,
         broken_links: props.user.notification_preferences?.broken_links ?? true,
+        crawler_updates: props.user.notification_preferences?.crawler_updates ?? true,
+        search_engine_updates: props.user.notification_preferences?.search_engine_updates ?? true,
+        support_updates: props.user.notification_preferences?.support_updates ?? true,
     }
 });
 
@@ -155,6 +158,30 @@ const submitDeactivation = () => {
                                                 $t('preferences.notifications.critical_alerts_desc') }}</p>
                                         </div>
                                         <Toggle v-model="notifyForm.notification_preferences.broken_links" />
+                                    </div>
+
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="text-sm text-gray-500">{{
+                                                $t('preferences.notifications.crawler_updates_desc') }}</p>
+                                        </div>
+                                        <Toggle v-model="notifyForm.notification_preferences.crawler_updates" />
+                                    </div>
+
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="text-sm text-gray-500">{{
+                                                $t('preferences.notifications.search_engine_updates_desc') }}</p>
+                                        </div>
+                                        <Toggle v-model="notifyForm.notification_preferences.search_engine_updates" />
+                                    </div>
+
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="text-sm text-gray-500">{{
+                                                $t('preferences.notifications.support_updates_desc') }}</p>
+                                        </div>
+                                        <Toggle v-model="notifyForm.notification_preferences.support_updates" />
                                     </div>
 
                                     <div class="pt-2 flex items-center gap-4">

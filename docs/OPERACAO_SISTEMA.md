@@ -32,7 +32,31 @@ Sem isso:
 - artefatos podem nao ser importados
 - paginas, links e contagens podem demorar ou nao aparecer no painel
 
-## 3. Webhook interno da API Python
+## 3. Broadcast e notificacoes em tempo real
+
+As notificacoes em tempo real dependem do Laravel Reverb e do broadcast privado por usuario.
+
+Requisitos minimos:
+
+- `BROADCAST_CONNECTION=reverb`
+- `REVERB_APP_ID`, `REVERB_APP_KEY`, `REVERB_APP_SECRET` definidos
+- `REVERB_HOST`, `REVERB_PORT` e `REVERB_SCHEME` definidos
+- `VITE_REVERB_APP_KEY`, `VITE_REVERB_HOST`, `VITE_REVERB_PORT` e `VITE_REVERB_SCHEME` coerentes com o backend
+
+Em ambiente persistente, mantenha o servidor do Reverb ativo:
+
+- `php artisan reverb:start`
+
+Em ambiente local, o comando abaixo ja sobe HTTP, fila, Reverb, logs e Vite:
+
+- `composer dev`
+
+Sem isso:
+
+- o dropdown de notificacoes continua funcionando por refresh
+- mas novas notificacoes nao chegam em tempo real na interface
+
+## 4. Webhook interno da API Python
 
 A API Python notifica a conclusao de jobs em:
 
@@ -56,7 +80,7 @@ Sem isso:
 - jobs podem ficar presos como `running`
 - proximos agendamentos podem nao ser recalculados
 
-## 4. API Python de crawler
+## 5. API Python de crawler
 
 O Laravel depende da API Python para:
 
@@ -71,7 +95,7 @@ Verificacoes minimas:
 - endpoint `/api/v1/health` respondendo
 - token interno valido
 
-## 5. Migracoes e schema
+## 6. Migracoes e schema
 
 Sempre que houver mudanca estrutural:
 
@@ -79,7 +103,22 @@ Sempre que houver mudanca estrutural:
 
 O projeto atualiza o schema dump automaticamente. Isso precisa acompanhar os commits quando a estrutura do banco mudar.
 
-## 6. Frontend
+## 7. Dependencias e descoberta de pacotes
+
+Quando houver entrada ou atualizacao de pacotes no `composer.json` e `composer.lock`, rode:
+
+- `composer install`
+
+Se o vendor ja estiver instalado, mas algum comando novo do Laravel nao aparecer, rode:
+
+- `php artisan package:discover`
+
+Sem isso:
+
+- comandos de pacotes novos podem nao aparecer
+- providers e aliases descobertos automaticamente podem ficar desatualizados no cache do Laravel
+
+## 8. Frontend
 
 Sempre que houver alteracao na interface:
 
@@ -87,14 +126,16 @@ Sempre que houver alteracao na interface:
 
 Se a aplicacao estiver servindo assets antigos, faca limpeza de cache do navegador e confira o manifesto em `public/build`.
 
-## 7. Rotina minima de verificacao apos deploy
+## 9. Rotina minima de verificacao apos deploy
 
 Checklist objetivo:
 
+- `composer install`
 - `php artisan migrate --force`
 - `php artisan schedule:list`
 - scheduler ativo com `schedule:work` ou cron equivalente
 - worker de fila ativo se a fila nao for `sync`
+- Reverb ativo com `php artisan reverb:start` ou processo equivalente
 - `npm run build` ou deploy dos assets gerados
 - endpoint `/api/v1/health` da API Python respondendo
 - webhook interno alcancavel entre Python e Laravel

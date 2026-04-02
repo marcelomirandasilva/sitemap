@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Jobs\ProcessSitemapArtifactsJob;
 use App\Models\TarefaSitemap;
+use App\Services\CentralNotificacoesService;
 use App\Services\FrequenciaRastreamentoService;
 use App\Services\SitemapGeneratorService;
 use Illuminate\Http\Request;
@@ -20,7 +21,8 @@ class WebhookSitemapController extends Controller
 {
     public function __construct(
         protected SitemapGeneratorService $sitemapService,
-        protected FrequenciaRastreamentoService $frequenciaRastreamento
+        protected FrequenciaRastreamentoService $frequenciaRastreamento,
+        protected CentralNotificacoesService $centralNotificacoes
     )
     {
     }
@@ -67,6 +69,7 @@ class WebhookSitemapController extends Controller
             $statusData = $this->sitemapService->checkStatus($externalJobId, $userId);
         }
 
+        $statusAnterior = $job->status;
         $resolvedStatus = $statusData['status'] ?? $status;
 
         $updateData = [
@@ -126,6 +129,14 @@ class WebhookSitemapController extends Controller
         }
 
         $this->notifyUserCallback($job, $statusData, $errorMessage);
+
+        if (
+            !in_array($statusAnterior, ['completed', 'failed', 'cancelled'], true)
+            && in_array($resolvedStatus, ['completed', 'failed', 'cancelled'], true)
+            && $job->projeto
+        ) {
+            $this->centralNotificacoes->notificarCrawler($job->projeto, $job);
+        }
 
         Log::info('Webhook processado com sucesso.', [
             'job_id' => $externalJobId,

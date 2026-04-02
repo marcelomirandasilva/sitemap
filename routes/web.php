@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\PerfilController;
 use App\Http\Controllers\PaginaPublicaController;
+use App\Http\Controllers\NotificacaoController;
 use App\Http\Controllers\ProjectSearchEngineController;
 use App\Http\Controllers\SearchEngineConnectionController;
 use App\Http\Controllers\SeoSiteController;
@@ -111,6 +112,9 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/preferences/password', [App\Http\Controllers\PreferenciasController::class, 'updatePassword'])->name('preferences.password.update');
     Route::get('/preferences', [App\Http\Controllers\PreferenciasController::class, 'edit'])->name('preferences.edit');
     Route::delete('/preferences/deactivate', [App\Http\Controllers\PreferenciasController::class, 'deactivate'])->name('preferences.deactivate');
+    Route::get('/notifications', [NotificacaoController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/read-all', [NotificacaoController::class, 'marcarTodasComoLidas'])->name('notifications.read-all');
+    Route::post('/notifications/{notificacaoId}/read', [NotificacaoController::class, 'marcarComoLida'])->name('notifications.read');
     Route::get('/integrations/google/search-console/connect', [SearchEngineConnectionController::class, 'redirectToGoogle'])->name('search-engines.google.connect');
     Route::get('/integrations/google/search-console/callback', [SearchEngineConnectionController::class, 'handleGoogleCallback'])->name('search-engines.google.callback');
     Route::delete('/integrations/google/search-console', [SearchEngineConnectionController::class, 'disconnectGoogle'])->name('search-engines.google.disconnect');

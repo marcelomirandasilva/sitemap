@@ -34,6 +34,9 @@ class PreferenciasController extends Controller
             'notification_preferences' => ['required', 'array'],
             'notification_preferences.weekly_summary' => ['boolean'],
             'notification_preferences.broken_links' => ['boolean'],
+            'notification_preferences.crawler_updates' => ['boolean'],
+            'notification_preferences.search_engine_updates' => ['boolean'],
+            'notification_preferences.support_updates' => ['boolean'],
         ]);
 
         $request->user()->update([

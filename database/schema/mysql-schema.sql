@@ -135,6 +135,22 @@ CREATE TABLE `migrations` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `notifications`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `notifications` (
+  `id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `type` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `notifiable_type` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `notifiable_id` bigint unsigned NOT NULL,
+  `data` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `read_at` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `notifications_notifiable_type_notifiable_id_index` (`notifiable_type`,`notifiable_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `pages`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -479,3 +495,4 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (29,'2026_04_02_101
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (30,'2026_04_02_114500_add_sellable_crawler_features_to_plans_table',17);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (31,'2026_04_02_143000_normalize_plan_feature_hierarchy',18);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (32,'2026_04_02_160000_add_next_scheduled_crawl_at_to_projects_table',19);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (33,'2026_04_02_170000_create_notifications_table',20);

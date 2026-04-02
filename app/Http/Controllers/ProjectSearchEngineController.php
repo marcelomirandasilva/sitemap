@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Projeto;
 use App\Models\SearchEngineConnection;
 use App\Models\SearchEngineSubmission;
+use App\Services\CentralNotificacoesService;
 use App\Services\BingWebmasterService;
 use App\Services\GoogleSearchConsoleService;
 use Illuminate\Http\JsonResponse;
@@ -15,6 +16,10 @@ use Illuminate\Validation\ValidationException;
 
 class ProjectSearchEngineController extends Controller
 {
+    public function __construct(protected CentralNotificacoesService $centralNotificacoes)
+    {
+    }
+
     public function googleSites(Request $request, Projeto $projeto, GoogleSearchConsoleService $googleSearchConsoleService): JsonResponse
     {
         $this->authorizeProject($request, $projeto);
@@ -91,6 +96,7 @@ class ProjectSearchEngineController extends Controller
                 'Sitemap enviado ao Google Search Console.',
                 $result
             );
+            $this->centralNotificacoes->notificarEnvioBuscador($projeto->refresh()->load('user'), $submission);
 
             return response()->json([
                 'success' => true,
@@ -111,6 +117,7 @@ class ProjectSearchEngineController extends Controller
                 $exception->getMessage(),
                 ['error' => $exception->getMessage()]
             );
+            $this->centralNotificacoes->notificarEnvioBuscador($projeto->refresh()->load('user'), $submission);
 
             return response()->json([
                 'message' => $exception->getMessage(),
@@ -156,6 +163,7 @@ class ProjectSearchEngineController extends Controller
                 'Sitemap enviado ao Bing Webmaster Tools.',
                 $result
             );
+            $this->centralNotificacoes->notificarEnvioBuscador($projeto->refresh()->load('user'), $submission);
 
             return response()->json([
                 'success' => true,
@@ -176,6 +184,7 @@ class ProjectSearchEngineController extends Controller
                 $exception->getMessage(),
                 ['error' => $exception->getMessage()]
             );
+            $this->centralNotificacoes->notificarEnvioBuscador($projeto->refresh()->load('user'), $submission);
 
             return response()->json([
                 'message' => $exception->getMessage(),

@@ -1,9 +1,9 @@
 <script setup>
-import { Link } from '@inertiajs/vue3';
+import { Link, router, usePage } from '@inertiajs/vue3';
 import { loadLanguageAsync } from 'laravel-vue-i18n';
 import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
-import { onMounted, computed } from 'vue';
+import { onMounted, computed, onUnmounted, ref, watch } from 'vue';
 
 const logoutRoute = computed(() => {
     try {
@@ -12,6 +12,45 @@ const logoutRoute = computed(() => {
         return route('logout');
     }
 });
+
+const page = usePage();
+const quantidadeNotificacoesNaoLidas = ref(0);
+const listaNotificacoes = ref([]);
+
+const sincronizarNotificacoes = (dados) => {
+    quantidadeNotificacoesNaoLidas.value = dados?.nao_lidas || 0;
+    listaNotificacoes.value = Array.isArray(dados?.itens) ? [...dados.itens] : [];
+};
+
+const inserirNotificacaoTempoReal = (item) => {
+    if (!item?.id) {
+        return;
+    }
+
+    if (listaNotificacoes.value.some((notificacao) => notificacao.id === item.id)) {
+        return;
+    }
+
+    listaNotificacoes.value = [item, ...listaNotificacoes.value].slice(0, 8);
+
+    if (!item.lida) {
+        quantidadeNotificacoesNaoLidas.value += 1;
+    }
+};
+
+watch(
+    () => page.props.notificacoes,
+    (dados) => sincronizarNotificacoes(dados),
+    { immediate: true, deep: true }
+);
+
+const marcarTodasComoLidas = () => {
+    router.post(route('notifications.read-all'), {}, {
+        preserveScroll: true,
+        preserveState: true,
+        only: ['notificacoes', 'flash'],
+    });
+};
 
 const mudarIdioma = (lang) => {
     localStorage.setItem('user_locale', lang);
@@ -51,6 +90,23 @@ onMounted(() => {
     if (savedLocale) {
         loadLanguageAsync(savedLocale);
     }
+
+    const usuarioId = page.props.auth?.user?.id;
+
+    if (usuarioId && window.Echo) {
+        window.Echo.private(`usuarios.${usuarioId}`)
+            .listen('.notificacao.criada', (evento) => {
+                inserirNotificacaoTempoReal(evento?.notificacao);
+            });
+    }
+});
+
+onUnmounted(() => {
+    const usuarioId = page.props.auth?.user?.id;
+
+    if (usuarioId && window.Echo) {
+        window.Echo.leave(`usuarios.${usuarioId}`);
+    }
 });
 </script>
 
@@ -70,16 +126,44 @@ onMounted(() => {
         <div class="mr-4">
              <Dropdown align="right" width="64">
                 <template #trigger>
-                    <button class="p-1 text-gray-500 hover:text-accent-800 transition flex items-center">
+                    <button class="relative p-1 text-gray-500 hover:text-accent-800 transition flex items-center">
                          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
+                         <span v-if="quantidadeNotificacoesNaoLidas > 0" class="absolute -right-1 -top-1 inline-flex min-w-[18px] items-center justify-center rounded-full bg-danger-600 px-1.5 py-0.5 text-[10px] font-bold leading-none text-white">
+                            {{ quantidadeNotificacoesNaoLidas }}
+                         </span>
                     </button>
                 </template>
                 <template #content>
-                    <div class="px-4 py-2 text-xs text-gray-500 font-normal normal-case border-b border-gray-100">
-                        {{ $t('nav.notifications') }}
+                    <div class="flex items-center justify-between gap-3 px-4 py-3 text-xs text-gray-500 font-normal normal-case border-b border-gray-100">
+                        <span>{{ $t('nav.notifications') }}</span>
+                        <button v-if="quantidadeNotificacoesNaoLidas > 0" type="button" class="font-semibold text-primary-600 hover:text-primary-700" @click.stop="marcarTodasComoLidas">
+                            {{ $t('nav.mark_all_read') }}
+                        </button>
                     </div>
-                    <div class="px-4 py-4 text-center text-xs text-gray-400 font-normal normal-case">
+                    <div v-if="listaNotificacoes.length === 0" class="px-4 py-4 text-center text-xs text-gray-400 font-normal normal-case">
                         {{ $t('nav.no_notifications') }}
+                    </div>
+                    <div v-else class="max-h-80 overflow-y-auto">
+                        <Link
+                            v-for="item in listaNotificacoes"
+                            :key="item.id"
+                            :href="item.url || route('notifications.index')"
+                            class="block border-b border-gray-50 px-4 py-3 text-left transition last:border-b-0 hover:bg-gray-50"
+                        >
+                            <div class="flex items-start gap-3">
+                                <span class="mt-1 inline-flex h-2.5 w-2.5 shrink-0 rounded-full" :class="item.lida ? 'bg-gray-300' : 'bg-primary-500'"></span>
+                                <div class="min-w-0">
+                                    <div class="text-sm font-semibold text-gray-800 normal-case">{{ item.titulo }}</div>
+                                    <div class="mt-1 text-xs text-gray-500 normal-case line-clamp-2">{{ item.mensagem }}</div>
+                                    <div class="mt-2 text-[11px] uppercase tracking-wide text-gray-400">{{ formatTimeAgo(item.criada_em) }}</div>
+                                </div>
+                            </div>
+                        </Link>
+                    </div>
+                    <div class="border-t border-gray-100 px-4 py-3">
+                        <Link :href="route('notifications.index')" class="text-xs font-semibold uppercase tracking-wide text-primary-600 hover:text-primary-700">
+                            {{ $t('nav.view_all_notifications') }}
+                        </Link>
                     </div>
                 </template>
              </Dropdown>

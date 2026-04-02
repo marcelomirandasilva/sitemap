@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Pagina;
 use App\Models\Projeto;
 use App\Models\TarefaSitemap;
+use App\Services\CentralNotificacoesService;
 use App\Services\ExecucaoRastreamentoService;
 use App\Services\FrequenciaRastreamentoService;
 use App\Services\RelatorioSeoBilingueService;
@@ -18,18 +19,21 @@ class RastreadorController extends Controller
     protected $relatorioSeoBilingue;
     protected $frequenciaRastreamento;
     protected $execucaoRastreamento;
+    protected $centralNotificacoes;
 
     public function __construct(
         SitemapGeneratorService $sitemapService,
         RelatorioSeoBilingueService $relatorioSeoBilingue,
         FrequenciaRastreamentoService $frequenciaRastreamento,
-        ExecucaoRastreamentoService $execucaoRastreamento
+        ExecucaoRastreamentoService $execucaoRastreamento,
+        CentralNotificacoesService $centralNotificacoes
     )
     {
         $this->sitemapService = $sitemapService;
         $this->relatorioSeoBilingue = $relatorioSeoBilingue;
         $this->frequenciaRastreamento = $frequenciaRastreamento;
         $this->execucaoRastreamento = $execucaoRastreamento;
+        $this->centralNotificacoes = $centralNotificacoes;
     }
 
     protected function syncJobFromStatus(TarefaSitemap $job, array $statusData): TarefaSitemap
@@ -122,10 +126,14 @@ class RastreadorController extends Controller
 
                         if ($statusAnterior !== 'completed') {
                             \App\Jobs\ProcessSitemapArtifactsJob::dispatch($jobAtivo);
+                            $this->centralNotificacoes->notificarCrawler($projeto, $jobAtivo);
                         }
 
                         $this->finalizeCompletedJob($projeto, $jobAtivo);
                     } elseif (in_array($jobAtivo->status, ['failed', 'cancelled'])) {
+                        if (!in_array($statusAnterior, ['failed', 'cancelled'], true)) {
+                            $this->centralNotificacoes->notificarCrawler($projeto, $jobAtivo);
+                        }
                         $this->finalizeTerminalJob($projeto, $jobAtivo);
                     }
                 }
@@ -214,6 +222,7 @@ class RastreadorController extends Controller
         ]);
         $jobAtivo->refresh();
 
+        $this->centralNotificacoes->notificarCrawler($projeto, $jobAtivo);
         $this->finalizeTerminalJob($projeto, $jobAtivo);
 
         return response()->json([
@@ -275,8 +284,12 @@ class RastreadorController extends Controller
 
                     if ($statusAnterior !== 'completed') {
                         \App\Jobs\ProcessSitemapArtifactsJob::dispatch($ultimoJob);
+                        $this->centralNotificacoes->notificarCrawler($projeto, $ultimoJob);
                     }
                 } elseif (in_array($ultimoJob->status, ['failed', 'cancelled'])) {
+                    if (!in_array($statusAnterior, ['failed', 'cancelled'], true)) {
+                        $this->centralNotificacoes->notificarCrawler($projeto, $ultimoJob);
+                    }
                     $this->finalizeTerminalJob($projeto, $ultimoJob);
                 }
             }

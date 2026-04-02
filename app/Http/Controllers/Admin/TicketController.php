@@ -4,11 +4,16 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Ticket;
+use App\Services\CentralNotificacoesService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class TicketController extends Controller
 {
+    public function __construct(protected CentralNotificacoesService $centralNotificacoes)
+    {
+    }
+
     public function index(Request $request)
     {
         $query = Ticket::with(['usuario', 'projeto'])->orderBy('updated_at', 'desc');
@@ -50,6 +55,8 @@ class TicketController extends Controller
 
         // Atualiza a flag do ticket pai para que o usuário veja
         $ticket->update(['status' => 'respondido']);
+        $ticket->loadMissing('usuario');
+        $this->centralNotificacoes->notificarRespostaTicket($ticket);
 
         return back()->with('success', 'Resposta do Administrador enviada.');
     }
