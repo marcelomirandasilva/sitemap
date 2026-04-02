@@ -23,10 +23,12 @@ createInertiaApp({
             import.meta.glob('./Pages/**/*.vue'),
         ),
     setup({ el, App, props, plugin }) {
+        const idiomaInicial = props.initialPage.props.locale || 'pt';
+
         return createApp({ render: () => h(App, props) })
             .use(plugin)
             .use(i18nVue, {
-                lang: 'pt',
+                lang: idiomaInicial,
                 resolve: async lang => {
                     const langs = import.meta.glob('../../lang/*.json');
                     return await langs[`../../lang/${lang}.json`]();

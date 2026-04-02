@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\Plano;
 use App\Services\SitemapGeneratorService;
+use App\Support\SeoPublico;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -33,13 +34,17 @@ class RegisteredUserController extends Controller
      */
     public function create(): Response
     {
+        $locale = SeoPublico::normalizarLocale(app()->getLocale());
+
         return Inertia::render('Public/LandingPage', [
             'canLogin' => Route::has('login'),
             'canRegister' => Route::has('register'),
             'laravelVersion' => \Illuminate\Foundation\Application::VERSION,
             'phpVersion' => PHP_VERSION,
             'defaultTab' => 'signup',
-            'plans' => \App\Models\Plano::all(), // Planos injetados
+            'plans' => Plano::all(),
+            'locale' => $locale,
+            'seo' => SeoPublico::dadosLanding($locale),
         ]);
     }
 

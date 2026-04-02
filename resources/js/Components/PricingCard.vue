@@ -1,6 +1,7 @@
 <script setup>
 import { CheckIcon } from '@heroicons/vue/20/solid';
 import { computed } from 'vue';
+import { trans as t } from 'laravel-vue-i18n';
 
 const props = defineProps({
     plan: Object,
@@ -51,6 +52,48 @@ const targetStripePriceId = computed(() => {
         ? props.plan.stripe_yearly_price_id
         : props.plan.stripe_monthly_price_id;
 });
+
+const frequenciaComercial = computed(() => {
+    const chave = `pricing.plans.${props.plan.slug}.frequency`;
+    const traducao = t(chave);
+
+    if (traducao && traducao !== chave) {
+        return traducao;
+    }
+
+    return props.plan.update_frequency || 'Manual';
+});
+
+const descricaoComercial = computed(() => {
+    const chave = `pricing.plans.${props.plan.slug}.ideal_for`;
+    const traducao = t(chave);
+
+    if (traducao && traducao !== chave) {
+        return traducao;
+    }
+
+    return props.plan.ideal_for || t('subscription.ideal_for_scaling');
+});
+
+const recursosExtras = computed(() => {
+    const recursos = [];
+
+    if (props.plan.permite_imagens) recursos.push(t('subscription.features.images'));
+    if (props.plan.permite_videos) recursos.push(t('subscription.features.videos'));
+    if (props.plan.permite_noticias) recursos.push(t('subscription.features.news'));
+    if (props.plan.permite_mobile) recursos.push(t('subscription.features.mobile'));
+    if (props.plan.permite_padroes_exclusao) recursos.push(t('subscription.features.exclude_patterns'));
+    if (props.plan.permite_politicas_crawl) recursos.push(t('subscription.features.crawl_policies'));
+    if (props.plan.permite_cache_crawler) recursos.push(t('subscription.features.cache'));
+    if (props.plan.permite_compactacao) recursos.push(t('subscription.features.compression'));
+    if (props.plan.has_advanced_features) recursos.push(t('subscription.features.api'));
+
+    if (recursos.length === 0) {
+        recursos.push(t('subscription.features.basic'));
+    }
+
+    return recursos;
+});
 </script>
 
 <template>
@@ -67,7 +110,7 @@ const targetStripePriceId = computed(() => {
 
         <div class="mb-5">
             <h3 class="text-lg font-semibold leading-8 text-gray-900">{{ plan.name }}</h3>
-            <p class="mt-4 text-base leading-6 text-gray-600">{{ plan.ideal_for || $t('subscription.ideal_for_scaling') }}</p>
+            <p class="mt-4 text-base leading-6 text-gray-600">{{ descricaoComercial }}</p>
             
             <p class="mt-6 flex items-baseline gap-x-1">
                 <span class="text-4xl font-bold tracking-tight text-gray-900">
@@ -89,7 +132,7 @@ const targetStripePriceId = computed(() => {
         <ul role="list" class="mt-8 space-y-3 text-sm leading-6 text-gray-600 flex-1">
             <li class="flex gap-x-3">
                 <CheckIcon class="h-6 w-5 flex-none text-primary-600" aria-hidden="true" />
-                {{ $t('pricing.table.update') }}: {{ plan.update_frequency || 'Manual' }}
+                {{ $t('pricing.table.update') }}: {{ frequenciaComercial }}
             </li>
             <li class="flex gap-x-3">
                 <CheckIcon class="h-6 w-5 flex-none text-primary-600" aria-hidden="true" />
@@ -103,9 +146,9 @@ const targetStripePriceId = computed(() => {
                 <CheckIcon class="h-6 w-5 flex-none text-primary-600" aria-hidden="true" />
                 {{ $t('subscription.features.advanced') }}
             </li>
-             <li v-if="plan.has_advanced_features" class="flex gap-x-3">
+            <li v-for="recurso in recursosExtras" :key="recurso" class="flex gap-x-3">
                 <CheckIcon class="h-6 w-5 flex-none text-primary-600" aria-hidden="true" />
-                {{ $t('subscription.features.api') }}
+                {{ recurso }}
             </li>
         </ul>
 

@@ -9,13 +9,14 @@ use Illuminate\Support\Facades\Gate;
 class ChaveApiController extends Controller
 {
     /**
-     * Lista as API Keys do usuário autenticado.
+     * Lista as API Keys do usuario autenticado.
      */
     public function index(Request $request)
     {
-        // Verifica se o plano do usuário permite acesso à API Externa
-        if (!$request->user()->plano || !$request->user()->plano->has_advanced_features) {
-            abort(403, 'Seu plano não inclui acesso à API Externa. Faça um upgrade.');
+        $planoEfetivo = $request->user()->planoEfetivo();
+
+        if (!$planoEfetivo || !$planoEfetivo->has_advanced_features) {
+            abort(403, 'Seu plano nao inclui acesso a API Externa. Faca um upgrade.');
         }
 
         $chaves = $request->user()
@@ -23,7 +24,6 @@ class ChaveApiController extends Controller
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($chave) {
-                // Retorna tudo exceto a chave em si (segurança)
                 return [
                     'id' => $chave->id,
                     'name' => $chave->name,
@@ -37,17 +37,19 @@ class ChaveApiController extends Controller
 
         return response()->json([
             'keys' => $chaves,
-            'limit' => 5, // Limite de chaves por usuário
+            'limit' => 5,
         ]);
     }
 
     /**
-     * Cria uma nova API Key. A chave completa é retornada APENAS UMA VEZ.
+     * Cria uma nova API Key. A chave completa e retornada apenas uma vez.
      */
     public function store(Request $request)
     {
-        if (!$request->user()->plano || !$request->user()->plano->has_advanced_features) {
-            abort(403, 'Seu plano não inclui acesso à API Externa.');
+        $planoEfetivo = $request->user()->planoEfetivo();
+
+        if (!$planoEfetivo || !$planoEfetivo->has_advanced_features) {
+            abort(403, 'Seu plano nao inclui acesso a API Externa.');
         }
 
         $request->validate([
@@ -55,8 +57,8 @@ class ChaveApiController extends Controller
             'expires_at' => 'nullable|date|after:today',
         ]);
 
-        // Limite de 5 chaves ativas por usuário
         $contagemAtivas = $request->user()->chavesApi()->active()->count();
+
         if ($contagemAtivas >= 5) {
             abort(422, 'Limite de 5 chaves ativas atingido. Revogue uma chave antes de criar outra.');
         }
@@ -69,12 +71,11 @@ class ChaveApiController extends Controller
             'expires_at' => $request->expires_at,
         ]);
 
-        // Retorna a chave completa apenas nesta resposta (nunca mais será exibida)
         return response()->json([
-            'message' => 'API Key criada com sucesso. Guarde a chave abaixo, ela não será exibida novamente.',
+            'message' => 'API Key criada com sucesso. Guarde a chave abaixo, ela nao sera exibida novamente.',
             'id' => $chaveApi->id,
             'name' => $chaveApi->name,
-            'key' => $chaveRaw, // Única vez que a chave completa é exposta
+            'key' => $chaveRaw,
             'expires_at' => $chaveApi->expires_at?->toDateString(),
         ], 201);
     }
@@ -84,7 +85,6 @@ class ChaveApiController extends Controller
      */
     public function revoke(Request $request, ChaveApi $chaveApi)
     {
-        // Garante que o usuário só pode revogar as próprias chaves
         Gate::authorize('manage', $chaveApi);
 
         $chaveApi->update(['is_active' => false]);

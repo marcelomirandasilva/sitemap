@@ -20,6 +20,12 @@ const form = useForm({
     has_advanced_features: !!props.plano.has_advanced_features,
     permite_imagens: !!props.plano.permite_imagens,
     permite_videos: !!props.plano.permite_videos,
+    permite_noticias: !!props.plano.permite_noticias,
+    permite_mobile: !!props.plano.permite_mobile,
+    permite_compactacao: !!props.plano.permite_compactacao,
+    permite_cache_crawler: !!props.plano.permite_cache_crawler,
+    permite_padroes_exclusao: !!props.plano.permite_padroes_exclusao,
+    permite_politicas_crawl: !!props.plano.permite_politicas_crawl,
     stripe_monthly_price_id: props.plano.stripe_monthly_price_id || '',
     stripe_yearly_price_id: props.plano.stripe_yearly_price_id || '',
     price_monthly_brl: props.plano.price_monthly_brl || null,
@@ -31,9 +37,10 @@ const form = useForm({
 const salvar = () => {
     if (isEditing) {
         form.put(route('admin.plans.update', props.plano.id));
-    } else {
-        form.post(route('admin.plans.store'));
+        return;
     }
+
+    form.post(route('admin.plans.store'));
 };
 </script>
 
@@ -55,8 +62,6 @@ const salvar = () => {
 
             <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
                 <form @submit.prevent="salvar" class="space-y-6">
-                    
-                    <!-- Configurações Gerais -->
                     <div class="bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700 p-6">
                         <h2 class="text-lg font-medium text-gray-900 dark:text-gray-100 border-b dark:border-gray-700 pb-2 mb-4">Informações Gerais</h2>
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -71,66 +76,125 @@ const salvar = () => {
                                 <InputError :message="form.errors.slug" class="mt-2" />
                             </div>
                             <div class="lg:col-span-2">
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Ideal para (Ex: Times grandes)</label>
-                                <input v-model="form.ideal_for" type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 dark:bg-gray-900 dark:border-gray-600 dark:text-white">
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Ideal para</label>
+                                <input v-model="form.ideal_for" type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 dark:bg-gray-900 dark:border-gray-600 dark:text-white" placeholder="Ex: agências e operações com vários sites">
                                 <InputError :message="form.errors.ideal_for" class="mt-2" />
                             </div>
                             <div class="lg:col-span-2">
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Frequência de Atualização Automática</label>
                                 <select v-model="form.update_frequency" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 dark:bg-gray-900 dark:border-gray-600 dark:text-white" required>
-                                    <option value="" disabled>Selecione uma Frequência</option>
-                                    <option value="diario">Diária (A cada 24h)</option>
-                                    <option value="semanal">Semanal (A cada 7 dias)</option>
-                                    <option value="quinzenal">Quinzenal (A cada 15 dias)</option>
-                                    <option value="mensal">Mensal (A cada 30 dias)</option>
-                                    <option value="anual">Anual (A cada 365 dias)</option>
-                                    <option value="manual">Sob Demanda (Apenas Manual)</option>
+                                    <option value="" disabled>Selecione uma frequência</option>
+                                    <option value="diario">Diária</option>
+                                    <option value="semanal">Semanal</option>
+                                    <option value="quinzenal">Quinzenal</option>
+                                    <option value="mensal">Mensal</option>
+                                    <option value="anual">Anual</option>
+                                    <option value="manual">Sob Demanda</option>
                                 </select>
                                 <InputError :message="form.errors.update_frequency" class="mt-2" />
                             </div>
                         </div>
                     </div>
 
-                    <!-- Limites Operacionais -->
                     <div class="bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700 p-6">
                         <h2 class="text-lg font-medium text-gray-900 dark:text-gray-100 border-b dark:border-gray-700 pb-2 mb-4">Limites Operacionais</h2>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Máximo de Projetos (Sites) <span class="text-xs text-gray-400 font-normal">(-1 para infinito)</span></label>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Máximo de Projetos <span class="text-xs text-gray-400 font-normal">(-1 para ilimitado)</span></label>
                                 <input v-model="form.max_projects" type="number" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 dark:bg-gray-900 dark:border-gray-600 dark:text-white" required>
                                 <InputError :message="form.errors.max_projects" class="mt-2" />
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Máximo de Páginas <span class="text-xs text-gray-400 font-normal">(-1 para infinito)</span></label>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Máximo de Páginas <span class="text-xs text-gray-400 font-normal">(-1 para ilimitado)</span></label>
                                 <input v-model="form.max_pages" type="number" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 dark:bg-gray-900 dark:border-gray-600 dark:text-white" required>
                                 <InputError :message="form.errors.max_pages" class="mt-2" />
-                            </div>
-                            <div class="col-span-1 md:col-span-2 pt-4 grid grid-cols-1 md:grid-cols-3 gap-4 border-t dark:border-gray-700">
-                                <label class="flex items-start">
-                                    <input v-model="form.has_advanced_features" type="checkbox" class="mt-1 rounded border-gray-300 text-primary-600 shadow-sm focus:ring-primary-500 dark:bg-gray-900 dark:border-gray-600">
-                                    <div class="ml-3">
-                                        <span class="block text-sm font-medium text-gray-700 dark:text-gray-300">Recursos Avançados</span>
-                                    </div>
-                                </label>
-                                <label class="flex items-start">
-                                    <input v-model="form.permite_imagens" type="checkbox" class="mt-1 rounded border-gray-300 text-primary-600 shadow-sm focus:ring-primary-500 dark:bg-gray-900 dark:border-gray-600">
-                                    <div class="ml-3">
-                                        <span class="block text-sm font-medium text-gray-700 dark:text-gray-300">Permite Imagens</span>
-                                    </div>
-                                </label>
-                                <label class="flex items-start">
-                                    <input v-model="form.permite_videos" type="checkbox" class="mt-1 rounded border-gray-300 text-primary-600 shadow-sm focus:ring-primary-500 dark:bg-gray-900 dark:border-gray-600">
-                                    <div class="ml-3">
-                                        <span class="block text-sm font-medium text-gray-700 dark:text-gray-300">Permite Vídeos</span>
-                                    </div>
-                                </label>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Stripe e Preços em Centavos -->
                     <div class="bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700 p-6">
-                        <h2 class="text-lg font-medium text-gray-900 dark:text-gray-100 border-b dark:border-gray-700 pb-2 mb-4">Integração Stripe e Preços (Definido em Centavos Integrais - Ex: R$ 5,00 = 500)</h2>
+                        <h2 class="text-lg font-medium text-gray-900 dark:text-gray-100 border-b dark:border-gray-700 pb-2 mb-4">Recursos Vendáveis do Plano</h2>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-5">
+                            Esses itens aparecem nas telas de plano e controlam o que o cliente consegue configurar no projeto.
+                        </p>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <label class="flex items-start rounded-lg border border-gray-200 p-4 dark:border-gray-700">
+                                <input v-model="form.has_advanced_features" type="checkbox" class="mt-1 rounded border-gray-300 text-primary-600 shadow-sm focus:ring-primary-500 dark:bg-gray-900 dark:border-gray-600">
+                                <div class="ml-3">
+                                    <span class="block text-sm font-medium text-gray-700 dark:text-gray-300">Configurações Avançadas</span>
+                                    <span class="block text-xs text-gray-500 dark:text-gray-400">Profundidade, concorrência, atraso, user-agent e acesso à API.</span>
+                                </div>
+                            </label>
+
+                            <label class="flex items-start rounded-lg border border-gray-200 p-4 dark:border-gray-700">
+                                <input v-model="form.permite_imagens" type="checkbox" class="mt-1 rounded border-gray-300 text-primary-600 shadow-sm focus:ring-primary-500 dark:bg-gray-900 dark:border-gray-600">
+                                <div class="ml-3">
+                                    <span class="block text-sm font-medium text-gray-700 dark:text-gray-300">Sitemap de Imagens</span>
+                                    <span class="block text-xs text-gray-500 dark:text-gray-400">Permite gerar e rastrear imagens no sitemap.</span>
+                                </div>
+                            </label>
+
+                            <label class="flex items-start rounded-lg border border-gray-200 p-4 dark:border-gray-700">
+                                <input v-model="form.permite_videos" type="checkbox" class="mt-1 rounded border-gray-300 text-primary-600 shadow-sm focus:ring-primary-500 dark:bg-gray-900 dark:border-gray-600">
+                                <div class="ml-3">
+                                    <span class="block text-sm font-medium text-gray-700 dark:text-gray-300">Sitemap de Vídeos</span>
+                                    <span class="block text-xs text-gray-500 dark:text-gray-400">Permite gerar e rastrear vídeos no sitemap.</span>
+                                </div>
+                            </label>
+
+                            <label class="flex items-start rounded-lg border border-gray-200 p-4 dark:border-gray-700">
+                                <input v-model="form.permite_noticias" type="checkbox" class="mt-1 rounded border-gray-300 text-primary-600 shadow-sm focus:ring-primary-500 dark:bg-gray-900 dark:border-gray-600">
+                                <div class="ml-3">
+                                    <span class="block text-sm font-medium text-gray-700 dark:text-gray-300">Sitemap de Notícias</span>
+                                    <span class="block text-xs text-gray-500 dark:text-gray-400">Libera o rastreamento de conteúdo voltado a Google News.</span>
+                                </div>
+                            </label>
+
+                            <label class="flex items-start rounded-lg border border-gray-200 p-4 dark:border-gray-700">
+                                <input v-model="form.permite_mobile" type="checkbox" class="mt-1 rounded border-gray-300 text-primary-600 shadow-sm focus:ring-primary-500 dark:bg-gray-900 dark:border-gray-600">
+                                <div class="ml-3">
+                                    <span class="block text-sm font-medium text-gray-700 dark:text-gray-300">Sitemap Mobile</span>
+                                    <span class="block text-xs text-gray-500 dark:text-gray-400">Permite sitemap dedicado para páginas mobile.</span>
+                                </div>
+                            </label>
+
+                            <label class="flex items-start rounded-lg border border-gray-200 p-4 dark:border-gray-700">
+                                <input v-model="form.permite_padroes_exclusao" type="checkbox" class="mt-1 rounded border-gray-300 text-primary-600 shadow-sm focus:ring-primary-500 dark:bg-gray-900 dark:border-gray-600">
+                                <div class="ml-3">
+                                    <span class="block text-sm font-medium text-gray-700 dark:text-gray-300">Padrões de Exclusão</span>
+                                    <span class="block text-xs text-gray-500 dark:text-gray-400">Regex e padrões para ignorar áreas do site no crawl.</span>
+                                </div>
+                            </label>
+
+                            <label class="flex items-start rounded-lg border border-gray-200 p-4 dark:border-gray-700">
+                                <input v-model="form.permite_politicas_crawl" type="checkbox" class="mt-1 rounded border-gray-300 text-primary-600 shadow-sm focus:ring-primary-500 dark:bg-gray-900 dark:border-gray-600">
+                                <div class="ml-3">
+                                    <span class="block text-sm font-medium text-gray-700 dark:text-gray-300">Políticas de Crawl</span>
+                                    <span class="block text-xs text-gray-500 dark:text-gray-400">Presets reutilizáveis de escopo, filtros e limites do crawler.</span>
+                                </div>
+                            </label>
+
+                            <label class="flex items-start rounded-lg border border-gray-200 p-4 dark:border-gray-700">
+                                <input v-model="form.permite_cache_crawler" type="checkbox" class="mt-1 rounded border-gray-300 text-primary-600 shadow-sm focus:ring-primary-500 dark:bg-gray-900 dark:border-gray-600">
+                                <div class="ml-3">
+                                    <span class="block text-sm font-medium text-gray-700 dark:text-gray-300">Controle de Cache</span>
+                                    <span class="block text-xs text-gray-500 dark:text-gray-400">Deixa o cliente ativar ou desativar o cache do crawler.</span>
+                                </div>
+                            </label>
+
+                            <label class="flex items-start rounded-lg border border-gray-200 p-4 dark:border-gray-700">
+                                <input v-model="form.permite_compactacao" type="checkbox" class="mt-1 rounded border-gray-300 text-primary-600 shadow-sm focus:ring-primary-500 dark:bg-gray-900 dark:border-gray-600">
+                                <div class="ml-3">
+                                    <span class="block text-sm font-medium text-gray-700 dark:text-gray-300">Saída Compactada</span>
+                                    <span class="block text-xs text-gray-500 dark:text-gray-400">Permite ao cliente solicitar artefatos compactados.</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700 p-6">
+                        <h2 class="text-lg font-medium text-gray-900 dark:text-gray-100 border-b dark:border-gray-700 pb-2 mb-4">Integração Stripe e Preços</h2>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Stripe Price ID (Mensal)</label>
@@ -143,37 +207,37 @@ const salvar = () => {
                                 <InputError :message="form.errors.stripe_yearly_price_id" class="mt-2" />
                             </div>
                         </div>
+
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Preço Mensal (BRL Centavos)</label>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Preço Mensal (BRL em centavos)</label>
                                 <input v-model="form.price_monthly_brl" type="number" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 dark:bg-gray-900 dark:border-gray-600 dark:text-white">
                                 <InputError :message="form.errors.price_monthly_brl" class="mt-2" />
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Preço Anual (BRL Centavos)</label>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Preço Anual (BRL em centavos)</label>
                                 <input v-model="form.price_yearly_brl" type="number" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 dark:bg-gray-900 dark:border-gray-600 dark:text-white">
                                 <InputError :message="form.errors.price_yearly_brl" class="mt-2" />
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Preço Mensal (USD Cents)</label>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Preço Mensal (USD em cents)</label>
                                 <input v-model="form.price_monthly_usd" type="number" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 dark:bg-gray-900 dark:border-gray-600 dark:text-white">
                                 <InputError :message="form.errors.price_monthly_usd" class="mt-2" />
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Preço Anual (USD Cents)</label>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Preço Anual (USD em cents)</label>
                                 <input v-model="form.price_yearly_usd" type="number" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 dark:bg-gray-900 dark:border-gray-600 dark:text-white">
                                 <InputError :message="form.errors.price_yearly_usd" class="mt-2" />
                             </div>
                         </div>
                     </div>
 
-                    <div class="flex flex-row-reverse items-center gap-4 mb-20 px-2 justify-start sm:justify-start lg:justify-start">
+                    <div class="flex flex-row-reverse items-center gap-4 mb-20 px-2 justify-start">
                         <PrimaryButton :processing="form.processing" type="submit">
-                            {{ isEditing ? 'Gravar Alterações' : 'Criar Plano Definitivo' }}
+                            {{ isEditing ? 'Gravar Alterações' : 'Criar Plano' }}
                         </PrimaryButton>
                         <Link :href="route('admin.plans.index')" class="text-sm font-medium text-gray-500 hover:text-gray-900 transition">Cancelar Operação</Link>
                     </div>
-
                 </form>
             </div>
         </template>

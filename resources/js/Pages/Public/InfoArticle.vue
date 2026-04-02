@@ -1,7 +1,8 @@
 <script setup>
-import { Head, Link } from '@inertiajs/vue3';
+import { Link } from '@inertiajs/vue3';
 import { loadLanguageAsync } from 'laravel-vue-i18n';
 import { onMounted, computed } from 'vue';
+import MetaSeoPublico from '@/Components/Public/MetaSeoPublico.vue';
 
 const appName = import.meta.env.VITE_APP_NAME;
 const anoAtual = new Date().getFullYear();
@@ -10,18 +11,41 @@ const props = defineProps({
     article: Object,
     slug: String,
     allSlugs: Array,
+    locale: {
+        type: String,
+        default: 'pt',
+    },
+    seo: {
+        type: Object,
+        default: () => ({
+            title: '',
+            description: '',
+            canonical: '',
+            robots: '',
+            alternativas: {},
+        }),
+    },
 });
 
+const normalizarLocale = (locale) => {
+    const localeNormalizado = String(locale || 'pt').toLowerCase();
+
+    if (localeNormalizado.startsWith('en')) {
+        return 'en';
+    }
+
+    return 'pt';
+};
+
+const localeAtual = computed(() => normalizarLocale(props.locale));
+
 const mudarIdioma = (lang) => {
-    localStorage.setItem('user_locale', lang);
-    loadLanguageAsync(lang);
+    const destino = props.seo?.alternativas?.[lang] ?? route('public.landing', { locale: lang });
+    window.location.href = destino;
 };
 
 onMounted(() => {
-    const savedLocale = localStorage.getItem('user_locale');
-    if (savedLocale) {
-        loadLanguageAsync(savedLocale);
-    }
+    loadLanguageAsync(localeAtual.value);
 });
 
 // Mapa de slugs para chaves de tradução dos labels do sidebar
@@ -45,7 +69,7 @@ const otherArticles = computed(() => {
 </script>
 
 <template>
-    <Head :title="$t(article.page_title_key, { app_name: appName })" />
+    <MetaSeoPublico :seo="seo" />
 
     <div class="min-h-screen bg-gradient-to-b from-primary-50 to-[#f5f5f5] font-sans text-gray-700 flex flex-col">
 
@@ -54,14 +78,14 @@ const otherArticles = computed(() => {
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
                 <div class="flex justify-between items-center h-20">
                     <div class="flex items-center gap-2">
-                        <Link href="/" class="text-accent-800 hover:opacity-90 transition">
+                        <Link :href="route('public.landing', { locale: localeAtual })" class="text-accent-800 hover:opacity-90 transition">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M4 16h4v4H4v-4zm0-6h4v4H4v-4zm0-6h4v4H4v-4zm6 12h4v4h-4v-4zm0-6h4v4h-4v-4zm0-6h4v4h-4v-4zm6 12h4v4h-4v-4zm0-6h4v4h-4v-4zm0-6h4v4h-4v-4z" />
                                 <path d="M2 2h20v20H2V2zm2 2v16h16V4H4z" fill="none" stroke="currentColor" stroke-width="2" />
                             </svg>
                         </Link>
                         <div class="flex flex-col">
-                            <Link href="/" class="text-2xl font-bold leading-none tracking-tight text-gray-800 hover:text-accent-800 transition">
+                            <Link :href="route('public.landing', { locale: localeAtual })" class="text-2xl font-bold leading-none tracking-tight text-gray-800 hover:text-accent-800 transition">
                                 {{ appName }}
                             </Link>
                             <span class="text-xs text-gray-500 tracking-wider">{{ $t('hero.subtitle_tag', { app_name: appName }) }}</span>
@@ -69,7 +93,7 @@ const otherArticles = computed(() => {
                     </div>
 
                     <nav class="hidden md:flex items-center gap-3 text-sm font-bold text-accent-800 uppercase tracking-wide">
-                        <Link href="/" class="hover:opacity-80 transition">
+                        <Link :href="route('public.landing', { locale: localeAtual })" class="hover:opacity-80 transition">
                             ← {{ $t('articles.about_sitemaps.back_home', { app_name: appName }) }}
                         </Link>
                         <div class="flex items-center gap-2 border-l border-gray-300 pl-4 ml-2">
@@ -119,7 +143,7 @@ const otherArticles = computed(() => {
                                 <Link
                                     v-for="articleSlug in allSlugs"
                                     :key="articleSlug"
-                                    :href="route('info.article', articleSlug)"
+                                    :href="route('info.article', { locale: localeAtual, slug: articleSlug })"
                                     class="block text-sm font-medium transition-colors px-3 py-2 rounded-lg"
                                     :class="articleSlug === slug
                                         ? 'bg-accent-800 text-white'

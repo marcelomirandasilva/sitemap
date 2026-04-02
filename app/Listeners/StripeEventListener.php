@@ -2,10 +2,10 @@
 
 namespace App\Listeners;
 
-use Laravel\Cashier\Events\WebhookReceived;
-use App\Models\User;
 use App\Models\Plano;
+use App\Models\User;
 use Illuminate\Support\Facades\Log;
+use Laravel\Cashier\Events\WebhookReceived;
 
 class StripeEventListener
 {
@@ -34,84 +34,100 @@ class StripeEventListener
         }
     }
 
-    protected function handleSubscriptionUpdate($subscription)
+    protected function handleSubscriptionUpdate($subscription): void
     {
         $stripeId = $subscription['customer'];
         $priceId = $subscription['items']['data'][0]['price']['id'] ?? null;
         $status = $subscription['status'];
+        $usuario = $this->encontrarUsuarioPorClienteStripe($stripeId);
 
-        // Só atualiza se o status for 'active' ou 'trialing'
-        if (!in_array($status, ['active', 'trialing'])) {
+        if (!in_array($status, ['active', 'trialing'], true)) {
+            if ($usuario) {
+                $plano = $usuario->sincronizarPlanoComAssinatura();
+
+                Log::info("Webhook Stripe: assinatura sem acesso vigente para usuario {$usuario->id}. Plano sincronizado para " . ($plano?->name ?? 'nenhum'));
+            }
+
             return;
         }
 
-        Log::info("Webhook Stripe: Atualizando plano para customer {$stripeId}, preço {$priceId}");
+        Log::info("Webhook Stripe: atualizando plano para customer {$stripeId}, preco {$priceId}");
 
-        if (!$priceId) {
+        if (!$usuario || !$priceId) {
             return;
         }
 
-        // 1. Achar o usuário pelo ID do Stripe
-        $user = User::where('stripe_id', $stripeId)->first();
+        $plano = Plano::query()
+            ->where('stripe_monthly_price_id', $priceId)
+            ->orWhere('stripe_yearly_price_id', $priceId)
+            ->first();
 
-        // Se não achou pelo ID, tenta pelo e-mail (caso o webhook chegue antes do sync ou seja a primeira assinatura)
-        if (!$user) {
-            try {
-                // Configura a chave se necessário (geralmente o Cashier já faz, mas por garantia)
-                if (!\Stripe\Stripe::getApiKey()) {
-                    \Stripe\Stripe::setApiKey(config('cashier.secret'));
-                }
-
-                $customer = \Stripe\Customer::retrieve($stripeId);
-
-                if ($customer && $customer->email) {
-                    $user = User::where('email', $customer->email)->first();
-
-                    if ($user) {
-                        $user->stripe_id = $stripeId;
-                        $user->save();
-                        Log::info("Webhook Stripe: Usuário {$user->id} ({$user->email}) vinculado ao Customer {$stripeId}.");
-                    }
-                }
-            } catch (\Exception $e) {
-                Log::error("Webhook Stripe: Erro ao buscar customer {$stripeId}: " . $e->getMessage());
-            }
+        if (!$plano) {
+            Log::warning("Webhook Stripe: plano local nao encontrado para o price_id {$priceId}");
+            return;
         }
 
-        if ($user) {
-            // 2. Achar o plano local pelo ID do preço do Stripe (Mensal ou Anual)
-            $plano = Plano::where('stripe_monthly_price_id', $priceId)
-                ->orWhere('stripe_yearly_price_id', $priceId)
-                ->first();
+        $usuario->plan_id = $plano->id;
+        $usuario->save();
+        $usuario->setRelation('plano', $plano);
 
-            if ($plano) {
-                $user->plan_id = $plano->id;
-                $user->save();
-                Log::info("Webhook Stripe: Plano do usuário {$user->id} atualizado para {$plano->name}");
-            } else {
-                Log::warning("Webhook Stripe: Plano local não encontrado para o price_id {$priceId}");
-            }
-        }
+        Log::info("Webhook Stripe: plano do usuario {$usuario->id} atualizado para {$plano->name}");
     }
 
-    protected function handleSubscriptionCancelled($subscription)
+    protected function handleSubscriptionCancelled($subscription): void
     {
         $stripeId = $subscription['customer'];
-        $user = User::where('stripe_id', $stripeId)->first();
+        $usuario = $this->encontrarUsuarioPorClienteStripe($stripeId);
 
-        if ($user) {
-            // Remove o plano (volta para free/null)
-            $user->plan_id = null; // Ou ID do plano free se existir
-            $user->save();
-            Log::info("Webhook Stripe: Assinatura cancelada para usuário {$user->id}. Plano removido.");
+        if (!$usuario) {
+            return;
         }
+
+        $plano = $usuario->sincronizarPlanoComAssinatura();
+
+        Log::info("Webhook Stripe: assinatura cancelada para usuario {$usuario->id}. Plano ajustado para " . ($plano?->name ?? 'nenhum') . '.');
     }
 
-    protected function handlePaymentFailed($invoice)
+    protected function handlePaymentFailed($invoice): void
     {
         $stripeId = $invoice['customer'];
-        Log::warning("Webhook Stripe: Pagamento falhou para customer {$stripeId}. Verifique o status da assinatura.");
-        // O Cashier já lidar com o update da tabela subscriptions para 'past_due', 
-        // mas aqui podemos enviar notificação extra se quisermos.
+
+        Log::warning("Webhook Stripe: pagamento falhou para customer {$stripeId}. Verifique o status da assinatura.");
+    }
+
+    protected function encontrarUsuarioPorClienteStripe(string $stripeId): ?User
+    {
+        $usuario = User::where('stripe_id', $stripeId)->first();
+
+        if ($usuario) {
+            return $usuario;
+        }
+
+        try {
+            if (!\Stripe\Stripe::getApiKey()) {
+                \Stripe\Stripe::setApiKey(config('cashier.secret'));
+            }
+
+            $customer = \Stripe\Customer::retrieve($stripeId);
+
+            if (!$customer || !$customer->email) {
+                return null;
+            }
+
+            $usuario = User::where('email', $customer->email)->first();
+
+            if ($usuario) {
+                $usuario->stripe_id = $stripeId;
+                $usuario->save();
+
+                Log::info("Webhook Stripe: usuario {$usuario->id} ({$usuario->email}) vinculado ao customer {$stripeId}.");
+            }
+
+            return $usuario;
+        } catch (\Throwable $erro) {
+            Log::error("Webhook Stripe: erro ao buscar customer {$stripeId}: " . $erro->getMessage());
+
+            return null;
+        }
     }
 }

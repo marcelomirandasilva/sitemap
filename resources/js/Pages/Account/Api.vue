@@ -14,6 +14,21 @@ const props = defineProps({
     podeAcessarApi: { type: Boolean, default: false },
     temPlanoApi:    { type: Boolean, default: false },
     assinaturaAtivaApi: { type: Boolean, default: false },
+    politicasCrawl: {
+        type: Object,
+        default: () => ({
+            presets: [],
+            options: {
+                exclude_extensions: [],
+                example_prefixes: [],
+                example_regex: [],
+                example_globs: [],
+                defaults: {},
+                limits: {},
+                query_params_policy_values: [],
+            },
+        }),
+    },
 });
 
 const activeTab = ref('reference');
@@ -43,8 +58,43 @@ const exemploMaxDepth = computed(() => String(projetoSelecionado.value?.max_dept
 const exemploMaxPages = computed(() => String(projetoSelecionado.value?.max_pages ?? 1000));
 const exemploIncludeImages = computed(() => String(projetoSelecionado.value?.check_images ?? true));
 const exemploIncludeVideos = computed(() => String(projetoSelecionado.value?.check_videos ?? true));
+const exemploIncludeNews = computed(() => String(projetoSelecionado.value?.check_news ?? false));
+const exemploIncludeMobile = computed(() => String(projetoSelecionado.value?.check_mobile ?? false));
 const exemploDelay = computed(() => String(projetoSelecionado.value?.delay_between_requests ?? 1));
 const exemploConcorrencia = computed(() => String(projetoSelecionado.value?.max_concurrent_requests ?? 2));
+const exemploCompressOutput = computed(() => String(projetoSelecionado.value?.compress_output ?? true));
+const exemploEnableCache = computed(() => String(projetoSelecionado.value?.enable_cache ?? true));
+const presetsPoliticaCrawl = computed(() => props.politicasCrawl?.presets ?? []);
+const opcoesPoliticaCrawl = computed(() => props.politicasCrawl?.options ?? {});
+const exemploExcludePatternsLista = computed(() => {
+    const patterns = projetoSelecionado.value?.exclude_patterns ?? [];
+
+    if (patterns.length) {
+        return patterns;
+    }
+
+    const exemplos = [
+        ...(opcoesPoliticaCrawl.value.example_prefixes ?? []).slice(0, 1),
+        ...(opcoesPoliticaCrawl.value.example_regex ?? []).slice(0, 1),
+    ].filter(Boolean);
+
+    return exemplos.length ? exemplos : ['/admin/.*', '\\.(pdf|zip)$'];
+});
+const exemploExcludePatterns = computed(() => JSON.stringify(exemploExcludePatternsLista.value));
+const exemploCrawlPolicyId = computed(() => projetoSelecionado.value?.crawl_policy_id || presetsPoliticaCrawl.value[0]?.id || 'preset_uuid');
+const exemploCrawlPolicy = computed(() => JSON.stringify({
+    stay_on_host: true,
+    allow_subdomains: false,
+    exclude_prefixes: (opcoesPoliticaCrawl.value.example_prefixes ?? []).slice(0, 2),
+    exclude_patterns: (opcoesPoliticaCrawl.value.example_regex ?? []).slice(0, 1),
+    exclude_extensions: (opcoesPoliticaCrawl.value.exclude_extensions ?? []).slice(0, 4),
+    max_depth: Number(exemploMaxDepth.value),
+    max_pages: Number(exemploMaxPages.value),
+    include_images: exemploIncludeImages.value === 'true',
+    include_videos: exemploIncludeVideos.value === 'true',
+    include_news: exemploIncludeNews.value === 'true',
+    include_mobile: exemploIncludeMobile.value === 'true',
+}, null, 2));
 const outputDirectory = computed(() => `sitemaps/projects/${exemploProjId.value}`);
 const statusUrlExemplo = computed(() => `${endpointBase.value}/${exemploJobId}`);
 const artifactsUrlExemplo = computed(() => `${endpointBase.value}/${exemploJobId}/artifacts`);
@@ -135,8 +185,15 @@ const endpoints = computed(() => [
             { param: 'max_pages', desc: 'Quantidade maxima de paginas a processar.', value: exemploMaxPages.value },
             { param: 'include_images', desc: 'Inclui sitemap de imagens.', value: exemploIncludeImages.value },
             { param: 'include_videos', desc: 'Inclui sitemap de videos.', value: exemploIncludeVideos.value },
+            { param: 'include_news', desc: 'Inclui sitemap de noticias.', value: exemploIncludeNews.value },
+            { param: 'include_mobile', desc: 'Inclui sitemap mobile.', value: exemploIncludeMobile.value },
             { param: 'delay_between_requests', desc: 'Intervalo entre requisicoes.', value: exemploDelay.value },
             { param: 'max_concurrent_requests', desc: 'Concorrencia maxima do crawler.', value: exemploConcorrencia.value },
+            { param: 'excludes_patterns', desc: 'Lista opcional de regex/padroes para excluir URLs.', value: exemploExcludePatterns.value },
+            { param: 'crawl_policy_id', desc: 'ID de um preset salvo na API Python.', value: exemploCrawlPolicyId.value },
+            { param: 'crawl_policy', desc: 'JSON inline opcional com filtros e regras de escopo. Se enviado junto com crawl_policy_id, sobrescreve campos especificos do preset.', value: null, json: exemploCrawlPolicy.value },
+            { param: 'compress_output', desc: 'Compacta os artefatos gerados quando suportado.', value: exemploCompressOutput.value },
+            { param: 'enable_cache', desc: 'Ativa cache no crawler para rastreamentos repetidos.', value: exemploEnableCache.value },
             { param: 'massive_processing', desc: 'Ativa o modo massivo de processamento.', value: 'true' },
             { param: 'output_directory', desc: 'Diretorio de saida opcional.', value: outputDirectory.value },
         ],
@@ -344,7 +401,8 @@ const scrollTo = (id) => {
                                                     <td class="px-4 py-2 font-mono text-gray-700 align-top">{{ p.param }}</td>
                                                     <td class="px-4 py-2 text-gray-500 align-top">{{ p.desc }}</td>
                                                     <td class="px-4 py-2 text-gray-700 align-top break-all">
-                                                        <span class="font-mono text-[10px] break-all">{{ p.value }}</span>
+                                                        <pre v-if="p.json" class="bg-blue-50 text-blue-800 rounded p-2 text-[10px] overflow-x-auto whitespace-pre-wrap font-mono leading-relaxed">{{ p.json }}</pre>
+                                                        <span v-else class="font-mono text-[10px] break-all">{{ p.value }}</span>
                                                     </td>
                                                 </tr>
                                             </tbody>
@@ -444,6 +502,15 @@ const scrollTo = (id) => {
                                         <div class="font-semibold text-gray-700 mb-1">media e concorrencia</div>
                                         <div class="font-mono">images={{ exemploIncludeImages }}, videos={{ exemploIncludeVideos }}, delay={{ exemploDelay }}, concurrent={{ exemploConcorrencia }}</div>
                                     </div>
+                                    <div class="border border-gray-200 rounded p-3 bg-gray-50">
+                                        <div class="font-semibold text-gray-700 mb-1">news / mobile / cache</div>
+                                        <div class="font-mono">news={{ exemploIncludeNews }}, mobile={{ exemploIncludeMobile }}, compress={{ exemploCompressOutput }}, cache={{ exemploEnableCache }}</div>
+                                    </div>
+                                    <div class="border border-gray-200 rounded p-3 bg-gray-50 md:col-span-2">
+                                        <div class="font-semibold text-gray-700 mb-1">padroes e politica de crawl</div>
+                                        <div class="font-mono break-all">excludes_patterns={{ exemploExcludePatterns }}</div>
+                                        <div class="font-mono break-all mt-1">crawl_policy_id={{ exemploCrawlPolicyId }}</div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -508,6 +575,15 @@ const scrollTo = (id) => {
                                         <span class="font-semibold text-gray-700 block mb-1">Artifacts endpoint</span>
                                         <span class="font-mono break-all">{{ artifactsUrlExemplo }}</span>
                                     </div>
+                                </div>
+                                <div class="border border-gray-200 rounded px-3 py-3 bg-gray-50 text-xs text-gray-600">
+                                    <span class="font-semibold text-gray-700 block mb-2">Presets de politica disponiveis</span>
+                                    <div v-if="presetsPoliticaCrawl.length" class="space-y-1">
+                                        <div v-for="preset in presetsPoliticaCrawl" :key="preset.id" class="font-mono break-all">
+                                            {{ preset.name }} - {{ preset.id }}
+                                        </div>
+                                    </div>
+                                    <p v-else>Nenhum preset salvo foi retornado pela API Python.</p>
                                 </div>
                             </div>
                         </div>

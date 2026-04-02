@@ -1,7 +1,8 @@
 <script setup>
-import { Head, Link, useForm } from '@inertiajs/vue3';
-import { ref, onMounted } from 'vue';
-import { loadLanguageAsync } from 'laravel-vue-i18n';
+import { Link, useForm } from '@inertiajs/vue3';
+import { computed, ref, onMounted } from 'vue';
+import { loadLanguageAsync, trans as t } from 'laravel-vue-i18n';
+import MetaSeoPublico from '@/Components/Public/MetaSeoPublico.vue';
 
 const props = defineProps({
     canLogin: Boolean,
@@ -10,34 +11,50 @@ const props = defineProps({
         type: String,
         default: 'signup'
     },
-    plans: Array // Planos injetados via Inertia
+    plans: {
+        type: Array,
+        default: () => [],
+    },
+    locale: {
+        type: String,
+        default: 'pt',
+    },
+    seo: {
+        type: Object,
+        default: () => ({
+            title: '',
+            description: '',
+            canonical: '',
+            robots: '',
+            alternativas: {},
+        }),
+    },
 });
+
+const normalizarLocale = (locale) => {
+    const localeNormalizado = String(locale || 'pt').toLowerCase();
+
+    if (localeNormalizado.startsWith('en')) {
+        return 'en';
+    }
+
+    return 'pt';
+};
 
 const activeTab = ref(props.defaultTab || 'signup');
 const appName = import.meta.env.VITE_APP_NAME;
 const anoAtual = new Date().getFullYear();
-const currentCurrency = ref('USD'); // Padrão USD
+const localeAtual = computed(() => normalizarLocale(props.locale));
+const currentCurrency = ref(localeAtual.value === 'pt' ? 'BRL' : 'USD');
 
 const mudarIdioma = (lang) => {
-    localStorage.setItem('user_locale', lang);
-    loadLanguageAsync(lang);
-    
-    // Atualiza moeda baseada no idioma
-    if (lang === 'pt') {
-        currentCurrency.value = 'BRL';
-    } else {
-        currentCurrency.value = 'USD';
-    }
+    const destino = props.seo?.alternativas?.[lang] ?? route('public.landing', { locale: lang });
+    window.location.href = destino;
 };
 
 onMounted(() => {
-    const savedLocale = localStorage.getItem('user_locale');
-    if (savedLocale) {
-        loadLanguageAsync(savedLocale);
-        if (savedLocale === 'pt') {
-            currentCurrency.value = 'BRL';
-        }
-    }
+    loadLanguageAsync(localeAtual.value);
+    currentCurrency.value = localeAtual.value === 'pt' ? 'BRL' : 'USD';
 });
 
 // Helpers de Preço
@@ -107,10 +124,30 @@ const submitLogin = () => {
         onFinish: () => loginForm.reset('password'),
     });
 };
+
+const recursosPlano = (plan) => {
+    const recursos = [];
+
+    if (plan.permite_imagens) recursos.push(t('subscription.features.images'));
+    if (plan.permite_videos) recursos.push(t('subscription.features.videos'));
+    if (plan.permite_noticias) recursos.push(t('subscription.features.news'));
+    if (plan.permite_mobile) recursos.push(t('subscription.features.mobile'));
+    if (plan.permite_padroes_exclusao) recursos.push(t('subscription.features.exclude_patterns'));
+    if (plan.permite_politicas_crawl) recursos.push(t('subscription.features.crawl_policies'));
+    if (plan.permite_cache_crawler) recursos.push(t('subscription.features.cache'));
+    if (plan.permite_compactacao) recursos.push(t('subscription.features.compression'));
+    if (plan.has_advanced_features) recursos.push(t('subscription.features.api'));
+
+    if (recursos.length === 0) {
+        recursos.push(t('subscription.features.basic'));
+    }
+
+    return recursos;
+};
 </script>
 
 <template>
-    <Head title="Gerador de Sitemap XML" />
+    <MetaSeoPublico :seo="seo" />
 
     <div class="min-h-screen bg-gradient-to-b from-primary-50 to-[#f5f5f5] font-sans text-gray-700 flex flex-col">
         <!-- Flash Message -->
@@ -247,8 +284,8 @@ const submitLogin = () => {
                                     <input v-model="registerForm.terms" id="terms" type="checkbox" required
                                         class="mt-1 w-4 h-4 text-accent-800 border-gray-300 rounded focus:ring-accent-800">
                                     <label for="terms" class="text-xs text-gray-500 italic">
-                                        * {{ $t('auth.agree_prefix', { app_name: appName }) }} <Link :href="route('info.article', 'privacy-policy')" class="text-accent-800 hover:underline" target="_blank">{{ $t('auth.privacy_policy', { app_name: appName }) }}</Link> 
-                                        {{ $t('auth.and', { app_name: appName }) }} <Link :href="route('info.article', 'terms-of-use')" class="text-accent-800 hover:underline" target="_blank">{{ $t('auth.terms_of_use', { app_name: appName }) }}</Link> {{ $t('auth.service_suffix', { app_name: appName }) }}
+                                        * {{ $t('auth.agree_prefix', { app_name: appName }) }} <Link :href="route('info.article', { locale: localeAtual, slug: 'privacy-policy' })" class="text-accent-800 hover:underline" target="_blank">{{ $t('auth.privacy_policy', { app_name: appName }) }}</Link> 
+                                        {{ $t('auth.and', { app_name: appName }) }} <Link :href="route('info.article', { locale: localeAtual, slug: 'terms-of-use' })" class="text-accent-800 hover:underline" target="_blank">{{ $t('auth.terms_of_use', { app_name: appName }) }}</Link> {{ $t('auth.service_suffix', { app_name: appName }) }}
                                     </label>
                                 </div>
 
@@ -345,7 +382,7 @@ const submitLogin = () => {
                             <p class="text-sm text-gray-600 leading-relaxed mb-4">
                                 {{ $t('info.what_text', { app_name: appName }) }}
                             </p>
-                            <Link :href="route('info.article', 'about-sitemaps')" class="text-sm font-bold text-accent-800 uppercase tracking-wide hover:underline">
+                            <Link :href="route('info.article', { locale: localeAtual, slug: 'about-sitemaps' })" class="text-sm font-bold text-accent-800 uppercase tracking-wide hover:underline">
                                 &rsaquo; {{ $t('info.more_about', { app_name: appName }) }}
                             </Link>
 
@@ -419,6 +456,7 @@ const submitLogin = () => {
                                 <th class="py-4 px-6 font-bold uppercase tracking-wider text-center">{{ $t('pricing.table.limit', { app_name: appName }) }}</th>
                                 <th class="py-4 px-6 font-bold uppercase tracking-wider">{{ $t('pricing.table.update', { app_name: appName }) }}</th>
                                 <th class="py-4 px-6 font-bold uppercase tracking-wider">{{ $t('pricing.table.ideal', { app_name: appName }) }}</th>
+                                <th class="py-4 px-6 font-bold uppercase tracking-wider">{{ $t('pricing.table.resources', { app_name: appName }) }}</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100">
@@ -453,6 +491,18 @@ const submitLogin = () => {
                                 <td class="py-4 px-6 text-gray-600 italic">
                                     {{ $t(`pricing.plans.${plan.slug}.ideal_for`, { app_name: appName }) }}
                                 </td>
+
+                                <td class="py-4 px-6 text-gray-600">
+                                    <div class="flex flex-wrap gap-1">
+                                        <span
+                                            v-for="recurso in recursosPlano(plan)"
+                                            :key="`${plan.id}-${recurso}`"
+                                            class="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-[10px] font-medium text-gray-600"
+                                        >
+                                            {{ recurso }}
+                                        </span>
+                                    </div>
+                                </td>
                             </tr>
                         </tbody>
                     </table>
@@ -463,8 +513,8 @@ const submitLogin = () => {
         <footer class="border-t border-gray-200 bg-white pt-10 pb-6">
             <div class="max-w-6xl mx-auto px-4 text-center">
                 <nav class="flex flex-wrap justify-center gap-6 mb-6 text-sm text-accent-800 font-medium">
-                    <Link :href="route('info.article', 'privacy-policy')" class="hover:underline">{{ $t('footer.privacy', { app_name: appName }) }}</Link>
-                    <Link :href="route('info.article', 'terms-of-use')" class="hover:underline">{{ $t('footer.terms', { app_name: appName }) }}</Link>
+                    <Link :href="route('info.article', { locale: localeAtual, slug: 'privacy-policy' })" class="hover:underline">{{ $t('footer.privacy', { app_name: appName }) }}</Link>
+                    <Link :href="route('info.article', { locale: localeAtual, slug: 'terms-of-use' })" class="hover:underline">{{ $t('footer.terms', { app_name: appName }) }}</Link>
                     <a href="#" class="hover:underline">{{ $t('footer.api', { app_name: appName }) }}</a>
                     <a href="#" class="hover:underline">{{ $t('footer.contact', { app_name: appName }) }}</a>
                     <a href="#" class="hover:underline">{{ $t('footer.help', { app_name: appName }) }}</a>

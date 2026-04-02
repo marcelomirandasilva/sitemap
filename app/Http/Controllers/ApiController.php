@@ -3,20 +3,22 @@
 namespace App\Http\Controllers;
 
 use App\Models\ChaveApi;
+use App\Services\SitemapGeneratorService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class ApiController extends Controller
 {
+    public function __construct(
+        protected SitemapGeneratorService $sitemapService
+    ) {
+    }
+
     protected function userHasExternalApiAccess($user): bool
     {
-        $user->loadMissing('plano');
+        $planoEfetivo = $user->planoEfetivo();
 
-        $subscription = $user->subscription('default');
-        $subscriptionActive = $subscription && in_array($subscription->stripe_status, ['active', 'trialing'], true);
-        $trialActive = method_exists($user, 'onTrial') ? (bool) $user->onTrial() : false;
-
-        return (bool) ($user->plano?->has_advanced_features) && ($subscriptionActive || $trialActive);
+        return (bool) ($planoEfetivo?->has_advanced_features);
     }
     /**
      * Exibe a página de API do usuário.
@@ -24,11 +26,8 @@ class ApiController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-        $user->loadMissing('plano');
-
-        $subscription = $user->subscription('default');
-        $subscriptionActive = $subscription && in_array($subscription->stripe_status, ['active', 'trialing'], true);
-        $trialActive = method_exists($user, 'onTrial') ? (bool) $user->onTrial() : false;
+        $planoEfetivo = $user->planoEfetivo();
+        $assinaturaAtiva = $user->possuiAcessoPagoVigente();
 
         // Busca a chave ativa mais recente (sem expiração ou ainda válida)
         $chaveAtiva = $user->chavesApi()
@@ -42,7 +41,22 @@ class ApiController extends Controller
 
         // Lista de projetos para o dropdown "Site-specific"
         $projetos = $user->projetos()
-            ->select('id', 'url', 'max_depth', 'max_pages', 'check_images', 'check_videos', 'delay_between_requests', 'max_concurrent_requests')
+            ->select(
+                'id',
+                'url',
+                'max_depth',
+                'max_pages',
+                'check_images',
+                'check_videos',
+                'check_news',
+                'check_mobile',
+                'delay_between_requests',
+                'max_concurrent_requests',
+                'exclude_patterns',
+                'crawl_policy_id',
+                'compress_output',
+                'enable_cache'
+            )
             ->orderBy('url')
             ->get();
 
@@ -52,8 +66,12 @@ class ApiController extends Controller
             'callbackUrl' => $user->api_callback_url,
             'projetos' => $projetos,
             'podeAcessarApi' => $this->userHasExternalApiAccess($user),
-            'temPlanoApi' => (bool) ($user->plano?->has_advanced_features),
-            'assinaturaAtivaApi' => $subscriptionActive || $trialActive,
+            'temPlanoApi' => (bool) ($planoEfetivo?->has_advanced_features),
+            'assinaturaAtivaApi' => $assinaturaAtiva,
+            'politicasCrawl' => [
+                'presets' => $this->sitemapService->listCrawlPolicyPresets($user->id),
+                'options' => $this->sitemapService->getCrawlPolicyOptions($user->id),
+            ],
         ]);
     }
 

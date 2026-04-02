@@ -150,11 +150,16 @@ CREATE TABLE `pages` (
   `load_time_ms` double DEFAULT NULL,
   `content_type` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `size_bytes` bigint DEFAULT NULL,
+  `language` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `meta_description` text COLLATE utf8mb4_unicode_ci,
+  `canonical_url` varchar(2048) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `hreflang_links` json DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `pages_project_id_path_hash_unique` (`project_id`,`path_hash`),
   KEY `pages_path_hash_index` (`path_hash`),
+  KEY `pages_project_language_index` (`project_id`,`language`),
   CONSTRAINT `pages_project_id_foreign` FOREIGN KEY (`project_id`) REFERENCES `projects` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -186,6 +191,12 @@ CREATE TABLE `plans` (
   `has_advanced_features` tinyint(1) NOT NULL DEFAULT '0',
   `permite_imagens` tinyint(1) NOT NULL DEFAULT '0',
   `permite_videos` tinyint(1) NOT NULL DEFAULT '0',
+  `permite_noticias` tinyint(1) NOT NULL DEFAULT '0',
+  `permite_mobile` tinyint(1) NOT NULL DEFAULT '0',
+  `permite_compactacao` tinyint(1) NOT NULL DEFAULT '0',
+  `permite_cache_crawler` tinyint(1) NOT NULL DEFAULT '0',
+  `permite_padroes_exclusao` tinyint(1) NOT NULL DEFAULT '0',
+  `permite_politicas_crawl` tinyint(1) NOT NULL DEFAULT '0',
   `update_frequency` enum('diario','semanal','quinzenal','mensal','anual','manual') COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `ideal_for` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
@@ -215,6 +226,12 @@ CREATE TABLE `projects` (
   `max_pages` int NOT NULL DEFAULT '1000',
   `check_images` tinyint(1) NOT NULL DEFAULT '0',
   `check_videos` tinyint(1) NOT NULL DEFAULT '0',
+  `check_news` tinyint(1) NOT NULL DEFAULT '0',
+  `check_mobile` tinyint(1) NOT NULL DEFAULT '0',
+  `exclude_patterns` json DEFAULT NULL,
+  `crawl_policy_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `compress_output` tinyint(1) NOT NULL DEFAULT '1',
+  `enable_cache` tinyint(1) NOT NULL DEFAULT '1',
   `frequency` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'manual',
   `last_crawled_at` timestamp NULL DEFAULT NULL,
   `status` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'active',
@@ -456,3 +473,7 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (24,'2026_03_30_120
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (25,'2026_03_31_090000_add_search_submission_fields_to_projects_table',14);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (26,'2026_03_31_090100_create_search_engine_connections_table',14);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (27,'2026_03_31_090200_create_search_engine_submissions_table',14);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (28,'2026_03_31_103500_add_bilingual_seo_fields_to_pages_table',15);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (29,'2026_04_02_101500_add_advanced_crawler_fields_to_projects_table',16);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (30,'2026_04_02_114500_add_sellable_crawler_features_to_plans_table',17);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (31,'2026_04_02_143000_normalize_plan_feature_hierarchy',18);

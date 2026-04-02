@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Pagina;
 use App\Models\Projeto;
 use App\Models\TarefaSitemap;
+use App\Services\RelatorioSeoBilingueService;
 use App\Services\SitemapGeneratorService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -12,10 +13,15 @@ use Illuminate\Support\Facades\Log;
 class RastreadorController extends Controller
 {
     protected $sitemapService;
+    protected $relatorioSeoBilingue;
 
-    public function __construct(SitemapGeneratorService $sitemapService)
+    public function __construct(
+        SitemapGeneratorService $sitemapService,
+        RelatorioSeoBilingueService $relatorioSeoBilingue
+    )
     {
         $this->sitemapService = $sitemapService;
+        $this->relatorioSeoBilingue = $relatorioSeoBilingue;
     }
 
     protected function findActiveJob(Projeto $projeto): ?TarefaSitemap
@@ -130,23 +136,87 @@ class RastreadorController extends Controller
                 ], 409);
             }
 
-            $usuario = auth()->user()->load('plano');
-            $limitePlano = $usuario->plano?->max_pages ?? 500;
+            $usuario = auth()->user();
+            $planoEfetivo = $usuario->planoEfetivo();
+            $limitePlano = $planoEfetivo?->max_pages ?? 500;
             $limiteEfetivo = min($projeto->max_pages ?? $limitePlano, $limitePlano);
 
             Log::info("RastreadorController: Iniciando job com limite de {$limiteEfetivo} paginas (plano: {$limitePlano}, projeto: {$projeto->max_pages})");
 
-            $permiteImagens = (bool) ($usuario->plano?->permite_imagens);
-            $permiteVideos = (bool) ($usuario->plano?->permite_videos);
+            $permiteImagens = (bool) ($planoEfetivo?->permite_imagens);
+            $permiteVideos = (bool) ($planoEfetivo?->permite_videos);
+            $permiteOpcoesAvancadas = (bool) ($planoEfetivo?->has_advanced_features);
+            $permiteNoticias = (bool) ($planoEfetivo?->has_advanced_features && $planoEfetivo?->permite_noticias);
+            $permiteMobile = (bool) ($planoEfetivo?->has_advanced_features && $planoEfetivo?->permite_mobile);
+            $permiteCompactacao = (bool) ($planoEfetivo?->has_advanced_features && $planoEfetivo?->permite_compactacao);
+            $permiteCacheCrawler = (bool) ($planoEfetivo?->has_advanced_features && $planoEfetivo?->permite_cache_crawler);
+            $permitePadroesExclusao = (bool) ($planoEfetivo?->has_advanced_features && $planoEfetivo?->permite_padroes_exclusao);
+            $permitePoliticasCrawl = (bool) ($planoEfetivo?->has_advanced_features && $planoEfetivo?->permite_politicas_crawl);
+            $ajustesProjeto = [];
 
             if ($projeto->check_images && !$permiteImagens) {
-                $projeto->update(['check_images' => false]);
+                $ajustesProjeto['check_images'] = false;
                 Log::warning('RastreadorController: Rastreamento de imagens desativado (nao permitido no plano)');
             }
 
             if ($projeto->check_videos && !$permiteVideos) {
-                $projeto->update(['check_videos' => false]);
+                $ajustesProjeto['check_videos'] = false;
                 Log::warning('RastreadorController: Rastreamento de videos desativado (nao permitido no plano)');
+            }
+
+            if (!$permiteOpcoesAvancadas) {
+                if ($projeto->check_news) {
+                    $ajustesProjeto['check_news'] = false;
+                }
+
+                if ($projeto->check_mobile) {
+                    $ajustesProjeto['check_mobile'] = false;
+                }
+
+                if (!empty($projeto->exclude_patterns)) {
+                    $ajustesProjeto['exclude_patterns'] = null;
+                }
+
+                if (!empty($projeto->crawl_policy_id)) {
+                    $ajustesProjeto['crawl_policy_id'] = null;
+                }
+
+                if (($projeto->compress_output ?? true) === false) {
+                    $ajustesProjeto['compress_output'] = true;
+                }
+
+                if (($projeto->enable_cache ?? true) === false) {
+                    $ajustesProjeto['enable_cache'] = true;
+                }
+            } else {
+                if ($projeto->check_news && !$permiteNoticias) {
+                    $ajustesProjeto['check_news'] = false;
+                }
+
+                if ($projeto->check_mobile && !$permiteMobile) {
+                    $ajustesProjeto['check_mobile'] = false;
+                }
+
+                if (!empty($projeto->exclude_patterns) && !$permitePadroesExclusao) {
+                    $ajustesProjeto['exclude_patterns'] = null;
+                }
+
+                if (!empty($projeto->crawl_policy_id) && !$permitePoliticasCrawl) {
+                    $ajustesProjeto['crawl_policy_id'] = null;
+                }
+
+                if (($projeto->compress_output ?? true) === false && !$permiteCompactacao) {
+                    $ajustesProjeto['compress_output'] = true;
+                }
+
+                if (($projeto->enable_cache ?? true) === false && !$permiteCacheCrawler) {
+                    $ajustesProjeto['enable_cache'] = true;
+                }
+            }
+
+            if (!empty($ajustesProjeto)) {
+                $projeto->update($ajustesProjeto);
+                $projeto->refresh();
             }
 
             $externalJobId = $this->sitemapService->startJob($projeto, $limiteEfetivo);
@@ -307,6 +377,12 @@ class RastreadorController extends Controller
             Log::info("RastreadorController: Gerado preview para job {$ultimoJob->external_job_id}. Total URLs: " . count($previewUrls));
         }
 
+        $seoBilingue = null;
+
+        if ($ultimoJob->status === 'completed') {
+            $seoBilingue = $this->relatorioSeoBilingue->montarParaProjeto($projeto);
+        }
+
         return response()->json([
             'external_job_id' => $ultimoJob->external_job_id,
             'status' => $ultimoJob->status,
@@ -326,6 +402,7 @@ class RastreadorController extends Controller
             'queue_size' => $statusData['queue_size'] ?? 0,
             'started_at' => $ultimoJob->started_at?->toISOString(),
             'completed_at' => $ultimoJob->completed_at?->toISOString(),
+            'seo_bilingue' => $seoBilingue,
         ]);
     }
 
@@ -359,6 +436,9 @@ class RastreadorController extends Controller
                         'url' => $pagina->url,
                         'title' => $pagina->title,
                         'status_code' => $pagina->status_code,
+                        'language' => $pagina->language,
+                        'canonicalUrl' => $pagina->canonical_url,
+                        'hreflangCount' => count($pagina->hreflang_links ?? []),
                         'content_type' => $pagina->content_type,
                         'size_bytes' => $pagina->size_bytes,
                         'lastMod' => $pagina->updated_at->toIso8601String(),

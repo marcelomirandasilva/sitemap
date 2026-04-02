@@ -6,6 +6,11 @@ import Swal from 'sweetalert2';
 import { trans as t } from "laravel-vue-i18n";
 import axios from 'axios';
 import UrlDataTable from '@/Components/Project/UrlDataTable.vue';
+import PainelSeoBilingue from '@/Components/Project/PainelSeoBilingue.vue';
+
+// Funcionalidade estacionada: mantemos o SEO bilíngue no código para eventual
+// reativação futura, mas ela não deve aparecer no painel do usuário neste momento.
+const exibirSeoBilingue = false;
 
 const props = defineProps({
     projeto: {
@@ -23,6 +28,25 @@ const props = defineProps({
     preview_urls: {
         type: Array,
         default: () => []
+    },
+    seo_bilingue: {
+        type: Object,
+        default: () => ({
+            disponivel: false,
+            site_multilingue: false,
+            total_paginas: 0,
+            idiomas_detectados: [],
+            paginas_com_hreflang: 0,
+            paginas_sem_hreflang: 0,
+            paginas_sem_canonical: 0,
+            paginas_sem_autorreferencia: 0,
+            paginas_com_x_default: 0,
+            amostras: {
+                sem_canonical: [],
+                sem_hreflang: [],
+                sem_autorreferencia: [],
+            },
+        })
     },
     search_engines: {
         type: Object,
@@ -44,12 +68,33 @@ const props = defineProps({
             permite_imagens: false,
             permite_videos: false,
             advanced_settings_enabled: false,
+            permite_noticias: false,
+            permite_mobile: false,
+            permite_compactacao: false,
+            permite_cache_crawler: false,
+            permite_padroes_exclusao: false,
+            permite_politicas_crawl: false,
             plan_max_pages: 500,
             allowed_frequencies: ['manual'],
             max_depth_limit: 10,
             max_concurrent_requests_limit: 10,
             delay_between_requests_min: 0,
             delay_between_requests_max: 10,
+        })
+    },
+    politicas_crawl: {
+        type: Object,
+        default: () => ({
+            presets: [],
+            options: {
+                exclude_extensions: [],
+                example_prefixes: [],
+                example_regex: [],
+                example_globs: [],
+                defaults: {},
+                limits: {},
+                query_params_policy_values: [],
+            },
         })
     }
 });
@@ -63,6 +108,7 @@ const cancelando = ref(false);
 const tarefa = ref(props.ultimo_job || {});
 const historicoJobs = ref([]);
 const listaUrls = ref(props.preview_urls || []);
+const seoBilingue = ref(props.seo_bilingue || {});
 const salvandoConfiguracoes = ref(false);
 const configForm = reactive({
     frequency: props.projeto.frequency || 'manual',
@@ -71,7 +117,13 @@ const configForm = reactive({
     max_concurrent_requests: props.projeto.max_concurrent_requests ?? 2,
     delay_between_requests: props.projeto.delay_between_requests ?? 1,
     user_agent_custom: props.projeto.user_agent_custom ?? '',
+    check_news: !!props.projeto.check_news,
+    check_mobile: !!props.projeto.check_mobile,
+    compress_output: props.projeto.compress_output ?? true,
+    enable_cache: props.projeto.enable_cache ?? true,
+    crawl_policy_id: props.projeto.crawl_policy_id ?? '',
 });
+const textoPadroesExclusao = ref((props.projeto.exclude_patterns ?? []).join('\n'));
 const submitForm = reactive({
     published_sitemap_url: props.search_engines?.published_sitemap_url ?? props.search_engines?.suggested_sitemap_url ?? '',
     suggested_sitemap_url: props.search_engines?.suggested_sitemap_url ?? '',
@@ -178,8 +230,24 @@ const paginasPuladas = computed(() => {
 const jobAtivo = computed(() => ['queued', 'running'].includes(tarefa.value?.status));
 const acaoEmAndamento = computed(() => reexecutando.value || cancelando.value);
 const canEditAdvancedSettings = computed(() => !!props.features.advanced_settings_enabled);
+const permiteNoticias = computed(() => !!props.features.permite_noticias);
+const permiteMobile = computed(() => !!props.features.permite_mobile);
+const permiteCompactacao = computed(() => !!props.features.permite_compactacao);
+const permiteCacheCrawler = computed(() => !!props.features.permite_cache_crawler);
+const permitePadroesExclusao = computed(() => !!props.features.permite_padroes_exclusao);
+const permitePoliticasCrawl = computed(() => !!props.features.permite_politicas_crawl);
 const planMaxPages = computed(() => props.features.plan_max_pages ?? 500);
 const allowedFrequencyOptions = computed(() => props.features.allowed_frequencies ?? ['manual']);
+const presetsPoliticaCrawl = computed(() => props.politicas_crawl?.presets ?? []);
+const exemplosPoliticaCrawl = computed(() => {
+    const opcoes = props.politicas_crawl?.options ?? {};
+
+    return [
+        ...(opcoes.example_prefixes ?? []),
+        ...(opcoes.example_regex ?? []),
+        ...(opcoes.example_globs ?? []),
+    ].filter(Boolean).slice(0, 6);
+});
 const limiteEfetivoProjeto = computed(() => Math.min(props.projeto.max_pages ?? planMaxPages.value, planMaxPages.value));
 const paginasDescobertasAtuais = computed(() => {
     if (!tarefa.value) return 0;
@@ -309,6 +377,10 @@ const buscarDetalhesJob = async () => {
             listaUrls.value = data.preview_urls;
         }
 
+        if (data.seo_bilingue) {
+            seoBilingue.value = data.seo_bilingue;
+        }
+
         // Se finalizou o crawler durante o polling, para o interval e recarrega página opcionalmente
         if (['completed', 'failed', 'cancelled'].includes(tarefa.value.status)) {
             if (pollingInterval) clearInterval(pollingInterval);
@@ -343,6 +415,13 @@ onUnmounted(() => {
     if (pollingInterval) clearInterval(pollingInterval);
 });
 
+const normalizarPadroesExclusao = () => {
+    return textoPadroesExclusao.value
+        .split(/\r?\n/)
+        .map((item) => item.trim())
+        .filter(Boolean);
+};
+
 const resetConfigForm = () => {
     configForm.frequency = props.projeto.frequency || 'manual';
     configForm.max_pages = props.projeto.max_pages ?? planMaxPages.value;
@@ -350,6 +429,12 @@ const resetConfigForm = () => {
     configForm.max_concurrent_requests = props.projeto.max_concurrent_requests ?? 2;
     configForm.delay_between_requests = props.projeto.delay_between_requests ?? 1;
     configForm.user_agent_custom = props.projeto.user_agent_custom ?? '';
+    configForm.check_news = !!props.projeto.check_news;
+    configForm.check_mobile = !!props.projeto.check_mobile;
+    configForm.compress_output = props.projeto.compress_output ?? true;
+    configForm.enable_cache = props.projeto.enable_cache ?? true;
+    configForm.crawl_policy_id = props.projeto.crawl_policy_id ?? '';
+    textoPadroesExclusao.value = (props.projeto.exclude_patterns ?? []).join('\n');
 };
 
 watch(() => props.projeto, () => {
@@ -359,6 +444,16 @@ watch(() => props.projeto, () => {
 watch(() => props.job_history, (jobs) => {
     substituirHistoricoJobs(jobs ?? []);
 }, { deep: true });
+
+watch(() => props.seo_bilingue, (value) => {
+    seoBilingue.value = value ?? {};
+}, { deep: true });
+
+watch(abaAtiva, (value) => {
+    if (!exibirSeoBilingue && value === 'seo_bilingue') {
+        abaAtiva.value = 'details';
+    }
+});
 
 watch(() => props.search_engines, (value) => {
     googleConnection.value = { ...(value?.connections?.google ?? { connected: false }) };
@@ -815,6 +910,12 @@ const salvarConfiguracoes = () => {
         max_concurrent_requests: configForm.max_concurrent_requests,
         delay_between_requests: configForm.delay_between_requests,
         user_agent_custom: configForm.user_agent_custom,
+        check_news: configForm.check_news,
+        check_mobile: configForm.check_mobile,
+        exclude_patterns: normalizarPadroesExclusao(),
+        crawl_policy_id: configForm.crawl_policy_id || null,
+        compress_output: configForm.compress_output,
+        enable_cache: configForm.enable_cache,
     }, {
         preserveScroll: true,
         onSuccess: () => {
@@ -824,6 +925,12 @@ const salvarConfiguracoes = () => {
             props.projeto.max_concurrent_requests = configForm.max_concurrent_requests;
             props.projeto.delay_between_requests = configForm.delay_between_requests;
             props.projeto.user_agent_custom = configForm.user_agent_custom;
+            props.projeto.check_news = configForm.check_news;
+            props.projeto.check_mobile = configForm.check_mobile;
+            props.projeto.exclude_patterns = normalizarPadroesExclusao();
+            props.projeto.crawl_policy_id = configForm.crawl_policy_id || null;
+            props.projeto.compress_output = configForm.compress_output;
+            props.projeto.enable_cache = configForm.enable_cache;
 
             Swal.fire({
                 title: t('project.settings_saved'),
@@ -1075,6 +1182,10 @@ const toggleFeature = (feature) => {
                             :class="['px-6 py-3 text-sm font-bold uppercase border-t border-l border-r rounded-t-lg transition-all mr-1 translate-y-[1px]', abaAtiva === 'files' ? 'bg-white text-accent-600 border-gray-200 border-b-white shadow-sm' : 'bg-gray-100 text-gray-500 border-transparent hover:bg-white/50']">
                             <span class="mr-2">☁</span> {{ $t('project.download_files') }}
                         </button>
+                        <button v-if="exibirSeoBilingue" @click="abaAtiva = 'seo_bilingue'"
+                            :class="['px-6 py-3 text-sm font-bold uppercase border-t border-l border-r rounded-t-lg transition-all mr-1 translate-y-[1px]', abaAtiva === 'seo_bilingue' ? 'bg-white text-accent-600 border-gray-200 border-b-white shadow-sm' : 'bg-gray-100 text-gray-500 border-transparent hover:bg-white/50']">
+                            <span class="mr-2">SEO</span> {{ $t('project.seo_bilingual_tab') }}
+                        </button>
                         <button @click="abaAtiva = 'submit'"
                             :class="['px-6 py-3 text-sm font-bold uppercase border-t border-l border-r rounded-t-lg transition-all mr-1 translate-y-[1px]', abaAtiva === 'submit' ? 'bg-white text-accent-600 border-gray-200 border-b-white shadow-sm' : 'bg-gray-100 text-gray-500 border-transparent hover:bg-white/50']">
                             <span class="mr-2">+</span> {{ $t('project.submit_tab') }}
@@ -1163,6 +1274,10 @@ const toggleFeature = (feature) => {
                             </div>
                         </div>
                         
+
+                        <div v-else-if="exibirSeoBilingue && abaAtiva === 'seo_bilingue'">
+                            <PainelSeoBilingue :seo-bilingue="seoBilingue" />
+                        </div>
 
                         <!-- ABA FILES -->
                         <div v-else-if="abaAtiva === 'files'">
@@ -1546,6 +1661,67 @@ const toggleFeature = (feature) => {
                                             <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('project.field_user_agent') }}</label>
                                             <input v-model="configForm.user_agent_custom" type="text" maxlength="255" :disabled="!canEditAdvancedSettings" class="w-full rounded-md border-gray-300 focus:border-primary-500 focus:ring-primary-500 disabled:bg-gray-100 disabled:text-gray-500" :placeholder="$t('project.field_user_agent_placeholder')" />
                                             <p class="mt-2 text-xs text-gray-500">{{ $t('project.field_user_agent_help') }}</p>
+                                        </div>
+
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <label class="flex items-start gap-3 rounded-md border border-gray-200 px-4 py-3" :class="{ 'opacity-60': !permiteNoticias }">
+                                                <input v-model="configForm.check_news" type="checkbox" :disabled="!permiteNoticias" class="mt-1 rounded border-gray-300 text-primary-600 focus:ring-primary-500" />
+                                                <span>
+                                                    <span class="block text-sm font-medium text-gray-700">{{ $t('project.field_news') }}</span>
+                                                    <span class="mt-1 block text-xs text-gray-500">{{ $t('project.field_news_help') }}</span>
+                                                </span>
+                                            </label>
+
+                                            <label class="flex items-start gap-3 rounded-md border border-gray-200 px-4 py-3" :class="{ 'opacity-60': !permiteMobile }">
+                                                <input v-model="configForm.check_mobile" type="checkbox" :disabled="!permiteMobile" class="mt-1 rounded border-gray-300 text-primary-600 focus:ring-primary-500" />
+                                                <span>
+                                                    <span class="block text-sm font-medium text-gray-700">{{ $t('project.field_mobile') }}</span>
+                                                    <span class="mt-1 block text-xs text-gray-500">{{ $t('project.field_mobile_help') }}</span>
+                                                </span>
+                                            </label>
+
+                                            <label class="flex items-start gap-3 rounded-md border border-gray-200 px-4 py-3" :class="{ 'opacity-60': !permiteCompactacao }">
+                                                <input v-model="configForm.compress_output" type="checkbox" :disabled="!permiteCompactacao" class="mt-1 rounded border-gray-300 text-primary-600 focus:ring-primary-500" />
+                                                <span>
+                                                    <span class="block text-sm font-medium text-gray-700">{{ $t('project.field_compress_output') }}</span>
+                                                    <span class="mt-1 block text-xs text-gray-500">{{ $t('project.field_compress_output_help') }}</span>
+                                                </span>
+                                            </label>
+
+                                            <label class="flex items-start gap-3 rounded-md border border-gray-200 px-4 py-3" :class="{ 'opacity-60': !permiteCacheCrawler }">
+                                                <input v-model="configForm.enable_cache" type="checkbox" :disabled="!permiteCacheCrawler" class="mt-1 rounded border-gray-300 text-primary-600 focus:ring-primary-500" />
+                                                <span>
+                                                    <span class="block text-sm font-medium text-gray-700">{{ $t('project.field_enable_cache') }}</span>
+                                                    <span class="mt-1 block text-xs text-gray-500">{{ $t('project.field_enable_cache_help') }}</span>
+                                                </span>
+                                            </label>
+                                        </div>
+
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('project.field_crawl_policy') }}</label>
+                                            <select v-model="configForm.crawl_policy_id" :disabled="!permitePoliticasCrawl" class="w-full rounded-md border-gray-300 focus:border-primary-500 focus:ring-primary-500 disabled:bg-gray-100 disabled:text-gray-500">
+                                                <option value="">{{ $t('project.field_no_crawl_policy') }}</option>
+                                                <option v-for="preset in presetsPoliticaCrawl" :key="preset.id" :value="preset.id">
+                                                    {{ preset.name }}
+                                                </option>
+                                            </select>
+                                            <p class="mt-2 text-xs text-gray-500">{{ $t('project.field_crawl_policy_help') }}</p>
+                                        </div>
+
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('project.field_exclude_patterns') }}</label>
+                                            <textarea
+                                                v-model="textoPadroesExclusao"
+                                                rows="5"
+                                                :disabled="!permitePadroesExclusao"
+                                                class="w-full rounded-md border-gray-300 focus:border-primary-500 focus:ring-primary-500 disabled:bg-gray-100 disabled:text-gray-500"
+                                                :placeholder="$t('project.field_exclude_patterns_placeholder')"
+                                            />
+                                            <p class="mt-2 text-xs text-gray-500">{{ $t('project.field_exclude_patterns_help') }}</p>
+                                            <p v-if="exemplosPoliticaCrawl.length" class="mt-2 text-xs text-gray-500">
+                                                {{ $t('project.field_exclude_patterns_examples') }}:
+                                                <span class="font-mono">{{ exemplosPoliticaCrawl.join(', ') }}</span>
+                                            </p>
                                         </div>
                                     </div>
                                 </div>

@@ -29,20 +29,24 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $usuario = $request->user();
+        $planoEfetivo = $usuario ? $usuario->planoEfetivo() : null;
+
         return [
             ...parent::share($request),
             'auth' => [
-                'user' => $request->user(),
+                'user' => $usuario,
             ],
+            'locale' => app()->getLocale(),
             'appName' => config('app.name'),
-            'userProjects' => $request->user() ?
-                $request->user()->projetos()
+            'userProjects' => $usuario ?
+                $usuario->projetos()
                     ->select('id', 'name', 'url', 'last_crawled_at', 'status', 'max_pages')
                     ->withCount('paginas')
                     ->orderBy('updated_at', 'desc')
                     ->take(10)
                     ->get()
-                    ->map(function ($project) use ($request) {
+                    ->map(function ($project) use ($planoEfetivo) {
                         return [
                             'id' => $project->id,
                             'name' => $project->name,
@@ -50,10 +54,10 @@ class HandleInertiaRequests extends Middleware
                             'last_crawled_at' => $project->last_crawled_at ? $project->last_crawled_at->toISOString() : null,
                             'pages_count' => $project->paginas_count,
                             'status' => $project->status,
-                            'plan_name' => $request->user()->plano ? $request->user()->plano->name : 'Free'
+                            'plan_name' => $planoEfetivo?->name ?? 'Free',
                         ];
                     }) : [],
-            'userProjectsCount' => $request->user() ? $request->user()->projetos()->count() : 0,
+            'userProjectsCount' => $usuario ? $usuario->projetos()->count() : 0,
             'flash' => [
                 'success' => fn() => $request->session()->get('success'),
                 'error' => fn() => $request->session()->get('error'),

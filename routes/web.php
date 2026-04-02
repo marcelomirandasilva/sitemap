@@ -1,8 +1,10 @@
 <?php
 
 use App\Http\Controllers\PerfilController;
+use App\Http\Controllers\PaginaPublicaController;
 use App\Http\Controllers\ProjectSearchEngineController;
 use App\Http\Controllers\SearchEngineConnectionController;
+use App\Http\Controllers\SeoSiteController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
@@ -12,22 +14,28 @@ use App\Http\Controllers\ProjetoController;
 use App\Http\Controllers\RastreadorController;
 use App\Models\Projeto;
 
-Route::get('/', function () {
-    if (Auth::check()) {
-        return redirect()->route('dashboard');
-    }
+Route::get('/', [PaginaPublicaController::class, 'redirecionarRaiz'])->name('public.root');
+Route::get('/robots.txt', [SeoSiteController::class, 'robots'])->name('seo.robots');
+Route::get('/sitemap.xml', [SeoSiteController::class, 'sitemap'])->name('seo.sitemap');
 
-    return Inertia::render('Public/LandingPage', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
-        'plans' => \App\Models\Plano::all(), // Planos injetados
-    ]);
+Route::middleware('idioma.publico')->group(function () {
+    Route::get('/{locale}', [PaginaPublicaController::class, 'landing'])
+        ->whereIn('locale', ['pt', 'en'])
+        ->name('public.landing');
+
+    Route::get('/{locale}/info/{slug}', [\App\Http\Controllers\ArtigoInfoController::class, 'show'])
+        ->whereIn('locale', ['pt', 'en'])
+        ->name('info.article');
 });
 
-Route::get('/about-sitemaps', fn() => redirect()->route('info.article', 'about-sitemaps'));
-Route::get('/info/{slug}', [\App\Http\Controllers\ArtigoInfoController::class, 'show'])->name('info.article');
+Route::get('/about-sitemaps', fn() => redirect()->route('info.article', [
+    'locale' => config('app.locale', 'pt'),
+    'slug' => 'about-sitemaps',
+]));
+Route::get('/info/{slug}', fn(string $slug) => redirect()->route('info.article', [
+    'locale' => config('app.locale', 'pt'),
+    'slug' => $slug,
+]));
 
 Route::get('/dashboard', [App\Http\Controllers\PainelController::class, 'index'])
     ->middleware(['auth', 'verified'])

@@ -13,6 +13,7 @@ class FaturamentoController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
+        $planoEfetivo = $user->planoEfetivo();
         $faturas = [];
 
         // Verifica se o usuário tem faturas no Stripe
@@ -35,14 +36,14 @@ class FaturamentoController extends Controller
         }
 
         // 1. Buscar a assinatura ativa (default) com o Cashier
-        $assinatura = $user->subscription('default');
+        $assinatura = $user->assinaturaPadrao();
 
         // 2. Extrair dados cruciais do plano para a UI
         $assinatura_ativa = null;
-        if ($user->plano && strtolower($user->plano->name) !== 'free') {
+        if ($planoEfetivo && $user->planoExigeAssinatura($planoEfetivo) && $user->possuiAcessoPagoVigente()) {
             $assinatura_ativa = [
-                'name' => $user->plano->name,
-                'status' => $assinatura ? $assinatura->stripe_status : 'active',
+                'name' => $planoEfetivo->name,
+                'status' => $assinatura ? $assinatura->stripe_status : 'trialing',
                 'cancel_at_period_end' => $assinatura ? $assinatura->onGracePeriod() : false,
                 'ends_at' => $assinatura && $assinatura->ends_at ? $assinatura->ends_at->toIso8601String() : null,
             ];

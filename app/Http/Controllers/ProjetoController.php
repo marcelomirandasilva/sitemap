@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Projeto;
+use App\Services\RelatorioSeoBilingueService;
 use App\Services\SitemapGeneratorService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -12,10 +13,15 @@ use Inertia\Inertia;
 class ProjetoController extends Controller
 {
     protected $sitemapService;
+    protected $relatorioSeoBilingue;
 
-    public function __construct(SitemapGeneratorService $sitemapService)
+    public function __construct(
+        SitemapGeneratorService $sitemapService,
+        RelatorioSeoBilingueService $relatorioSeoBilingue
+    )
     {
         $this->sitemapService = $sitemapService;
+        $this->relatorioSeoBilingue = $relatorioSeoBilingue;
     }
 
     protected function normalizePlanFrequency(?string $frequency): string
@@ -55,12 +61,18 @@ class ProjetoController extends Controller
 
     protected function buildProjectFeatures($usuario): array
     {
-        $plano = $usuario->plano;
+        $plano = $usuario->planoEfetivo();
 
         return [
             'permite_imagens' => $plano ? (bool) $plano->permite_imagens : false,
             'permite_videos' => $plano ? (bool) $plano->permite_videos : false,
             'advanced_settings_enabled' => $plano ? (bool) $plano->has_advanced_features : false,
+            'permite_noticias' => $plano ? (bool) ($plano->has_advanced_features && $plano->permite_noticias) : false,
+            'permite_mobile' => $plano ? (bool) ($plano->has_advanced_features && $plano->permite_mobile) : false,
+            'permite_compactacao' => $plano ? (bool) ($plano->has_advanced_features && $plano->permite_compactacao) : false,
+            'permite_cache_crawler' => $plano ? (bool) ($plano->has_advanced_features && $plano->permite_cache_crawler) : false,
+            'permite_padroes_exclusao' => $plano ? (bool) ($plano->has_advanced_features && $plano->permite_padroes_exclusao) : false,
+            'permite_politicas_crawl' => $plano ? (bool) ($plano->has_advanced_features && $plano->permite_politicas_crawl) : false,
             'plan_max_pages' => $plano?->max_pages ?? 500,
             'plan_update_frequency' => $this->normalizePlanFrequency($plano?->update_frequency),
             'allowed_frequencies' => $this->allowedFrequenciesForPlan($plano?->update_frequency),
@@ -68,6 +80,7 @@ class ProjetoController extends Controller
             'max_concurrent_requests_limit' => 10,
             'delay_between_requests_min' => 0,
             'delay_between_requests_max' => 10,
+            'supports_advanced_api_options' => $plano ? (bool) $plano->has_advanced_features : false,
         ];
     }
 
@@ -111,19 +124,23 @@ class ProjetoController extends Controller
         $name = $parsed['host'] ?? $validated['url'];
 
         $user = $request->user();
-        $user->load('plano');
+        $planoEfetivo = $user->planoEfetivo();
 
         $projeto = $user->projetos()->create([
             'name' => $name,
             'url' => $validated['url'],
             'status' => 'pending',
             'frequency' => 'manual',
-            'check_images' => (bool) ($user->plano?->permite_imagens),
-            'check_videos' => (bool) ($user->plano?->permite_videos),
+            'check_images' => (bool) ($planoEfetivo?->permite_imagens),
+            'check_videos' => (bool) ($planoEfetivo?->permite_videos),
+            'check_news' => false,
+            'check_mobile' => false,
+            'compress_output' => true,
+            'enable_cache' => true,
         ]);
 
         $projeto->refresh();
-        $limitePlano = $user->plano?->max_pages ?? 500;
+        $limitePlano = $planoEfetivo?->max_pages ?? 500;
         $limiteEfetivo = min($projeto->max_pages ?? $limitePlano, $limitePlano);
 
         try {
@@ -160,15 +177,21 @@ class ProjetoController extends Controller
         $ultimoJob = $jobHistory->first();
 
         $usuario = auth()->user();
-        $usuario->load('plano');
         $searchConnections = $usuario->searchEngineConnections()->get()->keyBy('provider');
+        $presetsPoliticaCrawl = $this->sitemapService->listCrawlPolicyPresets($usuario->id);
+        $opcoesPoliticaCrawl = $this->sitemapService->getCrawlPolicyOptions($usuario->id);
 
         return Inertia::render('App/Projects/Show', [
             'projeto' => $projeto,
             'ultimo_job' => $ultimoJob,
             'job_history' => $jobHistory,
             'preview_urls' => [],
+            'seo_bilingue' => $this->relatorioSeoBilingue->montarParaProjeto($projeto),
             'features' => $this->buildProjectFeatures($usuario),
+            'politicas_crawl' => [
+                'presets' => $presetsPoliticaCrawl,
+                'options' => $opcoesPoliticaCrawl,
+            ],
             'search_engines' => [
                 'suggested_sitemap_url' => $this->defaultPublishedSitemapUrl($projeto->url),
                 'published_sitemap_url' => $projeto->published_sitemap_url,
@@ -211,8 +234,8 @@ class ProjetoController extends Controller
         }
 
         $usuario = auth()->user();
-        $usuario->load('plano');
         $features = $this->buildProjectFeatures($usuario);
+        $planoEfetivo = $usuario->planoEfetivo();
         $planMaxPages = $features['plan_max_pages'];
         $allowedFrequencies = $features['allowed_frequencies'];
         $advancedEnabled = $features['advanced_settings_enabled'];
@@ -220,23 +243,38 @@ class ProjetoController extends Controller
         $validated = $request->validate([
             'check_images' => 'sometimes|boolean',
             'check_videos' => 'sometimes|boolean',
+            'check_news' => 'sometimes|boolean',
+            'check_mobile' => 'sometimes|boolean',
             'frequency' => 'sometimes|string|in:manual,diario,semanal,quinzenal,mensal,anual',
             'max_pages' => 'sometimes|integer|min:1',
             'max_depth' => 'sometimes|integer|min:1|max:10',
             'max_concurrent_requests' => 'sometimes|integer|min:1|max:10',
             'delay_between_requests' => 'sometimes|numeric|min:0|max:10',
             'user_agent_custom' => 'sometimes|nullable|string|max:255',
+            'exclude_patterns' => 'sometimes|array',
+            'exclude_patterns.*' => 'string|max:255',
+            'crawl_policy_id' => 'sometimes|nullable|string|max:255',
+            'compress_output' => 'sometimes|boolean',
+            'enable_cache' => 'sometimes|boolean',
             'published_sitemap_url' => 'sometimes|nullable|url|max:2048',
             'google_site_property' => 'sometimes|nullable|string|max:255',
             'bing_site_url' => 'sometimes|nullable|url|max:2048',
         ]);
 
-        if (isset($validated['check_images']) && $validated['check_images'] && !($usuario->plano?->permite_imagens)) {
+        if (isset($validated['check_images']) && $validated['check_images'] && !($planoEfetivo?->permite_imagens)) {
             $validated['check_images'] = false;
         }
 
-        if (isset($validated['check_videos']) && $validated['check_videos'] && !($usuario->plano?->permite_videos)) {
+        if (isset($validated['check_videos']) && $validated['check_videos'] && !($planoEfetivo?->permite_videos)) {
             $validated['check_videos'] = false;
+        }
+
+        if (isset($validated['check_news']) && $validated['check_news'] && !($features['permite_noticias'] ?? false)) {
+            $validated['check_news'] = false;
+        }
+
+        if (isset($validated['check_mobile']) && $validated['check_mobile'] && !($features['permite_mobile'] ?? false)) {
+            $validated['check_mobile'] = false;
         }
 
         if (isset($validated['frequency']) && !in_array($validated['frequency'], $allowedFrequencies, true)) {
@@ -254,12 +292,46 @@ class ProjetoController extends Controller
                 $validated['max_depth'],
                 $validated['max_concurrent_requests'],
                 $validated['delay_between_requests'],
-                $validated['user_agent_custom']
+                $validated['user_agent_custom'],
+                $validated['check_news'],
+                $validated['check_mobile'],
+                $validated['exclude_patterns'],
+                $validated['crawl_policy_id'],
+                $validated['compress_output'],
+                $validated['enable_cache']
             );
+        }
+
+        if (!($features['permite_padroes_exclusao'] ?? false)) {
+            unset($validated['exclude_patterns']);
+        }
+
+        if (!($features['permite_politicas_crawl'] ?? false)) {
+            unset($validated['crawl_policy_id']);
+        }
+
+        if (!($features['permite_compactacao'] ?? false)) {
+            unset($validated['compress_output']);
+        }
+
+        if (!($features['permite_cache_crawler'] ?? false)) {
+            unset($validated['enable_cache']);
         }
 
         if (array_key_exists('user_agent_custom', $validated)) {
             $validated['user_agent_custom'] = trim((string) ($validated['user_agent_custom'] ?? '')) ?: null;
+        }
+
+        if (array_key_exists('exclude_patterns', $validated)) {
+            $validated['exclude_patterns'] = collect($validated['exclude_patterns'] ?? [])
+                ->map(fn ($padrao) => trim((string) $padrao))
+                ->filter()
+                ->values()
+                ->all();
+        }
+
+        if (array_key_exists('crawl_policy_id', $validated)) {
+            $validated['crawl_policy_id'] = trim((string) ($validated['crawl_policy_id'] ?? '')) ?: null;
         }
 
         if (array_key_exists('published_sitemap_url', $validated)) {

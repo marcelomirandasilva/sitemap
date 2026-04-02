@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Models\Plano;
+use App\Support\SeoPublico;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -18,6 +20,8 @@ class AuthenticatedSessionController extends Controller
      */
     public function create(): Response
     {
+        $locale = SeoPublico::normalizarLocale(app()->getLocale());
+
         return Inertia::render('Public/LandingPage', [
             'canResetPassword' => Route::has('password.request'),
             'status' => session('status'),
@@ -26,6 +30,9 @@ class AuthenticatedSessionController extends Controller
             'laravelVersion' => \Illuminate\Foundation\Application::VERSION,
             'phpVersion' => PHP_VERSION,
             'defaultTab' => 'login',
+            'plans' => Plano::all(),
+            'locale' => $locale,
+            'seo' => SeoPublico::dadosLanding($locale),
         ]);
     }
 

@@ -44,7 +44,7 @@ class AppServiceProvider extends ServiceProvider
                 return Limit::none();
             }
 
-            $plano = $user->plano;
+            $plano = $user->planoEfetivo();
             $limit = 5; // Limite padrão para quem não tem plano
 
             if ($plano) {

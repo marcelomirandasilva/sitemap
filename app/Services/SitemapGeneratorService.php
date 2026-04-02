@@ -46,6 +46,11 @@ class SitemapGeneratorService
     public function startJob(Projeto $projeto, ?int $maxPages = null): ?string
     {
         $userId = $projeto->user_id;
+        $padroesExclusao = collect($projeto->exclude_patterns ?? [])
+            ->map(fn ($padrao) => trim((string) $padrao))
+            ->filter()
+            ->values()
+            ->all();
 
         $payload = [
             'start_urls' => [$projeto->url],
@@ -53,8 +58,14 @@ class SitemapGeneratorService
             'max_pages' => $maxPages ?? ($projeto->max_pages ?? 1000),
             'include_images' => (bool) $projeto->check_images,
             'include_videos' => (bool) $projeto->check_videos,
+            'include_news' => (bool) ($projeto->check_news ?? false),
+            'include_mobile' => (bool) ($projeto->check_mobile ?? false),
             'delay_between_requests' => (float) ($projeto->delay_between_requests ?? 1.0),
             'max_concurrent_requests' => (int) ($projeto->max_concurrent_requests ?? 2),
+            'excludes_patterns' => $padroesExclusao ?: null,
+            'crawl_policy_id' => $projeto->crawl_policy_id ?: null,
+            'compress_output' => (bool) ($projeto->compress_output ?? true),
+            'enable_cache' => (bool) ($projeto->enable_cache ?? true),
             'massive_processing' => true,
             'output_directory' => 'sitemaps/projects/' . $projeto->id,
         ];
@@ -222,6 +233,54 @@ class SitemapGeneratorService
             Log::error("Erro ao buscar artefatos do job {$jobId}: " . $e->getMessage());
             return [];
         }
+    }
+
+    /**
+     * Lista os presets de politica de crawl disponiveis na API Python.
+     */
+    public function listCrawlPolicyPresets(int $userId): array
+    {
+        try {
+            $response = Http::withHeaders($this->internalHeaders($userId))
+                ->timeout($this->timeout)
+                ->get("{$this->baseUrl}/api/v1/crawl-policies");
+
+            if ($response->successful()) {
+                return $response->json('presets') ?? [];
+            }
+        } catch (\Exception $e) {
+            Log::warning('Falha ao listar presets de politica de crawl: ' . $e->getMessage());
+        }
+
+        return [];
+    }
+
+    /**
+     * Recupera opcoes auxiliares para montar a UI de politica de crawl.
+     */
+    public function getCrawlPolicyOptions(int $userId): array
+    {
+        try {
+            $response = Http::withHeaders($this->internalHeaders($userId))
+                ->timeout($this->timeout)
+                ->get("{$this->baseUrl}/api/v1/crawl-policies/options");
+
+            if ($response->successful()) {
+                return $response->json() ?? [];
+            }
+        } catch (\Exception $e) {
+            Log::warning('Falha ao obter opcoes de politica de crawl: ' . $e->getMessage());
+        }
+
+        return [
+            'exclude_extensions' => [],
+            'example_prefixes' => [],
+            'example_regex' => [],
+            'example_globs' => [],
+            'defaults' => [],
+            'limits' => [],
+            'query_params_policy_values' => [],
+        ];
     }
 
     /**

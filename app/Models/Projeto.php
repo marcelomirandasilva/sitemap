@@ -28,12 +28,23 @@ class Projeto extends Model
         'max_pages',
         'check_images',
         'check_videos',
+        'check_news',
+        'check_mobile',
+        'exclude_patterns',
+        'crawl_policy_id',
+        'compress_output',
+        'enable_cache',
         'last_crawled_at',
     ];
 
     protected $casts = [
         'check_images' => 'boolean',
         'check_videos' => 'boolean',
+        'check_news' => 'boolean',
+        'check_mobile' => 'boolean',
+        'compress_output' => 'boolean',
+        'enable_cache' => 'boolean',
+        'exclude_patterns' => 'array',
         'last_crawled_at' => 'datetime',
         'max_depth' => 'integer',
         'max_pages' => 'integer',

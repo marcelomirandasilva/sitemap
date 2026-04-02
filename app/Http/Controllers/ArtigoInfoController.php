@@ -150,8 +150,10 @@ class ArtigoInfoController extends Controller
         ];
     }
 
-    public function show(string $slug)
+    public function show(string $locale, string $slug)
     {
+        app()->setLocale($locale);
+
         $articles = $this->getArticles();
 
         if (!isset($articles[$slug])) {
@@ -167,6 +169,18 @@ class ArtigoInfoController extends Controller
             'article' => $article,
             'slug' => $slug,
             'allSlugs' => $allSlugs,
+            'locale' => $locale,
+            'seo' => [
+                'title' => __($article['page_title_key']),
+                'description' => __($article['paragraphs_keys'][0] ?? $article['page_title_key']),
+                'canonical' => route('info.article', ['locale' => $locale, 'slug' => $slug]),
+                'robots' => 'index,follow,max-image-preview:large',
+                'alternativas' => [
+                    'pt' => route('info.article', ['locale' => 'pt', 'slug' => $slug]),
+                    'en' => route('info.article', ['locale' => 'en', 'slug' => $slug]),
+                    'x-default' => route('info.article', ['locale' => config('app.locale', 'pt'), 'slug' => $slug]),
+                ],
+            ],
         ]);
     }
 }

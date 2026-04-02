@@ -2,9 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
 
 class PainelController extends Controller
 {
@@ -13,23 +12,23 @@ class PainelController extends Controller
         $projetos = Auth::user()->projetos()
             ->with([
                 'tarefasSitemap' => function ($query) {
-                    $query->latest()->limit(1); // Traz apenas o ultimo job
-                }
+                    $query->latest()->limit(1);
+                },
             ])
             ->latest()
             ->get()
             ->map(function ($projeto) {
-                // Adiciona um atributo "latest_job" para facilitar no frontend
                 $projeto->ultimo_job = $projeto->tarefasSitemap->first();
+
                 return $projeto;
             });
 
-        $user = Auth::user();
-        $user->load('plano'); // Garante que o plano está carregado
+        $usuario = Auth::user();
+        $planoEfetivo = $usuario->planoEfetivo();
 
         return Inertia::render('App/Dashboard/Index', [
             'projetos' => $projetos,
-            'userPlan' => $user->plano, // Passa o objeto do plano
+            'userPlan' => $planoEfetivo,
         ]);
     }
 }

@@ -34,6 +34,12 @@ class PlanoController extends Controller
                 'has_advanced_features' => false,
                 'max_projects' => 1,
                 'max_pages' => 500,
+                'permite_noticias' => false,
+                'permite_mobile' => false,
+                'permite_compactacao' => false,
+                'permite_cache_crawler' => false,
+                'permite_padroes_exclusao' => false,
+                'permite_politicas_crawl' => false,
             ])
         ]);
     }
@@ -75,6 +81,12 @@ class PlanoController extends Controller
             'has_advanced_features' => 'boolean',
             'permite_imagens' => 'boolean',
             'permite_videos' => 'boolean',
+            'permite_noticias' => 'boolean',
+            'permite_mobile' => 'boolean',
+            'permite_compactacao' => 'boolean',
+            'permite_cache_crawler' => 'boolean',
+            'permite_padroes_exclusao' => 'boolean',
+            'permite_politicas_crawl' => 'boolean',
             'stripe_monthly_price_id' => 'nullable|string|max:255',
             'stripe_yearly_price_id' => 'nullable|string|max:255',
             'price_monthly_brl' => 'nullable|numeric|min:0',
