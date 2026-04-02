@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Pagina;
 use App\Models\Projeto;
 use App\Models\TarefaSitemap;
+use App\Services\ExecucaoRastreamentoService;
+use App\Services\FrequenciaRastreamentoService;
 use App\Services\RelatorioSeoBilingueService;
 use App\Services\SitemapGeneratorService;
 use Illuminate\Http\Request;
@@ -14,22 +16,20 @@ class RastreadorController extends Controller
 {
     protected $sitemapService;
     protected $relatorioSeoBilingue;
+    protected $frequenciaRastreamento;
+    protected $execucaoRastreamento;
 
     public function __construct(
         SitemapGeneratorService $sitemapService,
-        RelatorioSeoBilingueService $relatorioSeoBilingue
+        RelatorioSeoBilingueService $relatorioSeoBilingue,
+        FrequenciaRastreamentoService $frequenciaRastreamento,
+        ExecucaoRastreamentoService $execucaoRastreamento
     )
     {
         $this->sitemapService = $sitemapService;
         $this->relatorioSeoBilingue = $relatorioSeoBilingue;
-    }
-
-    protected function findActiveJob(Projeto $projeto): ?TarefaSitemap
-    {
-        return $projeto->tarefasSitemap()
-            ->whereIn('status', ['queued', 'running'])
-            ->latest()
-            ->first();
+        $this->frequenciaRastreamento = $frequenciaRastreamento;
+        $this->execucaoRastreamento = $execucaoRastreamento;
     }
 
     protected function syncJobFromStatus(TarefaSitemap $job, array $statusData): TarefaSitemap
@@ -79,6 +79,11 @@ class RastreadorController extends Controller
         }
 
         $projeto->update($updates);
+        $this->frequenciaRastreamento->atualizarProximoRastreamento(
+            $projeto->refresh(),
+            $job->completed_at ?? now(),
+            $projeto->user?->planoEfetivo()
+        );
     }
 
     protected function finalizeTerminalJob(Projeto $projeto, TarefaSitemap $job): void
@@ -98,7 +103,7 @@ class RastreadorController extends Controller
         }
 
         try {
-            $jobAtivo = $this->findActiveJob($projeto);
+            $jobAtivo = $this->execucaoRastreamento->localizarJobAtivo($projeto);
 
             if ($jobAtivo) {
                 $statusData = $this->sitemapService->checkStatus($jobAtivo->external_job_id, auth()->id());
@@ -126,7 +131,7 @@ class RastreadorController extends Controller
                 }
             }
 
-            $jobAtivo = $this->findActiveJob($projeto);
+            $jobAtivo = $this->execucaoRastreamento->localizarJobAtivo($projeto);
 
             if ($jobAtivo) {
                 return response()->json([
@@ -136,105 +141,18 @@ class RastreadorController extends Controller
                 ], 409);
             }
 
-            $usuario = auth()->user();
-            $planoEfetivo = $usuario->planoEfetivo();
-            $limitePlano = $planoEfetivo?->max_pages ?? 500;
-            $limiteEfetivo = min($projeto->max_pages ?? $limitePlano, $limitePlano);
+            $resultado = $this->execucaoRastreamento->iniciar(
+                $projeto,
+                'Job criado e aguardando processamento.'
+            );
 
-            Log::info("RastreadorController: Iniciando job com limite de {$limiteEfetivo} paginas (plano: {$limitePlano}, projeto: {$projeto->max_pages})");
-
-            $permiteImagens = (bool) ($planoEfetivo?->permite_imagens);
-            $permiteVideos = (bool) ($planoEfetivo?->permite_videos);
-            $permiteOpcoesAvancadas = (bool) ($planoEfetivo?->has_advanced_features);
-            $permiteNoticias = (bool) ($planoEfetivo?->has_advanced_features && $planoEfetivo?->permite_noticias);
-            $permiteMobile = (bool) ($planoEfetivo?->has_advanced_features && $planoEfetivo?->permite_mobile);
-            $permiteCompactacao = (bool) ($planoEfetivo?->has_advanced_features && $planoEfetivo?->permite_compactacao);
-            $permiteCacheCrawler = (bool) ($planoEfetivo?->has_advanced_features && $planoEfetivo?->permite_cache_crawler);
-            $permitePadroesExclusao = (bool) ($planoEfetivo?->has_advanced_features && $planoEfetivo?->permite_padroes_exclusao);
-            $permitePoliticasCrawl = (bool) ($planoEfetivo?->has_advanced_features && $planoEfetivo?->permite_politicas_crawl);
-            $ajustesProjeto = [];
-
-            if ($projeto->check_images && !$permiteImagens) {
-                $ajustesProjeto['check_images'] = false;
-                Log::warning('RastreadorController: Rastreamento de imagens desativado (nao permitido no plano)');
-            }
-
-            if ($projeto->check_videos && !$permiteVideos) {
-                $ajustesProjeto['check_videos'] = false;
-                Log::warning('RastreadorController: Rastreamento de videos desativado (nao permitido no plano)');
-            }
-
-            if (!$permiteOpcoesAvancadas) {
-                if ($projeto->check_news) {
-                    $ajustesProjeto['check_news'] = false;
-                }
-
-                if ($projeto->check_mobile) {
-                    $ajustesProjeto['check_mobile'] = false;
-                }
-
-                if (!empty($projeto->exclude_patterns)) {
-                    $ajustesProjeto['exclude_patterns'] = null;
-                }
-
-                if (!empty($projeto->crawl_policy_id)) {
-                    $ajustesProjeto['crawl_policy_id'] = null;
-                }
-
-                if (($projeto->compress_output ?? true) === false) {
-                    $ajustesProjeto['compress_output'] = true;
-                }
-
-                if (($projeto->enable_cache ?? true) === false) {
-                    $ajustesProjeto['enable_cache'] = true;
-                }
-            } else {
-                if ($projeto->check_news && !$permiteNoticias) {
-                    $ajustesProjeto['check_news'] = false;
-                }
-
-                if ($projeto->check_mobile && !$permiteMobile) {
-                    $ajustesProjeto['check_mobile'] = false;
-                }
-
-                if (!empty($projeto->exclude_patterns) && !$permitePadroesExclusao) {
-                    $ajustesProjeto['exclude_patterns'] = null;
-                }
-
-                if (!empty($projeto->crawl_policy_id) && !$permitePoliticasCrawl) {
-                    $ajustesProjeto['crawl_policy_id'] = null;
-                }
-
-                if (($projeto->compress_output ?? true) === false && !$permiteCompactacao) {
-                    $ajustesProjeto['compress_output'] = true;
-                }
-
-                if (($projeto->enable_cache ?? true) === false && !$permiteCacheCrawler) {
-                    $ajustesProjeto['enable_cache'] = true;
-                }
-            }
-
-            if (!empty($ajustesProjeto)) {
-                $projeto->update($ajustesProjeto);
-                $projeto->refresh();
-            }
-
-            $externalJobId = $this->sitemapService->startJob($projeto, $limiteEfetivo);
-
-            if (!$externalJobId) {
+            if (!$resultado['success']) {
                 return response()->json(['message' => 'Falha ao iniciar o servico de crawler. Tente novamente.'], 500);
             }
 
-            $projeto->tarefasSitemap()->create([
-                'external_job_id' => $externalJobId,
-                'status' => 'queued',
-                'started_at' => now(),
-                'message' => 'Job criado e aguardando processamento.',
-            ]);
-
             return response()->json([
                 'message' => 'Rastreamento iniciado!',
-                'job_id' => $externalJobId,
+                'job_id' => $resultado['job_id'],
                 'status' => 'queued',
             ], 201);
         } catch (\Exception $e) {
@@ -255,7 +173,7 @@ class RastreadorController extends Controller
             abort(403);
         }
 
-        $jobAtivo = $this->findActiveJob($projeto);
+        $jobAtivo = $this->execucaoRastreamento->localizarJobAtivo($projeto);
 
         if (!$jobAtivo) {
             return response()->json([
@@ -383,6 +301,8 @@ class RastreadorController extends Controller
             $seoBilingue = $this->relatorioSeoBilingue->montarParaProjeto($projeto);
         }
 
+        $projeto->refresh();
+
         return response()->json([
             'external_job_id' => $ultimoJob->external_job_id,
             'status' => $ultimoJob->status,
@@ -402,6 +322,7 @@ class RastreadorController extends Controller
             'queue_size' => $statusData['queue_size'] ?? 0,
             'started_at' => $ultimoJob->started_at?->toISOString(),
             'completed_at' => $ultimoJob->completed_at?->toISOString(),
+            'next_scheduled_crawl_at' => $projeto->next_scheduled_crawl_at?->toISOString(),
             'seo_bilingue' => $seoBilingue,
         ]);
     }

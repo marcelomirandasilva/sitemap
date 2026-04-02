@@ -234,6 +234,7 @@ CREATE TABLE `projects` (
   `enable_cache` tinyint(1) NOT NULL DEFAULT '1',
   `frequency` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'manual',
   `last_crawled_at` timestamp NULL DEFAULT NULL,
+  `next_scheduled_crawl_at` timestamp NULL DEFAULT NULL,
   `status` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'active',
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
@@ -477,3 +478,4 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (28,'2026_03_31_103
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (29,'2026_04_02_101500_add_advanced_crawler_fields_to_projects_table',16);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (30,'2026_04_02_114500_add_sellable_crawler_features_to_plans_table',17);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (31,'2026_04_02_143000_normalize_plan_feature_hierarchy',18);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (32,'2026_04_02_160000_add_next_scheduled_crawl_at_to_projects_table',19);

@@ -308,6 +308,26 @@ const formatarDataHora = (value) => {
     });
 };
 
+const proximoRastreamentoDescricao = computed(() => {
+    const frequencia = props.projeto.frequency || 'manual';
+
+    if (frequencia === 'manual') {
+        return t('project.next_scheduled_run_disabled');
+    }
+
+    const proximo = props.projeto.next_scheduled_crawl_at;
+
+    if (!proximo) {
+        return t('project.next_scheduled_run_pending');
+    }
+
+    if (new Date(proximo).getTime() <= Date.now()) {
+        return t('project.next_scheduled_run_due');
+    }
+
+    return formatarDataHora(proximo);
+});
+
 const formatarDuracaoJob = (job) => {
     if (!job?.started_at) return '-';
 
@@ -375,6 +395,10 @@ const buscarDetalhesJob = async () => {
 
         if (data.preview_urls) {
             listaUrls.value = data.preview_urls;
+        }
+
+        if (data.next_scheduled_crawl_at !== undefined) {
+            props.projeto.next_scheduled_crawl_at = data.next_scheduled_crawl_at;
         }
 
         if (data.seo_bilingue) {
@@ -918,19 +942,24 @@ const salvarConfiguracoes = () => {
         enable_cache: configForm.enable_cache,
     }, {
         preserveScroll: true,
-        onSuccess: () => {
-            props.projeto.frequency = configForm.frequency;
-            props.projeto.max_pages = configForm.max_pages;
-            props.projeto.max_depth = configForm.max_depth;
-            props.projeto.max_concurrent_requests = configForm.max_concurrent_requests;
-            props.projeto.delay_between_requests = configForm.delay_between_requests;
-            props.projeto.user_agent_custom = configForm.user_agent_custom;
-            props.projeto.check_news = configForm.check_news;
-            props.projeto.check_mobile = configForm.check_mobile;
-            props.projeto.exclude_patterns = normalizarPadroesExclusao();
-            props.projeto.crawl_policy_id = configForm.crawl_policy_id || null;
-            props.projeto.compress_output = configForm.compress_output;
-            props.projeto.enable_cache = configForm.enable_cache;
+        onSuccess: (page) => {
+            const projetoAtualizado = page?.props?.projeto ?? {};
+
+            props.projeto.frequency = projetoAtualizado.frequency || configForm.frequency;
+            props.projeto.max_pages = projetoAtualizado.max_pages ?? configForm.max_pages;
+            props.projeto.max_depth = projetoAtualizado.max_depth ?? configForm.max_depth;
+            props.projeto.max_concurrent_requests = projetoAtualizado.max_concurrent_requests ?? configForm.max_concurrent_requests;
+            props.projeto.delay_between_requests = projetoAtualizado.delay_between_requests ?? configForm.delay_between_requests;
+            props.projeto.user_agent_custom = projetoAtualizado.user_agent_custom ?? configForm.user_agent_custom;
+            props.projeto.check_news = projetoAtualizado.check_news ?? configForm.check_news;
+            props.projeto.check_mobile = projetoAtualizado.check_mobile ?? configForm.check_mobile;
+            props.projeto.exclude_patterns = projetoAtualizado.exclude_patterns ?? normalizarPadroesExclusao();
+            props.projeto.crawl_policy_id = projetoAtualizado.crawl_policy_id ?? (configForm.crawl_policy_id || null);
+            props.projeto.compress_output = projetoAtualizado.compress_output ?? configForm.compress_output;
+            props.projeto.enable_cache = projetoAtualizado.enable_cache ?? configForm.enable_cache;
+            props.projeto.next_scheduled_crawl_at = projetoAtualizado.next_scheduled_crawl_at ?? null;
+
+            configForm.frequency = props.projeto.frequency;
 
             Swal.fire({
                 title: t('project.settings_saved'),
@@ -1619,6 +1648,10 @@ const toggleFeature = (feature) => {
                                                 </option>
                                             </select>
                                             <p class="mt-2 text-xs text-gray-500">{{ $t('project.field_frequency_help') }}</p>
+                                            <div class="mt-3 rounded-md border border-primary-100 bg-primary-50 px-4 py-3">
+                                                <div class="text-[11px] font-bold uppercase tracking-wide text-primary-700">{{ $t('project.next_scheduled_run_label') }}</div>
+                                                <div class="mt-1 text-sm font-medium text-primary-900">{{ proximoRastreamentoDescricao }}</div>
+                                            </div>
                                         </div>
 
                                         <div>

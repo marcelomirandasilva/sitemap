@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Projeto;
+use App\Services\ExecucaoRastreamentoService;
+use App\Services\FrequenciaRastreamentoService;
 use App\Services\RelatorioSeoBilingueService;
 use App\Services\SitemapGeneratorService;
 use Illuminate\Http\Request;
@@ -14,49 +16,20 @@ class ProjetoController extends Controller
 {
     protected $sitemapService;
     protected $relatorioSeoBilingue;
+    protected $frequenciaRastreamento;
+    protected $execucaoRastreamento;
 
     public function __construct(
         SitemapGeneratorService $sitemapService,
-        RelatorioSeoBilingueService $relatorioSeoBilingue
+        RelatorioSeoBilingueService $relatorioSeoBilingue,
+        FrequenciaRastreamentoService $frequenciaRastreamento,
+        ExecucaoRastreamentoService $execucaoRastreamento
     )
     {
         $this->sitemapService = $sitemapService;
         $this->relatorioSeoBilingue = $relatorioSeoBilingue;
-    }
-
-    protected function normalizePlanFrequency(?string $frequency): string
-    {
-        $normalized = mb_strtolower(trim((string) $frequency));
-
-        return match (true) {
-            str_contains($normalized, 'manual') => 'manual',
-            str_contains($normalized, 'di') => 'diario',
-            str_contains($normalized, 'seman') => 'semanal',
-            str_contains($normalized, 'quinzen') => 'quinzenal',
-            str_contains($normalized, 'mens') => 'mensal',
-            str_contains($normalized, 'anual') => 'anual',
-            default => 'manual',
-        };
-    }
-
-    protected function allowedFrequenciesForPlan(?string $planFrequency): array
-    {
-        $levels = [
-            'manual' => 0,
-            'anual' => 1,
-            'mensal' => 2,
-            'quinzenal' => 3,
-            'semanal' => 4,
-            'diario' => 5,
-        ];
-
-        $displayOrder = ['manual', 'diario', 'semanal', 'quinzenal', 'mensal', 'anual'];
-        $normalizedPlanFrequency = $this->normalizePlanFrequency($planFrequency);
-        $planLevel = $levels[$normalizedPlanFrequency] ?? 0;
-
-        return array_values(array_filter($displayOrder, function ($value) use ($levels, $planLevel) {
-            return ($levels[$value] ?? 0) <= $planLevel || $value === 'manual';
-        }));
+        $this->frequenciaRastreamento = $frequenciaRastreamento;
+        $this->execucaoRastreamento = $execucaoRastreamento;
     }
 
     protected function buildProjectFeatures($usuario): array
@@ -74,8 +47,8 @@ class ProjetoController extends Controller
             'permite_padroes_exclusao' => $plano ? (bool) ($plano->has_advanced_features && $plano->permite_padroes_exclusao) : false,
             'permite_politicas_crawl' => $plano ? (bool) ($plano->has_advanced_features && $plano->permite_politicas_crawl) : false,
             'plan_max_pages' => $plano?->max_pages ?? 500,
-            'plan_update_frequency' => $this->normalizePlanFrequency($plano?->update_frequency),
-            'allowed_frequencies' => $this->allowedFrequenciesForPlan($plano?->update_frequency),
+            'plan_update_frequency' => $this->frequenciaRastreamento->normalizarFrequencia($plano?->update_frequency),
+            'allowed_frequencies' => $this->frequenciaRastreamento->frequenciasPermitidasParaPlano($plano?->update_frequency),
             'max_depth_limit' => 10,
             'max_concurrent_requests_limit' => 10,
             'delay_between_requests_min' => 0,
@@ -140,20 +113,15 @@ class ProjetoController extends Controller
         ]);
 
         $projeto->refresh();
-        $limitePlano = $planoEfetivo?->max_pages ?? 500;
-        $limiteEfetivo = min($projeto->max_pages ?? $limitePlano, $limitePlano);
 
         try {
-            $externalJobId = $this->sitemapService->startJob($projeto, $limiteEfetivo);
+            $resultado = $this->execucaoRastreamento->iniciar(
+                $projeto,
+                'Job criado e aguardando processamento.'
+            );
 
-            if ($externalJobId) {
-                $projeto->tarefasSitemap()->create([
-                    'external_job_id' => $externalJobId,
-                    'status' => 'queued',
-                    'started_at' => now(),
-                ]);
-            } else {
-                Log::warning("Falha ao iniciar crawler no startJob para o projeto {$projeto->id}");
+            if (!$resultado['success']) {
+                Log::warning("Falha ao iniciar crawler na criacao do projeto {$projeto->id}", $resultado);
             }
         } catch (\Exception $e) {
             Log::error('Erro ao iniciar crawler na criacao: ' . $e->getMessage());
@@ -177,6 +145,9 @@ class ProjetoController extends Controller
         $ultimoJob = $jobHistory->first();
 
         $usuario = auth()->user();
+        $planoEfetivo = $usuario->planoEfetivo();
+        $projeto = $this->frequenciaRastreamento->sincronizarFrequenciaProjeto($projeto, $planoEfetivo);
+        $projeto = $this->frequenciaRastreamento->garantirProximoRastreamento($projeto, $planoEfetivo);
         $searchConnections = $usuario->searchEngineConnections()->get()->keyBy('provider');
         $presetsPoliticaCrawl = $this->sitemapService->listCrawlPolicyPresets($usuario->id);
         $opcoesPoliticaCrawl = $this->sitemapService->getCrawlPolicyOptions($usuario->id);
@@ -346,7 +317,16 @@ class ProjetoController extends Controller
             $validated['bing_site_url'] = trim((string) ($validated['bing_site_url'] ?? '')) ?: null;
         }
 
+        $frequenciaAlterada = array_key_exists('frequency', $validated);
+
         $projeto->update($validated);
+        $projeto->refresh();
+
+        if ($frequenciaAlterada) {
+            $this->frequenciaRastreamento->atualizarProximoRastreamento($projeto, null, $planoEfetivo);
+        } else {
+            $this->frequenciaRastreamento->garantirProximoRastreamento($projeto, $planoEfetivo);
+        }
 
         return Redirect::back()->with('success', 'Configuracoes atualizadas!');
     }

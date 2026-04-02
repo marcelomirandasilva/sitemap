@@ -35,6 +35,7 @@ class Projeto extends Model
         'compress_output',
         'enable_cache',
         'last_crawled_at',
+        'next_scheduled_crawl_at',
     ];
 
     protected $casts = [
@@ -46,6 +47,7 @@ class Projeto extends Model
         'enable_cache' => 'boolean',
         'exclude_patterns' => 'array',
         'last_crawled_at' => 'datetime',
+        'next_scheduled_crawl_at' => 'datetime',
         'max_depth' => 'integer',
         'max_pages' => 'integer',
     ];

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Jobs\ProcessSitemapArtifactsJob;
 use App\Models\TarefaSitemap;
+use App\Services\FrequenciaRastreamentoService;
 use App\Services\SitemapGeneratorService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -17,7 +18,10 @@ use Illuminate\Support\Facades\Log;
  */
 class WebhookSitemapController extends Controller
 {
-    public function __construct(protected SitemapGeneratorService $sitemapService)
+    public function __construct(
+        protected SitemapGeneratorService $sitemapService,
+        protected FrequenciaRastreamentoService $frequenciaRastreamento
+    )
     {
     }
 
@@ -102,9 +106,23 @@ class WebhookSitemapController extends Controller
             $job->projeto->update([
                 'last_crawled_at' => now(),
                 'status' => 'active',
+                'current_crawler_job_id' => $job->projeto->current_crawler_job_id === $job->external_job_id
+                    ? null
+                    : $job->projeto->current_crawler_job_id,
             ]);
 
+            $this->frequenciaRastreamento->atualizarProximoRastreamento(
+                $job->projeto->refresh(),
+                $job->completed_at ?? now(),
+                $job->projeto->user?->planoEfetivo()
+            );
             ProcessSitemapArtifactsJob::dispatch($job);
+        } elseif (in_array($resolvedStatus, ['failed', 'cancelled'], true) && $job->projeto) {
+            if ($job->projeto->current_crawler_job_id === $job->external_job_id) {
+                $job->projeto->update([
+                    'current_crawler_job_id' => null,
+                ]);
+            }
         }
 
         $this->notifyUserCallback($job, $statusData, $errorMessage);

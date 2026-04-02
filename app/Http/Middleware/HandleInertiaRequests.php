@@ -41,7 +41,7 @@ class HandleInertiaRequests extends Middleware
             'appName' => config('app.name'),
             'userProjects' => $usuario ?
                 $usuario->projetos()
-                    ->select('id', 'name', 'url', 'last_crawled_at', 'status', 'max_pages')
+                    ->select('id', 'name', 'url', 'last_crawled_at', 'next_scheduled_crawl_at', 'status', 'max_pages')
                     ->withCount('paginas')
                     ->orderBy('updated_at', 'desc')
                     ->take(10)
@@ -52,6 +52,7 @@ class HandleInertiaRequests extends Middleware
                             'name' => $project->name,
                             'url' => str_replace(['http://', 'https://'], '', rtrim($project->url, '/')),
                             'last_crawled_at' => $project->last_crawled_at ? $project->last_crawled_at->toISOString() : null,
+                            'next_scheduled_crawl_at' => $project->next_scheduled_crawl_at ? $project->next_scheduled_crawl_at->toISOString() : null,
                             'pages_count' => $project->paginas_count,
                             'status' => $project->status,
                             'plan_name' => $planoEfetivo?->name ?? 'Free',
