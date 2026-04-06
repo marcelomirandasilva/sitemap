@@ -127,20 +127,21 @@ class SitemapGeneratorService
                     } elseif (isset($data['result'])) {
                         $result = $data['result'];
                         $map = [
-                            'main_sitemap_path' => ['name' => 'sitemap.xml', 'type' => 'main'],
-                            'image_sitemap_path' => ['name' => 'sitemap_images.xml', 'type' => 'images'],
-                            'video_sitemap_path' => ['name' => 'sitemap_videos.xml', 'type' => 'videos'],
-                            'news_sitemap_path' => ['name' => 'sitemap_news.xml', 'type' => 'news'],
-                            'mobile_sitemap_path' => ['name' => 'sitemap_mobile.xml', 'type' => 'mobile'],
-                            'rss_path' => ['name' => 'rss.xml', 'type' => 'rss'],
+                            'main_sitemap_path' => ['type' => 'main'],
+                            'image_sitemap_path' => ['type' => 'images'],
+                            'video_sitemap_path' => ['type' => 'videos'],
+                            'news_sitemap_path' => ['type' => 'news'],
+                            'mobile_sitemap_path' => ['type' => 'mobile'],
+                            'rss_path' => ['type' => 'rss'],
                         ];
 
                         foreach ($map as $key => $info) {
                             if (!empty($result[$key])) {
+                                $artifactName = basename($result[$key]);
                                 $finalArtifacts[] = [
-                                    'name' => $info['name'],
+                                    'name' => $artifactName,
                                     'path' => $result[$key],
-                                    'download_url' => route('downloads.sitemap', ['jobId' => $jobId, 'filename' => $info['name']]),
+                                    'download_url' => route('downloads.sitemap', ['jobId' => $jobId, 'filename' => $artifactName]),
                                     'size_bytes' => 0,
                                 ];
                             }
@@ -291,12 +292,12 @@ class SitemapGeneratorService
         $basePath = base_path('../api-sitemap/sitemaps/' . $jobId . '/');
         $filePath = $basePath . $filename;
 
-        if (!file_exists($filePath) && !file_exists($filePath . '.zip')) {
+        if (!file_exists($filePath) && !file_exists($filePath . '.zip') && !file_exists($filePath . '.gz')) {
             try {
                 $job = \App\Models\TarefaSitemap::where('external_job_id', $jobId)->first();
                 if ($job && $job->project_id) {
                     $projectPath = base_path('../api-sitemap/sitemaps/projects/' . $job->project_id . '/');
-                    if (file_exists($projectPath . $filename) || file_exists($projectPath . $filename . '.zip')) {
+                    if (file_exists($projectPath . $filename) || file_exists($projectPath . $filename . '.zip') || file_exists($projectPath . $filename . '.gz')) {
                         $filePath = $projectPath . $filename;
                     }
                 }
@@ -305,14 +306,23 @@ class SitemapGeneratorService
             }
         }
 
-        if (!file_exists($filePath) && !str_ends_with($filename, '.zip')) {
+        if (!file_exists($filePath) && !str_ends_with($filename, '.zip') && !str_ends_with($filename, '.gz')) {
             if (file_exists($filePath . '.zip')) {
                 $filePath .= '.zip';
+            } elseif (file_exists($filePath . '.gz')) {
+                $filePath .= '.gz';
             }
         }
 
         if (file_exists($filePath)) {
             $content = file_get_contents($filePath);
+
+            if (str_ends_with($filePath, '.gz')) {
+                $decoded = function_exists('gzdecode') ? @gzdecode($content) : false;
+                if ($decoded !== false) {
+                    return $decoded;
+                }
+            }
 
             if (str_ends_with($filePath, '.zip')) {
                 if (class_exists('\ZipArchive')) {
@@ -446,11 +456,15 @@ class SitemapGeneratorService
     public function getPreviewUrls(array $artifacts, ?string $jobId = null): array
     {
         $txtArtifact = collect($artifacts)->first(function ($a) {
-            return str_ends_with($a['name'], '.txt') || str_ends_with($a['name'], '.txt.zip');
+            return str_ends_with($a['name'], '.txt')
+                || str_ends_with($a['name'], '.txt.zip')
+                || str_ends_with($a['name'], '.txt.gz');
         });
 
         $xmlArtifact = collect($artifacts)->first(function ($a) {
-            return str_ends_with($a['name'], 'sitemap.xml') || str_ends_with($a['name'], 'sitemap.xml.zip');
+            return str_ends_with($a['name'], 'sitemap.xml')
+                || str_ends_with($a['name'], 'sitemap.xml.zip')
+                || str_ends_with($a['name'], 'sitemap.xml.gz');
         });
 
         $previewArtifact = $txtArtifact ?: $xmlArtifact;
@@ -469,8 +483,15 @@ class SitemapGeneratorService
             if (!$content && isset($previewArtifact['download_url'])) {
                 try {
                     $r = Http::timeout($this->timeout)->get($previewArtifact['download_url']);
-                    if ($r->successful())
+                    if ($r->successful()) {
                         $content = $r->body();
+                        if (str_ends_with($previewArtifact['name'], '.gz') && function_exists('gzdecode')) {
+                            $decoded = @gzdecode($content);
+                            if ($decoded !== false) {
+                                $content = $decoded;
+                            }
+                        }
+                    }
                 } catch (\Exception $e) {
                     Log::warning("Preview fallback HTTP falhou: " . $e->getMessage());
                 }

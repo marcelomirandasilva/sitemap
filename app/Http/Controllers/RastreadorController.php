@@ -395,8 +395,19 @@ class RastreadorController extends Controller
             }
 
             $artifacts = collect($ultimoJob->artifacts);
-            $targetArtifact = $artifacts->firstWhere(fn($artifact) => isset($artifact['name']) && str_ends_with($artifact['name'], 'sitemap.xml'))
-                ?? $artifacts->firstWhere(fn($artifact) => isset($artifact['name']) && str_ends_with($artifact['name'], '.txt'));
+            $targetArtifact = $artifacts->first(function ($artifact) {
+                return isset($artifact['name']) && (
+                    str_ends_with($artifact['name'], 'sitemap.xml')
+                    || str_ends_with($artifact['name'], 'sitemap.xml.gz')
+                    || str_ends_with($artifact['name'], 'sitemap.xml.zip')
+                );
+            }) ?? $artifacts->first(function ($artifact) {
+                return isset($artifact['name']) && (
+                    str_ends_with($artifact['name'], '.txt')
+                    || str_ends_with($artifact['name'], '.txt.gz')
+                    || str_ends_with($artifact['name'], '.txt.zip')
+                );
+            });
 
             if (!$targetArtifact) {
                 return response()->json(['data' => [], 'total' => 0]);

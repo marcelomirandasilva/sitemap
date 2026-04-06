@@ -16,6 +16,15 @@ const logoutRoute = computed(() => {
 const page = usePage();
 const quantidadeNotificacoesNaoLidas = ref(0);
 const listaNotificacoes = ref([]);
+const idiomaAtual = computed(() => {
+    const idioma = String(page.props.locale || localStorage.getItem('user_locale') || 'pt').toLowerCase();
+
+    if (idioma.startsWith('en')) {
+        return 'en';
+    }
+
+    return 'pt';
+});
 
 const sincronizarNotificacoes = (dados) => {
     quantidadeNotificacoesNaoLidas.value = dados?.nao_lidas || 0;
@@ -44,6 +53,16 @@ watch(
     { immediate: true, deep: true }
 );
 
+watch(
+    () => page.props.locale,
+    (novoIdioma) => {
+        const idioma = String(novoIdioma || 'pt').toLowerCase().startsWith('en') ? 'en' : 'pt';
+        localStorage.setItem('user_locale', idioma);
+        loadLanguageAsync(idioma);
+    },
+    { immediate: true }
+);
+
 const marcarTodasComoLidas = () => {
     router.post(route('notifications.read-all'), {}, {
         preserveScroll: true,
@@ -53,8 +72,19 @@ const marcarTodasComoLidas = () => {
 };
 
 const mudarIdioma = (lang) => {
-    localStorage.setItem('user_locale', lang);
-    loadLanguageAsync(lang);
+    if (lang === idiomaAtual.value) {
+        return;
+    }
+
+    router.put(route('preferences.locale.update'), { locale: lang }, {
+        preserveScroll: true,
+        preserveState: true,
+        only: ['locale', 'auth'],
+        onSuccess: () => {
+            localStorage.setItem('user_locale', lang);
+            loadLanguageAsync(lang);
+        },
+    });
 };
 
 const formatTimeAgo = (dateString) => {
@@ -62,13 +92,11 @@ const formatTimeAgo = (dateString) => {
     const date = new Date(dateString);
     const now = new Date();
     const diffInSeconds = Math.floor((now - date) / 1000);
-    
-    // Fallback: Default to PT-BR as requested, but uses the user's selected language seamlessly if possible
-    const lang = localStorage.getItem('user_locale') || 'pt';
-    
+    const lang = idiomaAtual.value;
+
     try {
         const rtf = new Intl.RelativeTimeFormat(lang, { numeric: 'auto', style: 'long' });
-        
+
         if (diffInSeconds < 60) return rtf.format(-Math.max(1, diffInSeconds), 'second');
         const diffInMinutes = Math.floor(diffInSeconds / 60);
         if (diffInMinutes < 60) return rtf.format(-diffInMinutes, 'minute');
@@ -86,11 +114,6 @@ const formatTimeAgo = (dateString) => {
 };
 
 onMounted(() => {
-    const savedLocale = localStorage.getItem('user_locale');
-    if (savedLocale) {
-        loadLanguageAsync(savedLocale);
-    }
-
     const usuarioId = page.props.auth?.user?.id;
 
     if (usuarioId && window.Echo) {
@@ -118,7 +141,7 @@ onUnmounted(() => {
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
             </button>
             <div class="absolute right-0 mt-2 w-64 bg-gray-50 border border-gray-200 shadow-lg rounded-sm p-3 hidden group-hover:block z-50 text-xs text-gray-500 font-normal normal-case text-center">
-                <div class="font-bold text-gray-700 border-b pb-1 mb-1 mb-1 border-gray-200">↻ {{ $t('nav.in_progress') }}</div>
+                <div class="font-bold text-gray-700 border-b pb-1 mb-1 mb-1 border-gray-200">â†» {{ $t('nav.in_progress') }}</div>
                 {{ $t('nav.no_crawls') }}
             </div>
         </div>
@@ -202,7 +225,7 @@ onUnmounted(() => {
                             </span>
                         </div>
                         <div class="text-xs text-gray-400 pl-4 whitespace-nowrap">
-                            {{ formatTimeAgo(project.last_crawled_at) || $t('freq.never') }}, {{ project.pages_count }} {{ project.pages_count === 1 ? 'página' : $t('project.pages_count').toLowerCase() }}
+                            {{ formatTimeAgo(project.last_crawled_at) || $t('freq.never') }}, {{ project.pages_count }} {{ project.pages_count === 1 ? 'pÃ¡gina' : $t('project.pages_count').toLowerCase() }}
                         </div>
                     </Link>
                 </div>
@@ -269,10 +292,10 @@ onUnmounted(() => {
         </a>
 
         <div class="flex items-center gap-2 border-l border-gray-300 pl-4 ml-2">
-            <button @click="mudarIdioma('pt')" class="hover:scale-110 transition-transform cursor-pointer opacity-80 hover:opacity-100" title="Português">
-                <img src="/flags/br.svg" alt="Português" class="w-5 h-auto shadow-sm rounded-sm" />
+            <button @click="mudarIdioma('pt')" class="hover:scale-110 transition-transform cursor-pointer hover:opacity-100" :class="idiomaAtual === 'pt' ? 'opacity-100' : 'opacity-60'" title="PortuguÃªs">
+                <img src="/flags/br.svg" alt="PortuguÃªs" class="w-5 h-auto shadow-sm rounded-sm" />
             </button>
-            <button @click="mudarIdioma('en')" class="hover:scale-110 transition-transform cursor-pointer opacity-80 hover:opacity-100" title="English">
+            <button @click="mudarIdioma('en')" class="hover:scale-110 transition-transform cursor-pointer hover:opacity-100" :class="idiomaAtual === 'en' ? 'opacity-100' : 'opacity-60'" title="English">
                 <img src="/flags/us.svg" alt="English" class="w-5 h-auto shadow-sm rounded-sm" />
             </button>
         </div>

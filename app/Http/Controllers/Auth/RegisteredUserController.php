@@ -72,6 +72,10 @@ class RegisteredUserController extends Controller
             'password' => Hash::make(Str::random(32)),
             'plan_id' => $plano ? $plano->id : null,
             'role' => 'user',
+            'ui_preferences' => [
+                'theme' => 'light',
+                'locale' => SeoPublico::normalizarLocale(app()->getLocale()),
+            ],
         ]);
 
         // 2. Cria o Primeiro Projeto automaticamente

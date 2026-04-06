@@ -1,39 +1,61 @@
 <script setup>
-import { Link } from '@inertiajs/vue3';
+import { Link, router, usePage } from '@inertiajs/vue3';
 import { loadLanguageAsync } from 'laravel-vue-i18n';
 import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
-import { onMounted } from 'vue';
+import { computed, watch } from 'vue';
+
+const page = usePage();
+const idiomaAtual = computed(() => {
+    const idioma = String(page.props.locale || localStorage.getItem('user_locale') || 'pt').toLowerCase();
+
+    if (idioma.startsWith('en')) {
+        return 'en';
+    }
+
+    return 'pt';
+});
 
 const mudarIdioma = (lang) => {
-    localStorage.setItem('user_locale', lang);
-    loadLanguageAsync(lang);
+    if (lang === idiomaAtual.value) {
+        return;
+    }
+
+    router.put(route('preferences.locale.update'), { locale: lang }, {
+        preserveScroll: true,
+        preserveState: true,
+        only: ['locale', 'auth'],
+        onSuccess: () => {
+            localStorage.setItem('user_locale', lang);
+            loadLanguageAsync(lang);
+        },
+    });
 };
 
-onMounted(() => {
-    const savedLocale = localStorage.getItem('user_locale');
-    if (savedLocale) {
-        loadLanguageAsync(savedLocale);
-    }
-});
+watch(
+    () => page.props.locale,
+    (novoIdioma) => {
+        const idioma = String(novoIdioma || 'pt').toLowerCase().startsWith('en') ? 'en' : 'pt';
+        localStorage.setItem('user_locale', idioma);
+        loadLanguageAsync(idioma);
+    },
+    { immediate: true }
+);
 </script>
 
 <template>
     <nav class="flex items-center justify-end gap-6 text-sm font-bold text-gray-500 uppercase tracking-widest">
         
-        <!-- Atalho para o App (Visão do Usuário) -->
         <Link :href="route('dashboard')" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-primary-50 text-gray-600 hover:text-primary-700 transition border border-gray-200 text-[11px]">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
             Voltar ao App
         </Link>
 
-        <!-- Status do Sistema (Placeholder Visual para Admin) -->
         <div class="flex items-center gap-2 group relative">
             <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
             <span class="text-[10px] text-gray-400">Sistema Online</span>
         </div>
 
-        <!-- Notificações Administrativas -->
         <div class="relative group">
              <Dropdown align="right" width="64">
                 <template #trigger>
@@ -43,16 +65,15 @@ onMounted(() => {
                 </template>
                 <template #content>
                     <div class="px-4 py-2 text-xs text-gray-500 font-bold border-b border-gray-100 uppercase">
-                        Alertas de Gestão
+                        Alertas de Gestao
                     </div>
                     <div class="px-4 py-6 text-center text-xs text-gray-400 lowercase font-normal italic">
-                        Sem alertas críticos no momento.
+                        Sem alertas criticos no momento.
                     </div>
                 </template>
              </Dropdown>
         </div>
 
-        <!-- Menu de Conta Staff -->
         <Dropdown align="right" width="64">
             <template #trigger>
                 <button class="flex items-center gap-2 hover:opacity-80 transition cursor-pointer bg-primary-600 text-white px-3 py-1.5 rounded-lg shadow-sm">
@@ -74,17 +95,16 @@ onMounted(() => {
 
                 <DropdownLink :href="route('admin.logout')" method="post" as="button" class="flex items-center gap-2 text-red-600 hover:text-red-700">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-                    Encerrar Sessão
+                    Encerrar Sessao
                 </DropdownLink>
             </template>
         </Dropdown>
 
-        <!-- Seletor de Idioma -->
         <div class="flex items-center gap-2 border-l border-gray-200 pl-4 ml-2">
-            <button @click="mudarIdioma('pt')" class="hover:scale-110 transition-transform cursor-pointer opacity-60 hover:opacity-100" title="Português">
-                <img src="/flags/br.svg" alt="Português" class="w-5 h-auto rounded-sm shadow-sm" />
+            <button @click="mudarIdioma('pt')" class="hover:scale-110 transition-transform cursor-pointer hover:opacity-100" :class="idiomaAtual === 'pt' ? 'opacity-100' : 'opacity-60'" title="Portugues">
+                <img src="/flags/br.svg" alt="Portugues" class="w-5 h-auto rounded-sm shadow-sm" />
             </button>
-            <button @click="mudarIdioma('en')" class="hover:scale-110 transition-transform cursor-pointer opacity-60 hover:opacity-100" title="English">
+            <button @click="mudarIdioma('en')" class="hover:scale-110 transition-transform cursor-pointer hover:opacity-100" :class="idiomaAtual === 'en' ? 'opacity-100' : 'opacity-60'" title="English">
                 <img src="/flags/us.svg" alt="English" class="w-5 h-auto rounded-sm shadow-sm" />
             </button>
         </div>

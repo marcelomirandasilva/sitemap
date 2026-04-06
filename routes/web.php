@@ -107,6 +107,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Preferências do Usuário
     Route::put('/preferences/ui', [App\Http\Controllers\PreferenciasController::class, 'updateUi'])->name('preferences.ui.update');
+    Route::put('/preferences/locale', [App\Http\Controllers\PreferenciasController::class, 'updateLocale'])->name('preferences.locale.update');
     Route::put('/preferences/notifications', [App\Http\Controllers\PreferenciasController::class, 'updateNotifications'])->name('preferences.notifications.update');
     Route::put('/preferences/billing', [App\Http\Controllers\PreferenciasController::class, 'updateBilling'])->name('preferences.billing.update');
     Route::put('/preferences/password', [App\Http\Controllers\PreferenciasController::class, 'updatePassword'])->name('preferences.password.update');

@@ -46,6 +46,12 @@ class DownloadController extends Controller
             $candidates[] = [$zipName, base_path('../api-sitemap/sitemaps/projects/' . $job->project_id . '/' . $zipName)];
         }
 
+        if (!str_ends_with($filename, '.gz')) {
+            $gzName = $filename . '.gz';
+            $candidates[] = [$gzName, base_path('../api-sitemap/sitemaps/' . $job->external_job_id . '/' . $gzName)];
+            $candidates[] = [$gzName, base_path('../api-sitemap/sitemaps/projects/' . $job->project_id . '/' . $gzName)];
+        }
+
         foreach ($candidates as [$resolvedName, $path]) {
             if (file_exists($path)) {
                 return [$resolvedName, $path];
@@ -76,6 +82,10 @@ class DownloadController extends Controller
                 $remoteCandidates[] = $filename . '.zip';
             }
 
+            if (!str_ends_with($filename, '.gz')) {
+                $remoteCandidates[] = $filename . '.gz';
+            }
+
             foreach ($remoteCandidates as $remoteFilename) {
                 $response = $this->sitemapService->getArtifactFile($jobId, $remoteFilename, auth()->id());
 
@@ -92,7 +102,9 @@ class DownloadController extends Controller
             abort(404, 'Arquivo sitemap nao encontrado no sistema ou na API.');
         }
 
-        $contentType = str_ends_with($resolvedFilename, '.zip') ? 'application/zip' : 'application/xml';
+        $contentType = str_ends_with($resolvedFilename, '.zip')
+            ? 'application/zip'
+            : (str_ends_with($resolvedFilename, '.gz') ? 'application/gzip' : 'application/xml');
 
         return Response::file($filePath, [
             'Content-Type' => $contentType,

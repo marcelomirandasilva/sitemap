@@ -15,6 +15,15 @@ import DangerButton from './Components/DangerButton.vue';
 
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+const normalizarIdioma = (idioma) => {
+    const idiomaNormalizado = String(idioma || '').toLowerCase();
+
+    if (idiomaNormalizado.startsWith('en')) {
+        return 'en';
+    }
+
+    return 'pt';
+};
 
 createInertiaApp({
     title: (title) => `${title} - ${appName}`,
@@ -24,7 +33,7 @@ createInertiaApp({
             import.meta.glob('./Pages/**/*.vue'),
         ),
     setup({ el, App, props, plugin }) {
-        const idiomaInicial = props.initialPage.props.locale || 'pt';
+        const idiomaInicial = normalizarIdioma(props.initialPage.props.locale || 'pt');
 
         return createApp({ render: () => h(App, props) })
             .use(plugin)

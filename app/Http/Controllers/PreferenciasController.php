@@ -3,29 +3,57 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
-use Illuminate\Support\Facades\Redirect;
-use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Redirect;
+use Illuminate\Validation\Rule;
+use Inertia\Inertia;
 
 class PreferenciasController extends Controller
 {
-    /**
-     * Atualiza preferências de UI (Tema, Layout, etc)
-     */
     public function updateUi(Request $request)
     {
         $validated = $request->validate([
-            // Validação aninhada para segurança
             'ui_preferences' => ['required', 'array'],
-            'ui_preferences.theme' => ['required', 'in:light,dark'],
+            'ui_preferences.theme' => ['nullable', 'in:light,dark'],
+            'ui_preferences.locale' => ['nullable', Rule::in(['pt', 'en'])],
         ]);
+
+        $preferencias = array_merge(
+            $request->user()->ui_preferences ?? [],
+            array_filter($validated['ui_preferences'], fn ($valor) => $valor !== null)
+        );
 
         $request->user()->update([
-            'ui_preferences' => array_merge($request->user()->ui_preferences ?? [], $validated['ui_preferences']),
+            'ui_preferences' => $preferencias,
         ]);
 
-        return back()->with('success', 'Preferências de interface atualizadas.');
+        if (!empty($preferencias['locale'])) {
+            $request->session()->put('app_locale', $preferencias['locale']);
+            app()->setLocale($preferencias['locale']);
+        }
+
+        return back()->with('success', 'Preferencias de interface atualizadas.');
+    }
+
+    public function updateLocale(Request $request)
+    {
+        $validated = $request->validate([
+            'locale' => ['required', Rule::in(['pt', 'en'])],
+        ]);
+
+        $preferencias = array_merge(
+            $request->user()->ui_preferences ?? [],
+            ['locale' => $validated['locale']]
+        );
+
+        $request->user()->update([
+            'ui_preferences' => $preferencias,
+        ]);
+
+        $request->session()->put('app_locale', $validated['locale']);
+        app()->setLocale($validated['locale']);
+
+        return back();
     }
 
     public function updateNotifications(Request $request)
@@ -43,12 +71,9 @@ class PreferenciasController extends Controller
             'notification_preferences' => array_merge($request->user()->notification_preferences ?? [], $validated['notification_preferences']),
         ]);
 
-        return back()->with('success', 'Preferências de notificação atualizadas.');
+        return back()->with('success', 'Preferencias de notificacao atualizadas.');
     }
 
-    /**
-     * Atualiza dados de cobrança e Sincroniza com Stripe
-     */
     public function updateBilling(Request $request)
     {
         $validated = $request->validate([
@@ -58,29 +83,19 @@ class PreferenciasController extends Controller
 
         $user = $request->user();
 
-        // 1. Atualiza banco local
         $user->update([
             'vat_number' => $validated['vat_number'],
             'billing_address' => $validated['billing_address'],
         ]);
 
-        // 2. Sincroniza endereço com Stripe (Se o usuário já for cliente lá)
         if ($user->hasStripeId()) {
             try {
-                // O Stripe aceita o endereço como um objeto. 
-                // Como você tem um campo de texto livre, vamos colocar tudo na 'line1' 
-                // ou você precisaria quebrar o endereço no frontend.
                 $user->updateStripeCustomer([
                     'address' => [
                         'line1' => $validated['billing_address'],
                     ],
-                    // Nota: Atualizar VAT ID (Tax ID) via API é mais complexo.
-                    // Geralmente recomenda-se usar o Portal do Cliente para Tax IDs.
-                    // Mas o endereço é seguro atualizar por aqui.
                 ]);
             } catch (\Exception $e) {
-                // Logar erro silenciosamente para não travar o usuário, 
-                // mas saber que falhou no Stripe
                 \Log::error('Erro ao sincronizar Stripe: ' . $e->getMessage());
             }
         }
@@ -92,7 +107,6 @@ class PreferenciasController extends Controller
     {
         return Inertia::render('Account/Preferences', [
             'user' => $request->user(),
-            // Garantir valores default caso seja null no banco
             'preferences' => array_merge(
                 ['theme' => 'light'],
                 $request->user()->ui_preferences ?? []
