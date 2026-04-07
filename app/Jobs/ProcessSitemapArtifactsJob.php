@@ -183,6 +183,7 @@ class ProcessSitemapArtifactsJob implements ShouldQueue
         try {
             $response = Http::withHeaders([
                 'X-Internal-Token' => $secret,
+                'X-User-Id' => (string) ($this->tarefa->projeto?->user_id ?? 0),
             ])
                 ->timeout($timeout)
                 ->get($url);
