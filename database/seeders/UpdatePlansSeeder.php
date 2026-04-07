@@ -3,14 +3,14 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\Plan;
+use App\Models\Plano;
 
 class UpdatePlansSeeder extends Seeder
 {
     public function run(): void
     {
         // Atualiza o plano Pro 1k (ID 2) com o ID fornecido pelo usuário
-        $plan = Plan::find(2);
+        $plan = Plano::find(2);
         if ($plan) {
             $plan->stripe_id = 'price_1SwWEOFOqAJ7yJjnWumEVcQE';
             $plan->save();
