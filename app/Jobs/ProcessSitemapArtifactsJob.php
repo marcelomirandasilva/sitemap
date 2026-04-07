@@ -11,6 +11,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class ProcessSitemapArtifactsJob implements ShouldQueue
@@ -51,28 +52,18 @@ class ProcessSitemapArtifactsJob implements ShouldQueue
 
         Log::info("Iniciando ingestao de artefatos para a tarefa {$jobId} (Projeto {$projectId})");
 
-        $basePath = base_path('../api-sitemap/sitemaps/' . $jobId . '/');
-        $projectPath = base_path('../api-sitemap/sitemaps/projects/' . $projectId . '/');
-
-        clearstatcache();
-
         $filename = 'pages_stream.jsonl.gz';
-        $path = $projectPath . 'streams/' . $filename;
+        $arquivoTemporario = false;
+        $path = $this->resolverCaminhoArquivo($jobId, $projectId, $filename);
 
-        if (!file_exists($path)) {
-            $path = $projectPath . $filename;
+        if (!$path) {
+            Log::info("Arquivo local nao encontrado. Baixando via HTTP da API para a tarefa {$jobId}...");
+            $path = $this->baixarArquivoViaHttp($jobId, $filename);
+            $arquivoTemporario = true;
         }
 
-        if (!file_exists($path)) {
-            $path = $basePath . 'streams/' . $filename;
-        }
-
-        if (!file_exists($path)) {
-            $path = $basePath . $filename;
-        }
-
-        if (!file_exists($path)) {
-            Log::warning("Arquivo de paginas nao encontrado para a tarefa {$jobId}. Caminho final: {$path}");
+        if (!$path) {
+            Log::warning("Nao foi possivel obter o arquivo de paginas para a tarefa {$jobId}. Abortando ingestao.");
             return;
         }
 
@@ -140,6 +131,77 @@ class ProcessSitemapArtifactsJob implements ShouldQueue
             DB::rollBack();
             Log::error("Erro durante a ingestao do arquivo jsonl: " . $e->getMessage());
             throw $e;
+        } finally {
+            if ($arquivoTemporario && $path && file_exists($path)) {
+                @unlink($path);
+                Log::info("Arquivo temporario removido: {$path}");
+            }
+        }
+    }
+
+    /**
+     * Tenta localizar o arquivo no disco local (útil quando Laravel e API estão na mesma máquina).
+     */
+    protected function resolverCaminhoArquivo(string $jobId, int $projectId, string $filename): ?string
+    {
+        $basePath = base_path('../api-sitemap/sitemaps/' . $jobId . '/');
+        $projectPath = base_path('../api-sitemap/sitemaps/projects/' . $projectId . '/');
+
+        clearstatcache();
+
+        $candidatos = [
+            $projectPath . 'streams/' . $filename,
+            $projectPath . $filename,
+            $basePath . 'streams/' . $filename,
+            $basePath . $filename,
+        ];
+
+        foreach ($candidatos as $candidato) {
+            if (file_exists($candidato)) {
+                Log::info("Arquivo encontrado no disco local: {$candidato}");
+                return $candidato;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Baixa o arquivo via HTTP da API Python e salva em arquivo temporário.
+     * Usa as configurações do .env: SITEMAP_API_URL, SITEMAP_INTERNAL_SECRET, SITEMAP_INGEST_DOWNLOAD_TIMEOUT.
+     */
+    protected function baixarArquivoViaHttp(string $jobId, string $filename): ?string
+    {
+        $baseUrl = config('services.sitemap_generator.base_url');
+        $secret = config('services.sitemap_generator.internal_secret', '');
+        $timeout = config('services.sitemap_generator.ingest_download_timeout', 300);
+
+        $url = "{$baseUrl}/api/v1/sitemaps/{$jobId}/artifacts/{$filename}";
+
+        Log::info("Baixando arquivo via HTTP: {$url} (timeout: {$timeout}s)");
+
+        try {
+            $response = Http::withHeaders([
+                'X-Internal-Token' => $secret,
+            ])
+                ->timeout($timeout)
+                ->get($url);
+
+            if (!$response->successful()) {
+                Log::error("Falha ao baixar arquivo via HTTP. Status: {$response->status()}. URL: {$url}");
+                return null;
+            }
+
+            $tempPath = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'sitemap_ingest_' . $jobId . '.jsonl.gz';
+            file_put_contents($tempPath, $response->body());
+
+            Log::info("Arquivo baixado com sucesso para: {$tempPath} (" . strlen($response->body()) . " bytes)");
+
+            return $tempPath;
+
+        } catch (\Exception $e) {
+            Log::error("Erro ao baixar arquivo via HTTP para job {$jobId}: " . $e->getMessage());
+            return null;
         }
     }
 
@@ -168,7 +230,7 @@ class ProcessSitemapArtifactsJob implements ShouldQueue
                 ];
             })
             ->filter()
-            ->unique(fn (array $item) => $item['lang'] . '|' . $item['url'])
+            ->unique(fn(array $item) => $item['lang'] . '|' . $item['url'])
             ->values()
             ->all();
     }
@@ -285,7 +347,7 @@ class ProcessSitemapArtifactsJob implements ShouldQueue
                     ];
                 })
                 ->filter()
-                ->unique(fn (array $item) => $item['target_url'] . '|' . ($item['anchor_text'] ?? '') . '|' . (int) $item['is_external'])
+                ->unique(fn(array $item) => $item['target_url'] . '|' . ($item['anchor_text'] ?? '') . '|' . (int) $item['is_external'])
                 ->values()
                 ->all();
         }
@@ -331,7 +393,7 @@ class ProcessSitemapArtifactsJob implements ShouldQueue
         libxml_use_internal_errors($previousState);
 
         return collect($items)
-            ->unique(fn (array $item) => $item['target_url'] . '|' . ($item['anchor_text'] ?? '') . '|' . (int) $item['is_external'])
+            ->unique(fn(array $item) => $item['target_url'] . '|' . ($item['anchor_text'] ?? '') . '|' . (int) $item['is_external'])
             ->values()
             ->all();
     }
