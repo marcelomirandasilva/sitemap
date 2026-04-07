@@ -70,12 +70,11 @@ echo ""
 # Verificação de saúde (opcional)
 # -------------------------------------
 echo "Verificando conexão com a API Python..."
-HEALTH_URL=$(php -r "
-    require 'vendor/autoload.php';
-    \$app = require 'bootstrap/app.php';
-    \$kernel = \$app->make(Illuminate\Contracts\Http\Kernel::class);
-    echo rtrim(env('SITEMAP_API_URL', env('SITEMAP_GENERATOR_BASE_URL', 'http://localhost:30000')), '/');
-" 2>/dev/null || echo "")
+HEALTH_URL=$(grep -m1 '^SITEMAP_API_URL=' "$APP_DIR/.env" | cut -d'=' -f2- | tr -d '"' | tr -d "'" | tr -d ' ')
+if [ -z "$HEALTH_URL" ]; then
+    HEALTH_URL=$(grep -m1 '^SITEMAP_GENERATOR_BASE_URL=' "$APP_DIR/.env" | cut -d'=' -f2- | tr -d '"' | tr -d "'" | tr -d ' ')
+fi
+HEALTH_URL="${HEALTH_URL%/}"
 
 if [ -n "$HEALTH_URL" ]; then
     HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 "$HEALTH_URL/api/v1/health" 2>/dev/null || echo "000")
