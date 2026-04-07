@@ -2,6 +2,45 @@
 
 Este documento resume os pontos operacionais que precisam estar ativos para o sistema funcionar corretamente em producao e em homologacao.
 
+## 0. Scripts de Inicialização Rápida
+
+Para subir todos os processos de uma vez no servidor Linux, use os scripts na pasta `scripts/`:
+
+```bash
+# Dar permissão (apenas na primeira vez)
+chmod +x scripts/start-server.sh scripts/stop-server.sh
+
+# Iniciar todos os serviços
+./scripts/start-server.sh
+
+# Parar todos os serviços
+./scripts/stop-server.sh
+```
+
+O script usa **tmux** para manter os processos vivos em background. Instale se necessário:
+```bash
+sudo apt install tmux
+```
+
+Após iniciar, verifique os processos:
+```bash
+tmux ls           # lista sessões ativas
+tmux attach -t fila      # entra na sessão da fila
+tmux attach -t scheduler # entra no scheduler
+```
+
+**Processos gerenciados pelo script:**
+
+| Sessão tmux | Comando | Finalidade |
+|---|---|---|
+| `fila` | `php artisan queue:work` | Processa jobs em background (ingestão de páginas, notificações) |
+| `scheduler` | `php artisan schedule:work` | Dispara recrawls automáticos e reconciliação de planos |
+| `reverb` *(opcional)* | `php artisan reverb:start` | WebSocket para notificações em tempo real |
+
+> **Nota sobre o Reverb:** A linha do Reverb no script está **comentada por padrão**. Se não for usar WebSockets, mantenha `BROADCAST_CONNECTION=log` no `.env`. Para ativar, descomente a linha no `start-server.sh` e configure `REVERB_HOST` com o domínio público do servidor.
+
+
+
 ## 1. Scheduler do Laravel
 
 O sistema depende do scheduler para executar rotinas periodicas. Hoje existem pelo menos estas tarefas:
