@@ -1,7 +1,7 @@
 <script setup>
 import AppLayout from '@/Layouts/AppLayout.vue';
 import { Head, useForm } from '@inertiajs/vue3';
-import { ref, computed } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import CartaoProjeto from '@/Components/Project/Card.vue';
 import ProjectList from '@/Components/Project/List.vue';
 import ModalProgressoRastreador from '@/Components/Crawler/ProgressModal.vue';
@@ -28,7 +28,20 @@ const projetoSelecionado = ref(null);
 
 const termoBusca = ref('');
 const modoVisualizacao = ref('grid'); // 'grid' | 'list'
-const filtroAtivo = ref('todos'); // 'todos' | 'gratis' | 'progresso'
+const filtroAtivo = ref('todos'); // 'todos' | 'progresso'
+
+onMounted(() => {
+    const saved = localStorage.getItem('sitemap_viewMode');
+    if (saved) {
+        modoVisualizacao.value = saved;
+    }
+});
+
+watch(modoVisualizacao, (novoModo) => {
+    if (typeof window !== 'undefined') {
+        localStorage.setItem('sitemap_viewMode', novoModo);
+    }
+});
 
 const salvarProjeto = () => {
     formulario.post(route('projects.store'), {
@@ -48,7 +61,6 @@ const salvarProjeto = () => {
 };
 
 const abrirProgresso = (projeto) => {
-    lara
     projetoSelecionado.value = projeto;
     mostrarModalProgresso.value = true;
 };
@@ -57,14 +69,14 @@ const atualizarJobProjeto = (job) => {
     if (!projetoSelecionado.value) return;
 
     // Atualiza o objeto selecionado (para o modal)
-    projetoSelecionado.value.latest_job = job;
+    projetoSelecionado.value.ultimo_job = job;
 
     // Atualiza na lista principal (para os cards)
     // Nota: Como props são readonly, o ideal seria ter uma cópia local, mas modificação profunda em Objetos dentro de Array prop funciona no Vue 3.
     // Se falhar, precisaremos clonar props.projetos para um ref local.
     const projetoNaLista = props.projetos.find(p => p.id === projetoSelecionado.value.id);
     if (projetoNaLista) {
-        projetoNaLista.latest_job = job;
+        projetoNaLista.ultimo_job = job;
     }
 };
 
@@ -72,8 +84,7 @@ const atualizarJobProjeto = (job) => {
 const contagens = computed(() => {
     return {
         todos: props.projetos.length,
-        gratis: props.projetos.filter(p => !p.has_advanced_features || p.max_pages <= 500).length,
-        progresso: props.projetos.filter(p => p.latest_job && ['running', 'queued'].includes(p.latest_job.status)).length
+        progresso: props.projetos.filter(p => p.ultimo_job && ['running', 'queued'].includes(p.ultimo_job.status)).length
     };
 });
 
@@ -81,10 +92,8 @@ const projetosFiltrados = computed(() => {
     let resultado = props.projetos;
 
     // 1. Filtro de Status/Tipo
-    if (filtroAtivo.value === 'gratis') {
-        resultado = resultado.filter(p => !p.has_advanced_features || p.max_pages <= 500);
-    } else if (filtroAtivo.value === 'progresso') {
-        resultado = resultado.filter(p => p.latest_job && ['running', 'queued'].includes(p.latest_job.status));
+    if (filtroAtivo.value === 'progresso') {
+        resultado = resultado.filter(p => p.ultimo_job && ['running', 'queued'].includes(p.ultimo_job.status));
     }
 
     // 2. Filtro de Busca
@@ -155,12 +164,6 @@ const projetosFiltrados = computed(() => {
                             {{ $t('dashboard.show_all') }} <span
                                 class="bg-gray-100 border border-gray-200 px-1.5 rounded-md text-xs ml-1">{{
                                 contagens.todos }}</span>
-                        </button>
-                        <button @click="filtroAtivo = 'gratis'"
-                            :class="['px-3 py-1 rounded transition border', filtroAtivo === 'gratis' ? 'bg-white border-gray-300 shadow-sm font-bold text-gray-800' : 'border-transparent hover:bg-gray-100']">
-                            {{ $t('dashboard.filters.free_sites') }} <span
-                                class="bg-gray-100 border border-gray-200 px-1.5 rounded-md text-xs ml-1">{{
-                                contagens.gratis }}</span>
                         </button>
                         <button @click="filtroAtivo = 'progresso'"
                             :class="['px-3 py-1 rounded transition border', filtroAtivo === 'progresso' ? 'bg-white border-gray-300 shadow-sm font-bold text-gray-800' : 'border-transparent hover:bg-gray-100']">
@@ -241,7 +244,7 @@ const projetosFiltrados = computed(() => {
 
                 <!-- Modal de Progresso -->
                 <ModalProgressoRastreador v-if="projetoSelecionado" :show="mostrarModalProgresso"
-                    :projeto="projetoSelecionado" @close="mostrarModalProgresso = false"
+                    :projeto="projetoSelecionado" :user-plan="userPlan" @close="mostrarModalProgresso = false"
                     @update:job="atualizarJobProjeto" />
 
             </div>

@@ -9,8 +9,8 @@ version: 1.0.0
 Esta skill garante que o agente utilize corretamente as ferramentas instaladas via Laragon, respeitando as particularidades do ambiente Windows.
 
 ## 1. Localização de Binários
-- **Contexto:** Os comandos devem ser executados considerando que o PHP e o MySQL estão no PATH gerenciado pelo Laragon.
-- **Verificação:** Antes de sugerir um comando `php artisan` ou `composer`, verifique se o terminal da IDE está integrado ao shell do Laragon (se disponível) para evitar conflitos de versão do PHP.
+- **Caminhos Fixos:** Utilize SEMPRE os caminhos absolutos definidos nas Diretrizes Globais (GEMINI.md) para `php`, `mysql` e `composer`.
+- **Execução:** Garanta que os comandos usem o formato `/c/laragon/...` para evitar erros de "comando não encontrado" no MINGW64.
 
 ## 2. Banco de Dados (MySQL/MariaDB)
 - **Acesso:** Utilize o `mysql` via terminal para operações rápidas. O host padrão é `127.0.0.1` ou `localhost`, geralmente com o usuário `root` e sem senha (padrão Laragon).
@@ -21,5 +21,5 @@ Esta skill garante que o agente utilize corretamente as ferramentas instaladas v
 - **Servidor:** Não utilize `php artisan serve` a menos que o Apache/Nginx do Laragon esteja desligado, para evitar conflito na porta 80.
 
 ## 4. Manipulação de Arquivos no Windows
-- **Caminhos:** Use sempre barras invertidas `\` para caminhos de diretórios ao sugerir comandos de sistema, mas mantenha `/` dentro do código PHP/Laravel conforme as PSRs.
+- **Caminhos:** No terminal (`run_command`), use sempre barras normais `/` e o formato de unidade do Git Bash (ex: `/d/www/sitemap`). NUNCA use barras invertidas `\` ou `D:\` em comandos de shell.
 - **Permissões:** No Windows/Laragon, problemas de permissão de escrita (Writable) costumam ser resolvidos verificando se a pasta `storage` não está como "Somente Leitura" nas propriedades do Windows.

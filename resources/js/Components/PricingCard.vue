@@ -1,6 +1,7 @@
 <script setup>
 import { CheckIcon } from '@heroicons/vue/20/solid';
 import { computed } from 'vue';
+import { trans as t } from 'laravel-vue-i18n';
 
 const props = defineProps({
     plan: Object,
@@ -8,7 +9,19 @@ const props = defineProps({
     billingCycle: {
         type: String,
         default: 'monthly'
-    }
+    },
+    isCancelled: Boolean,
+    onGracePeriod: Boolean,
+    endsAt: String,
+    currentPriceId: String
+});
+
+const isPendingCancellation = computed(() => {
+    if (!props.onGracePeriod) return false;
+    
+    // Este card é o plano que está sendo cancelado?
+    return props.currentPriceId === props.plan.stripe_monthly_price_id || 
+           props.currentPriceId === props.plan.stripe_yearly_price_id;
 });
 
 // Emits para o componente pai saber que o botão foi clicado
@@ -39,6 +52,48 @@ const targetStripePriceId = computed(() => {
         ? props.plan.stripe_yearly_price_id
         : props.plan.stripe_monthly_price_id;
 });
+
+const frequenciaComercial = computed(() => {
+    const chave = `pricing.plans.${props.plan.slug}.frequency`;
+    const traducao = t(chave);
+
+    if (traducao && traducao !== chave) {
+        return traducao;
+    }
+
+    return props.plan.update_frequency || 'Manual';
+});
+
+const descricaoComercial = computed(() => {
+    const chave = `pricing.plans.${props.plan.slug}.ideal_for`;
+    const traducao = t(chave);
+
+    if (traducao && traducao !== chave) {
+        return traducao;
+    }
+
+    return props.plan.ideal_for || t('subscription.ideal_for_scaling');
+});
+
+const recursosExtras = computed(() => {
+    const recursos = [];
+
+    if (props.plan.permite_imagens) recursos.push(t('subscription.features.images'));
+    if (props.plan.permite_videos) recursos.push(t('subscription.features.videos'));
+    if (props.plan.permite_noticias) recursos.push(t('subscription.features.news'));
+    if (props.plan.permite_mobile) recursos.push(t('subscription.features.mobile'));
+    if (props.plan.permite_padroes_exclusao) recursos.push(t('subscription.features.exclude_patterns'));
+    if (props.plan.permite_politicas_crawl) recursos.push(t('subscription.features.crawl_policies'));
+    if (props.plan.permite_cache_crawler) recursos.push(t('subscription.features.cache'));
+    if (props.plan.permite_compactacao) recursos.push(t('subscription.features.compression'));
+    if (props.plan.has_advanced_features) recursos.push(t('subscription.features.api'));
+
+    if (recursos.length === 0) {
+        recursos.push(t('subscription.features.basic'));
+    }
+
+    return recursos;
+});
 </script>
 
 <template>
@@ -49,9 +104,13 @@ const targetStripePriceId = computed(() => {
             plan.has_advanced_features ? 'lg:z-10 lg:scale-105 shadow-md border-primary-200' : ''
         ]"
     >
+        <div v-if="onGracePeriod && isPendingCancellation" class="absolute -top-4 left-1/2 -translate-x-1/2 bg-orange-500 text-white px-4 py-1 rounded-full text-xs font-bold shadow-sm whitespace-nowrap">
+            {{ $t('subscription.pending_cancellation') }}
+        </div>
+
         <div class="mb-5">
             <h3 class="text-lg font-semibold leading-8 text-gray-900">{{ plan.name }}</h3>
-            <p class="mt-4 text-base leading-6 text-gray-600">{{ plan.ideal_for || $t('subscription.ideal_for_scaling') }}</p>
+            <p class="mt-4 text-base leading-6 text-gray-600">{{ descricaoComercial }}</p>
             
             <p class="mt-6 flex items-baseline gap-x-1">
                 <span class="text-4xl font-bold tracking-tight text-gray-900">
@@ -62,15 +121,18 @@ const targetStripePriceId = computed(() => {
                 </span>
             </p>
             
-            <p v-if="billingCycle === 'yearly'" class="mt-1 text-xs text-green-600 font-semibold">
-                Pagamento único de {{ formatCurrency(displayPrice) }}
+            <p v-if="billingCycle === 'yearly' && (plan.stripe_monthly_price_id || plan.stripe_yearly_price_id)" class="mt-1 text-xs text-green-600 font-semibold">
+                {{ $t('subscription.yearly_single_payment', { amount: formatCurrency(displayPrice) }) || 'Pagamento único de ' + formatCurrency(displayPrice) }}
+            </p>
+            <p v-if="onGracePeriod && isPendingCancellation" class="mt-1 text-xs text-orange-600 font-semibold">
+                {{ $t('subscription.expires_on', { date: endsAt }) }}
             </p>
         </div>
         
         <ul role="list" class="mt-8 space-y-3 text-sm leading-6 text-gray-600 flex-1">
             <li class="flex gap-x-3">
                 <CheckIcon class="h-6 w-5 flex-none text-primary-600" aria-hidden="true" />
-                Atualização: {{ plan.update_frequency || 'Manual' }}
+                {{ $t('pricing.table.update') }}: {{ frequenciaComercial }}
             </li>
             <li class="flex gap-x-3">
                 <CheckIcon class="h-6 w-5 flex-none text-primary-600" aria-hidden="true" />
@@ -84,18 +146,18 @@ const targetStripePriceId = computed(() => {
                 <CheckIcon class="h-6 w-5 flex-none text-primary-600" aria-hidden="true" />
                 {{ $t('subscription.features.advanced') }}
             </li>
-             <li v-if="plan.has_advanced_features" class="flex gap-x-3">
+            <li v-for="recurso in recursosExtras" :key="recurso" class="flex gap-x-3">
                 <CheckIcon class="h-6 w-5 flex-none text-primary-600" aria-hidden="true" />
-                {{ $t('subscription.features.api') }}
+                {{ recurso }}
             </li>
         </ul>
 
         <button 
-            v-if="targetStripePriceId && !active"
+            v-if="(!targetStripePriceId || targetStripePriceId) && !active && !isPendingCancellation"
             @click="emit('subscribe')"
             class="mt-8 block w-full rounded-md px-3 py-2 text-center text-sm font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 bg-primary-50 text-primary-600 hover:bg-primary-100 transition-colors cursor-pointer"
         >
-            {{ $t('subscription.subscribe_now') }}
+            {{ $t('subscription.select_plan') }}
         </button>
         
         <button 
@@ -105,10 +167,10 @@ const targetStripePriceId = computed(() => {
             :class="[
                 active 
                     ? 'bg-primary-600 text-white' 
-                    : 'bg-gray-100 text-gray-400'
+                    : (isPendingCancellation ? 'bg-orange-100 text-orange-700' : 'bg-gray-100 text-gray-400')
             ]"
         >
-            {{ active ? $t('subscription.current_plan') : $t('subscription.available') }}
+            {{ active ? (isPendingCancellation ? $t('subscription.current_plan_cancelled') : $t('subscription.current_plan')) : (isPendingCancellation ? $t('subscription.cancelled_status') : $t('subscription.available')) }}
         </button>
     </div>
 </template>

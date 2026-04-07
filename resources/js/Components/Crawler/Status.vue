@@ -16,6 +16,10 @@ const props = defineProps({
     simple: {
         type: Boolean,
         default: false
+    },
+    actionOnly: {
+        type: Boolean,
+        default: false
     }
 });
 
@@ -58,12 +62,28 @@ const mensagemErroSanitizada = computed(() => {
     return msg || t('crawler.error_unknown') || 'Erro desconhecido.';
 });
 
+const rotuloAcao = computed(() => {
+    if (iniciando.value) {
+        return t('crawler.starting');
+    }
+
+    if (tarefa.value && ['queued', 'running'].includes(tarefa.value.status)) {
+        return t('crawler.processing');
+    }
+
+    if (tarefa.value && ['completed', 'failed', 'cancelled'].includes(tarefa.value.status)) {
+        return t('project.recrawl');
+    }
+
+    return t('crawler.start_button');
+});
+
 const iniciarRastreador = async () => {
     if (iniciando.value) return;
     
     iniciando.value = true;
     try {
-        const res = await axios.post(route('crawler.store', props.projeto.id));
+        const res = await axios.post(route('projects.crawl', props.projeto.id));
         
         // Captura o ID do novo job
         const newJobId = res.data.external_job_id || res.data.job_id;
@@ -94,7 +114,7 @@ const agendarProximaBusca = () => {
 
 const buscarStatus = async () => {
     try {
-        const resposta = await axios.get(route('crawler.show', props.projeto.id) + '?t=' + new Date().getTime());
+        const resposta = await axios.get(route('projects.status', props.projeto.id) + '?t=' + new Date().getTime());
         const jobRecebido = resposta.data;
 
         // VALIDAÇÃO DE CORRIDA:
@@ -174,25 +194,24 @@ onUnmounted(() => {
 
     <div v-else class="w-full">
         <div class="flex items-center justify-between mb-3">
-            <div class="flex items-center gap-2">
+            <div v-if="!actionOnly" class="flex items-center gap-2">
                 <span v-if="tarefa" :class="['w-2 h-2 rounded-full', corStatusPonto]"></span>
                 <span class="text-xs font-semibold uppercase tracking-wide text-gray-600">
                     {{ rotuloStatus }}
                 </span>
             </div>
-           <PrimaryButton 
+            <div v-else></div> <!-- Placeholder para flex spread -->
+            <PrimaryButton 
                 @click="iniciarRastreador"
                 :processing="iniciando"
                 :disabled="tarefa && ['queued', 'running'].includes(tarefa.status)"
                 class="!px-3 !py-1.5 !text-[11px]" 
             >
-                <span v-if="iniciando">{{ $t('crawler.starting') }}</span>
-                <span v-else-if="tarefa && ['queued', 'running'].includes(tarefa.status)">{{ $t('crawler.processing') }}</span>
-                <span v-else>{{ $t('crawler.resume_button') }}</span>
+                <span>{{ rotuloAcao }}</span>
             </PrimaryButton>
         </div>
 
-        <div v-if="tarefa">
+        <div v-if="tarefa && !actionOnly">
             <!-- Barra de Progresso Cleaner -->
             <div v-if="['running', 'queued'].includes(tarefa.status)" class="w-full bg-gray-100 rounded-full h-1.5 mt-2 mb-1 overflow-hidden">
                 <div 

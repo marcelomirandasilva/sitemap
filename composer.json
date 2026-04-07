@@ -3,21 +3,19 @@
     "name": "laravel/laravel",
     "type": "project",
     "description": "The skeleton application for the Laravel framework.",
-    "keywords": [
-        "laravel",
-        "framework"
-    ],
+    "keywords": ["laravel", "framework"],
     "license": "MIT",
     "require": {
         "php": "^8.2",
+        "fakerphp/faker": "^1.23",
         "inertiajs/inertia-laravel": "^2.0",
         "laravel/cashier": "^16.2",
         "laravel/framework": "^12.0",
+        "laravel/reverb": "^1.0",
         "laravel/sanctum": "^4.0",
         "laravel/socialite": "^5.24",
         "laravel/tinker": "^2.10.1",
-        "tightenco/ziggy": "^2.0",
-        "fakerphp/faker": "^1.23"
+        "tightenco/ziggy": "^2.0"
     },
     "require-dev": {
         "laravel/breeze": "^2.3",
@@ -51,7 +49,7 @@
         ],
         "dev": [
             "Composer\\Config::disableProcessTimeout",
-            "npx concurrently -c \"#93c5fd,#c4b5fd,#fb7185,#fdba74\" \"php artisan serve\" \"php artisan queue:listen --tries=1\" \"php artisan pail --timeout=0\" \"npm run dev\" --names=server,queue,logs,vite --kill-others"
+            "npx concurrently -c \"#93c5fd,#c4b5fd,#a7f3d0,#fb7185,#fdba74\" \"php artisan serve\" \"php artisan queue:listen --tries=1\" \"php artisan reverb:start --host=0.0.0.0 --port=8080\" \"php artisan pail --timeout=0\" \"npm run dev\" --names=server,queue,reverb,logs,vite --kill-others"
         ],
         "dev:db": [
             "php artisan migrate",
@@ -92,9 +90,13 @@
         "optimize-autoloader": true,
         "preferred-install": "dist",
         "sort-packages": true,
+        "platform-check": false,
         "allow-plugins": {
             "pestphp/pest-plugin": true,
             "php-http/discovery": true
+        },
+        "audit": {
+            "block-insecure": false
         }
     },
     "minimum-stability": "stable",

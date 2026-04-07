@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -29,6 +30,11 @@ class RegistrationTest extends TestCase
         ]);
 
         $this->assertAuthenticated();
-        $response->assertRedirect(route('dashboard', absolute: false));
+
+        $usuario = User::where('email', 'test@example.com')->firstOrFail();
+        $projeto = $usuario->projetos()->first();
+
+        $this->assertNotNull($projeto);
+        $response->assertRedirect(route('projects.show', $projeto));
     }
 }

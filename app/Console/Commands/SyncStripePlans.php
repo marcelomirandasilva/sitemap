@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use App\Models\Plan;
+use App\Models\Plano;
 use Stripe\Stripe;
 use Stripe\Product;
 use Stripe\Price;
@@ -34,7 +34,7 @@ class SyncStripePlans extends Command
         // Configura a chave da API
         Stripe::setApiKey(config('services.stripe.secret'));
 
-        $plans = Plan::all();
+        $plans = Plano::all();
 
         foreach ($plans as $plan) {
             $this->info("Processando plano '{$plan->name}'...");

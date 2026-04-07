@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\CentralNotificacoesService;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -29,15 +30,49 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $usuario = $request->user();
+        $planoEfetivo = $usuario ? $usuario->planoEfetivo() : null;
+        $centralNotificacoes = app(CentralNotificacoesService::class);
+
         return [
             ...parent::share($request),
             'auth' => [
-                'user' => $request->user(),
+                'user' => $usuario,
             ],
+            'locale' => app()->getLocale(),
             'appName' => config('app.name'),
+            'userProjects' => $usuario ?
+                $usuario->projetos()
+                    ->select('id', 'name', 'url', 'last_crawled_at', 'next_scheduled_crawl_at', 'status', 'max_pages')
+                    ->withCount('paginas')
+                    ->orderBy('updated_at', 'desc')
+                    ->take(10)
+                    ->get()
+                    ->map(function ($project) use ($planoEfetivo) {
+                        return [
+                            'id' => $project->id,
+                            'name' => $project->name,
+                            'url' => str_replace(['http://', 'https://'], '', rtrim($project->url, '/')),
+                            'last_crawled_at' => $project->last_crawled_at ? $project->last_crawled_at->toISOString() : null,
+                            'next_scheduled_crawl_at' => $project->next_scheduled_crawl_at ? $project->next_scheduled_crawl_at->toISOString() : null,
+                            'pages_count' => $project->paginas_count,
+                            'status' => $project->status,
+                            'plan_name' => $planoEfetivo?->name ?? 'Free',
+                        ];
+                    }) : [],
+            'userProjectsCount' => $usuario ? $usuario->projetos()->count() : 0,
             'flash' => [
                 'success' => fn() => $request->session()->get('success'),
                 'error' => fn() => $request->session()->get('error'),
+            ],
+            'notificacoes' => $usuario ? [
+                'nao_lidas' => $usuario->unreadNotifications()->count(),
+                'itens' => $centralNotificacoes->serializarColecao(
+                    $usuario->notifications()->latest()->limit(8)->get()
+                ),
+            ] : [
+                'nao_lidas' => 0,
+                'itens' => [],
             ],
         ];
     }

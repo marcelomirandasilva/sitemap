@@ -51,10 +51,13 @@ return [
     ],
 
     'sitemap_generator' => [
-        'base_url' => env('SITEMAP_GENERATOR_BASE_URL', env('PYTHON_CRAWLER_API', 'http://localhost:8000')),
-        'username' => env('SITEMAP_GENERATOR_USERNAME', 'admin'),
-        'password' => env('SITEMAP_GENERATOR_PASSWORD'),
+        'base_url' => env('SITEMAP_API_URL', env('SITEMAP_GENERATOR_BASE_URL', 'http://localhost:8000')),
+        'internal_secret' => env('SITEMAP_INTERNAL_SECRET', ''),
         'timeout' => env('SITEMAP_GENERATOR_TIMEOUT', 30),
+
+        // Legado - mantido para retrocompatibilidade com DevController/testConnection
+        'username' => env('SITEMAP_API_USERNAME', 'admin'),
+        'password' => env('SITEMAP_API_PASSWORD'),
     ],
 
 ];

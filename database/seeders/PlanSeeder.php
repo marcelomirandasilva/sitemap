@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
+use App\Models\Plano;
 use Illuminate\Database\Seeder;
-use App\Models\Plan;
 
 class PlanSeeder extends Seeder
 {
@@ -12,11 +12,7 @@ class PlanSeeder extends Seeder
      */
     public function run(): void
     {
-        // Limpar tabela antes de rodar (opcional, mas bom para garantir limpeza se não for migrate:fresh)
-        // Plan::truncate(); 
-
-        $plans = [
-            // 1. Free
+        $planos = [
             [
                 'slug' => 'free',
                 'name' => 'Free',
@@ -29,14 +25,20 @@ class PlanSeeder extends Seeder
                 'max_pages' => 500,
                 'max_projects' => 1,
                 'has_advanced_features' => false,
-                'update_frequency' => 'Manual',
-                'ideal_for' => 'Testes e sites pequenos',
+                'permite_imagens' => true,
+                'permite_videos' => true,
+                'permite_noticias' => false,
+                'permite_mobile' => false,
+                'permite_compactacao' => false,
+                'permite_cache_crawler' => false,
+                'permite_padroes_exclusao' => false,
+                'permite_politicas_crawl' => false,
+                'update_frequency' => 'manual',
+                'ideal_for' => 'Testar o servico em um unico site',
             ],
-            // 2. Solo
             [
                 'slug' => 'solo',
                 'name' => 'Solo',
-                // $5.99 -> R$ 35.90 | $50.28/yr -> R$ 301.68
                 'price_monthly_usd' => 599,
                 'price_yearly_usd' => 5028,
                 'price_monthly_brl' => 3590,
@@ -44,14 +46,20 @@ class PlanSeeder extends Seeder
                 'max_pages' => 1600,
                 'max_projects' => 3,
                 'has_advanced_features' => false,
-                'update_frequency' => 'Semanal',
-                'ideal_for' => 'Sites pequenos com atualização',
+                'permite_imagens' => true,
+                'permite_videos' => true,
+                'permite_noticias' => false,
+                'permite_mobile' => false,
+                'permite_compactacao' => false,
+                'permite_cache_crawler' => false,
+                'permite_padroes_exclusao' => false,
+                'permite_politicas_crawl' => false,
+                'update_frequency' => 'semanal',
+                'ideal_for' => 'Operar ate 3 sites com atualizacao semanal e midia',
             ],
-            // 3. Growth
             [
                 'slug' => 'growth',
                 'name' => 'Growth',
-                // $11.99 -> R$ 71.90 | $100.68/yr -> R$ 604.08
                 'price_monthly_usd' => 1199,
                 'price_yearly_usd' => 10068,
                 'price_monthly_brl' => 7190,
@@ -59,14 +67,20 @@ class PlanSeeder extends Seeder
                 'max_pages' => 16000,
                 'max_projects' => 10,
                 'has_advanced_features' => true,
-                'update_frequency' => 'Diária',
-                'ideal_for' => 'Conteúdo frequente / e-commerce',
+                'permite_imagens' => true,
+                'permite_videos' => true,
+                'permite_noticias' => true,
+                'permite_mobile' => true,
+                'permite_compactacao' => true,
+                'permite_cache_crawler' => true,
+                'permite_padroes_exclusao' => true,
+                'permite_politicas_crawl' => true,
+                'update_frequency' => 'diario',
+                'ideal_for' => 'Conteudo frequente e e-commerce em crescimento',
             ],
-            // 4. Pro
             [
                 'slug' => 'pro',
                 'name' => 'Pro',
-                // $23.99 -> R$ 143.90 | $201.48/yr -> R$ 1208.88
                 'price_monthly_usd' => 2399,
                 'price_yearly_usd' => 20148,
                 'price_monthly_brl' => 14390,
@@ -74,14 +88,20 @@ class PlanSeeder extends Seeder
                 'max_pages' => 80000,
                 'max_projects' => 25,
                 'has_advanced_features' => true,
-                'update_frequency' => 'Diária',
-                'ideal_for' => 'SEO avançado e relatórios',
+                'permite_imagens' => true,
+                'permite_videos' => true,
+                'permite_noticias' => true,
+                'permite_mobile' => true,
+                'permite_compactacao' => true,
+                'permite_cache_crawler' => true,
+                'permite_padroes_exclusao' => true,
+                'permite_politicas_crawl' => true,
+                'update_frequency' => 'diario',
+                'ideal_for' => 'SEO avancado com mais controle tecnico',
             ],
-            // 5. Scale
             [
                 'slug' => 'scale',
                 'name' => 'Scale',
-                // $47.99 -> R$ 287.90 | $403.08/yr -> R$ 2418.48
                 'price_monthly_usd' => 4799,
                 'price_yearly_usd' => 40308,
                 'price_monthly_brl' => 28790,
@@ -89,14 +109,20 @@ class PlanSeeder extends Seeder
                 'max_pages' => 320000,
                 'max_projects' => 50,
                 'has_advanced_features' => true,
-                'update_frequency' => 'Diária + delta crawl',
-                'ideal_for' => 'Agências e sites grandes',
+                'permite_imagens' => true,
+                'permite_videos' => true,
+                'permite_noticias' => true,
+                'permite_mobile' => true,
+                'permite_compactacao' => true,
+                'permite_cache_crawler' => true,
+                'permite_padroes_exclusao' => true,
+                'permite_politicas_crawl' => true,
+                'update_frequency' => 'diario',
+                'ideal_for' => 'Agencias, varios clientes e alto volume',
             ],
-            // 6. Enterprise
             [
                 'slug' => 'enterprise',
                 'name' => 'Enterprise',
-                // $149.99 -> R$ 899.90 | $1259.88/yr -> R$ 7559.28
                 'price_monthly_usd' => 14999,
                 'price_yearly_usd' => 125988,
                 'price_monthly_brl' => 89990,
@@ -104,15 +130,23 @@ class PlanSeeder extends Seeder
                 'max_pages' => 1600000,
                 'max_projects' => 100,
                 'has_advanced_features' => true,
-                'update_frequency' => 'Custom',
-                'ideal_for' => 'Portais gigantes / SLA',
+                'permite_imagens' => true,
+                'permite_videos' => true,
+                'permite_noticias' => true,
+                'permite_mobile' => true,
+                'permite_compactacao' => true,
+                'permite_cache_crawler' => true,
+                'permite_padroes_exclusao' => true,
+                'permite_politicas_crawl' => true,
+                'update_frequency' => 'manual',
+                'ideal_for' => 'Operacoes criticas, grandes portais e SLA',
             ],
         ];
 
-        foreach ($plans as $planData) {
-            Plan::updateOrCreate(
-                ['slug' => $planData['slug']],
-                $planData
+        foreach ($planos as $dadosPlano) {
+            Plano::updateOrCreate(
+                ['slug' => $dadosPlano['slug']],
+                $dadosPlano
             );
         }
     }

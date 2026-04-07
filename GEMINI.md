@@ -1,0 +1,1 @@
+- Não execute commits sem perguntar ou eu ordenar

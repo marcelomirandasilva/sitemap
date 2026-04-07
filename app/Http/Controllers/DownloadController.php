@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\TarefaSitemap;
 use App\Services\SitemapGeneratorService;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Response;
 
 class DownloadController extends Controller
@@ -15,44 +15,100 @@ class DownloadController extends Controller
         $this->sitemapService = $sitemapService;
     }
 
+    protected function authorizeJobDownload(TarefaSitemap $job): void
+    {
+        if (!$job->projeto || $job->projeto->user_id !== auth()->id()) {
+            abort(403, 'Voce nao tem permissao para acessar este arquivo.');
+        }
+    }
+
+    protected function normalizeFilename(string $filename): string
+    {
+        $normalized = basename($filename);
+
+        if ($normalized !== $filename || str_contains($normalized, '..')) {
+            abort(404, 'Arquivo invalido.');
+        }
+
+        return $normalized;
+    }
+
+    protected function resolveLocalFilePath(TarefaSitemap $job, string $filename): array
+    {
+        $candidates = [
+            [$filename, base_path('../api-sitemap/sitemaps/' . $job->external_job_id . '/' . $filename)],
+            [$filename, base_path('../api-sitemap/sitemaps/projects/' . $job->project_id . '/' . $filename)],
+        ];
+
+        if (!str_ends_with($filename, '.zip')) {
+            $zipName = $filename . '.zip';
+            $candidates[] = [$zipName, base_path('../api-sitemap/sitemaps/' . $job->external_job_id . '/' . $zipName)];
+            $candidates[] = [$zipName, base_path('../api-sitemap/sitemaps/projects/' . $job->project_id . '/' . $zipName)];
+        }
+
+        if (!str_ends_with($filename, '.gz')) {
+            $gzName = $filename . '.gz';
+            $candidates[] = [$gzName, base_path('../api-sitemap/sitemaps/' . $job->external_job_id . '/' . $gzName)];
+            $candidates[] = [$gzName, base_path('../api-sitemap/sitemaps/projects/' . $job->project_id . '/' . $gzName)];
+        }
+
+        foreach ($candidates as [$resolvedName, $path]) {
+            if (file_exists($path)) {
+                return [$resolvedName, $path];
+            }
+        }
+
+        return [$filename, null];
+    }
+
     /**
      * Proxy para download de sitemaps da API Python.
      */
     public function sitemap(string $jobId, string $filename)
     {
-        // TODO: Em produção, verificar se o usuário atual é dono do projeto vinculado ao $jobId
+        $job = TarefaSitemap::with('projeto')
+            ->where('external_job_id', $jobId)
+            ->firstOrFail();
 
-        // Caminho base para os sitemaps da API Python (assumindo estrutura irmã)
-        $basePath = base_path('../api-sitemap/sitemaps/' . $jobId . '/');
-        $filePath = $basePath . $filename;
+        $this->authorizeJobDownload($job);
 
-        // Fallback para .zip se o arquivo original não existir (comum na API Python)
-        if (!file_exists($filePath) && !str_ends_with($filename, '.zip')) {
-            if (file_exists($filePath . '.zip')) {
-                $filePath .= '.zip';
-                $filename .= '.zip';
-            }
-        }
+        $filename = $this->normalizeFilename($filename);
+        [$resolvedFilename, $filePath] = $this->resolveLocalFilePath($job, $filename);
 
-        if (!file_exists($filePath)) {
-            // Se falhar no acesso direto, tentamos um último esforço via API (caso mude o ambiente)
-            $response = $this->sitemapService->getArtifactFile($jobId, $filename);
-            if ($response && $response->successful()) {
-                $contentType = $response->header('Content-Type') ?: 'application/xml';
-                return Response::make($response->body(), 200, [
-                    'Content-Type' => $contentType,
-                    'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-                ]);
+        if (!$filePath) {
+            $remoteCandidates = [$filename];
+
+            if (!str_ends_with($filename, '.zip')) {
+                $remoteCandidates[] = $filename . '.zip';
             }
 
-            abort(404, "Arquivo sitemap não encontrado no sistema ou na API.");
+            if (!str_ends_with($filename, '.gz')) {
+                $remoteCandidates[] = $filename . '.gz';
+            }
+
+            foreach ($remoteCandidates as $remoteFilename) {
+                $response = $this->sitemapService->getArtifactFile($jobId, $remoteFilename, auth()->id());
+
+                if ($response && $response->successful()) {
+                    $contentType = $response->header('Content-Type') ?: 'application/xml';
+
+                    return Response::make($response->body(), 200, [
+                        'Content-Type' => $contentType,
+                        'Content-Disposition' => 'attachment; filename="' . $remoteFilename . '"',
+                    ]);
+                }
+            }
+
+            abort(404, 'Arquivo sitemap nao encontrado no sistema ou na API.');
         }
 
-        $contentType = str_ends_with($filename, '.zip') ? 'application/zip' : 'application/xml';
+        $contentType = str_ends_with($resolvedFilename, '.zip')
+            ? 'application/zip'
+            : (str_ends_with($resolvedFilename, '.gz') ? 'application/gzip' : 'application/xml');
 
         return Response::file($filePath, [
             'Content-Type' => $contentType,
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Content-Disposition' => 'attachment; filename="' . $resolvedFilename . '"',
         ]);
     }
 }
