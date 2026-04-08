@@ -353,6 +353,7 @@ class RastreadorController extends Controller
             $page = $request->input('page', 1);
             $perPage = $request->input('per_page', 50);
             $search = $request->input('q');
+            $reader = new \App\Services\SitemapDataReaderService();
 
             $query = Pagina::where('project_id', $projeto->id);
 
@@ -428,12 +429,24 @@ class RastreadorController extends Controller
                 }
             }
 
-            if (!$validPath) {
+            if ($validPath) {
+                $result = $reader->getPaginatedUrls($validPath, $page, $perPage, $search);
+                return response()->json($result);
+            }
+
+            $content = $this->sitemapService->getFileContent($ultimoJob->external_job_id, $targetArtifact['name']);
+
+            if (!$content) {
+                Log::warning('RastreadorController@getUrls: artefato indisponivel para fallback remoto.', [
+                    'project_id' => $projeto->id,
+                    'job_id' => $ultimoJob->external_job_id,
+                    'artifact' => $targetArtifact['name'] ?? null,
+                ]);
+
                 return response()->json(['data' => [], 'total' => 0]);
             }
 
-            $reader = new \App\Services\SitemapDataReaderService();
-            $result = $reader->getPaginatedUrls($validPath, $page, $perPage, $search);
+            $result = $reader->getPaginatedUrlsFromContent($content, $targetArtifact['name'], $page, $perPage, $search);
 
             return response()->json($result);
         } catch (\Throwable $e) {
