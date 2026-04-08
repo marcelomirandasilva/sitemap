@@ -176,7 +176,8 @@ class ProcessSitemapArtifactsJob implements ShouldQueue
         $secret = config('services.sitemap_generator.internal_secret', '');
         $timeout = config('services.sitemap_generator.ingest_download_timeout', 300);
 
-        $url = "{$baseUrl}/api/v1/sitemaps/{$jobId}/artifacts/{$filename}";
+        $requestFilename = $filename === 'pages_stream.jsonl.gz' ? 'streams/' . $filename : $filename;
+        $url = "{$baseUrl}/api/v1/sitemaps/{$jobId}/artifacts/{$requestFilename}";
 
         Log::info("Baixando arquivo via HTTP: {$url} (timeout: {$timeout}s)");
 
