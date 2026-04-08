@@ -29,6 +29,11 @@ class AdminSeeder extends Seeder
                 'email' => 'pablo@pablomurad.com',
                 'password' => 'driver#21',
             ],
+            [
+                'name' => 'Will',
+                'email' => 'will@portalidea.com.br',
+                'password' => 'driver#21',
+            ],
         ];
 
         foreach ($contasAdministrativas as $contaAdministrativa) {
