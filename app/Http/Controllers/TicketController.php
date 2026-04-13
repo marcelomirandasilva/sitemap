@@ -8,6 +8,7 @@ use App\Models\Projeto;
 use App\Models\Ticket;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class TicketController extends Controller
@@ -48,7 +49,13 @@ class TicketController extends Controller
     {
         $dados = $request->validate([
             'titulo' => ['required', 'string', 'max:255'],
-            'projeto_id' => ['nullable', 'integer', 'exists:projects,id'],
+            'projeto_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('projects', 'id')->where(function ($query) {
+                    $query->where('user_id', auth()->id());
+                }),
+            ],
             'mensagem' => ['required', 'string', 'min:10'],
             'anexos' => ['nullable', 'array', 'max:5'],
             'anexos.*' => ['file', 'mimes:jpeg,jpg,png', 'max:5120'],

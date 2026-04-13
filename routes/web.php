@@ -141,7 +141,7 @@ Route::middleware(['auth'])->group(function () {
 });
 
 // Rotas de Desenvolvimento
-Route::middleware(['auth'])->prefix('dev')->group(function () {
+Route::middleware(['auth', 'admin'])->prefix('dev')->group(function () {
     Route::get('/api-test', [App\Http\Controllers\DevController::class, 'showApiTest'])->name('dev.api-test');
     Route::post('/api-test/run', [App\Http\Controllers\DevController::class, 'runApiTest'])->name('dev.api-test.run');
 });
