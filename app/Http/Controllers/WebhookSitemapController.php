@@ -7,6 +7,7 @@ use App\Models\TarefaSitemap;
 use App\Services\CentralNotificacoesService;
 use App\Services\FrequenciaRastreamentoService;
 use App\Services\SitemapGeneratorService;
+use App\Support\ValidadorUrlExterna;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -22,7 +23,8 @@ class WebhookSitemapController extends Controller
     public function __construct(
         protected SitemapGeneratorService $sitemapService,
         protected FrequenciaRastreamentoService $frequenciaRastreamento,
-        protected CentralNotificacoesService $centralNotificacoes
+        protected CentralNotificacoesService $centralNotificacoes,
+        protected ValidadorUrlExterna $validadorUrlExterna,
     )
     {
     }
@@ -156,6 +158,18 @@ class WebhookSitemapController extends Controller
             return;
         }
 
+        $mensagemErroUrl = $this->validadorUrlExterna->mensagemErro($callbackUrl);
+
+        if ($mensagemErroUrl !== null) {
+            Log::warning('Callback do usuario ignorado por URL insegura.', [
+                'job_id' => $job->external_job_id,
+                'callback_url' => $callbackUrl,
+                'motivo' => $mensagemErroUrl,
+            ]);
+
+            return;
+        }
+
         $externalApiBase = rtrim(config('services.sitemap_generator.base_url'), '/') . '/api/v1';
         $artifacts = $this->buildExternalArtifacts($job, $statusData, $externalApiBase);
 
@@ -189,6 +203,7 @@ class WebhookSitemapController extends Controller
             $response = Http::acceptJson()
                 ->asJson()
                 ->timeout(5)
+                ->withoutRedirecting()
                 ->withHeaders([
                     'X-Sitemap-Event' => $payload['event'],
                     'X-Sitemap-Job-Id' => $job->external_job_id,

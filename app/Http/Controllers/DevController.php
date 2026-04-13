@@ -3,19 +3,21 @@
 namespace App\Http\Controllers;
 
 use App\Services\SitemapGeneratorService;
-use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class DevController extends Controller
 {
     public function showApiTest()
     {
+        abort_unless(auth()->user()?->isAdmin(), 403);
+
         return Inertia::render('Dev/ApiTest');
     }
 
     public function runApiTest(SitemapGeneratorService $service)
     {
-        // Apenas admins deveriam acessar isso em prod, mas é ambiente dev
+        abort_unless(auth()->user()?->isAdmin(), 403);
+
         return response()->json($service->testConnection());
     }
 }

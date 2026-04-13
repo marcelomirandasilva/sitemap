@@ -8,6 +8,7 @@ use App\Models\SearchEngineSubmission;
 use App\Services\CentralNotificacoesService;
 use App\Services\BingWebmasterService;
 use App\Services\GoogleSearchConsoleService;
+use App\Support\ValidadorUrlExterna;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -16,7 +17,10 @@ use Illuminate\Validation\ValidationException;
 
 class ProjectSearchEngineController extends Controller
 {
-    public function __construct(protected CentralNotificacoesService $centralNotificacoes)
+    public function __construct(
+        protected CentralNotificacoesService $centralNotificacoes,
+        protected ValidadorUrlExterna $validadorUrlExterna,
+    )
     {
     }
 
@@ -209,11 +213,48 @@ class ProjectSearchEngineController extends Controller
 
     protected function validatePublishedSitemapUrlReachable(string $sitemapUrl): void
     {
+        $this->validadorUrlExterna->validarOuFalhar($sitemapUrl, 'published_sitemap_url');
+
         try {
-            $response = Http::timeout(15)->accept('application/xml,text/xml,*/*')->head($sitemapUrl);
+            $urlAtual = $sitemapUrl;
+            $tentativas = 0;
+            $response = null;
+
+            while ($tentativas < 3) {
+                $response = Http::timeout(15)
+                    ->withoutRedirecting()
+                    ->accept('application/xml,text/xml,*/*')
+                    ->head($urlAtual);
+
+                if (in_array($response->status(), [301, 302, 303, 307, 308], true)) {
+                    $proximaUrl = $this->resolveRedirectLocation($urlAtual, $response->header('Location'));
+
+                    if (!$proximaUrl) {
+                        throw ValidationException::withMessages([
+                            'published_sitemap_url' => 'A URL publica do sitemap respondeu com redirecionamento invalido.',
+                        ]);
+                    }
+
+                    $this->validadorUrlExterna->validarOuFalhar($proximaUrl, 'published_sitemap_url');
+                    $urlAtual = $proximaUrl;
+                    $tentativas++;
+                    continue;
+                }
+
+                break;
+            }
+
+            if (!$response) {
+                throw ValidationException::withMessages([
+                    'published_sitemap_url' => 'Nao foi possivel validar a URL publica do sitemap.',
+                ]);
+            }
 
             if (in_array($response->status(), [403, 405], true) || $response->failed()) {
-                $response = Http::timeout(15)->accept('application/xml,text/xml,*/*')->get($sitemapUrl);
+                $response = Http::timeout(15)
+                    ->withoutRedirecting()
+                    ->accept('application/xml,text/xml,*/*')
+                    ->get($urlAtual);
             }
 
             if ($response->failed()) {
@@ -230,6 +271,41 @@ class ProjectSearchEngineController extends Controller
                 'published_sitemap_url' => 'Nao foi possivel acessar a URL publica do sitemap. Confirme o upload e tente novamente.',
             ]);
         }
+    }
+
+    protected function resolveRedirectLocation(string $baseUrl, ?string $location): ?string
+    {
+        if (!$location) {
+            return null;
+        }
+
+        if (filter_var($location, FILTER_VALIDATE_URL)) {
+            return $location;
+        }
+
+        $base = parse_url($baseUrl);
+
+        if (!is_array($base) || empty($base['scheme']) || empty($base['host'])) {
+            return null;
+        }
+
+        if (str_starts_with($location, '//')) {
+            return $base['scheme'] . ':' . $location;
+        }
+
+        $host = $base['scheme'] . '://' . $base['host'];
+
+        if (!empty($base['port'])) {
+            $host .= ':' . $base['port'];
+        }
+
+        if (str_starts_with($location, '/')) {
+            return $host . $location;
+        }
+
+        $pathBase = isset($base['path']) ? preg_replace('~/[^/]*$~', '/', $base['path']) : '/';
+
+        return $host . $pathBase . $location;
     }
 
     protected function ensureGooglePropertyMatchesSitemap(string $siteProperty, string $sitemapUrl): void

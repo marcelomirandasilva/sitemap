@@ -4,13 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Models\ChaveApi;
 use App\Services\SitemapGeneratorService;
+use App\Support\ValidadorUrlExterna;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class ApiController extends Controller
 {
     public function __construct(
-        protected SitemapGeneratorService $sitemapService
+        protected SitemapGeneratorService $sitemapService,
+        protected ValidadorUrlExterna $validadorUrlExterna,
     ) {
     }
 
@@ -115,6 +117,13 @@ class ApiController extends Controller
         $request->validate([
             'callback_url' => 'nullable|url|max:500',
         ]);
+
+        if ($request->filled('callback_url')) {
+            $this->validadorUrlExterna->validarOuFalhar(
+                (string) $request->callback_url,
+                'callback_url'
+            );
+        }
 
         $request->user()->update([
             'api_callback_url' => $request->callback_url,
