@@ -8,7 +8,7 @@ echo ""
 echo "=== Genmap — Parando serviços ==="
 echo ""
 
-for SESSION in fila scheduler reverb; do
+for SESSION in fila scheduler reverb stripe; do
     if tmux has-session -t "$SESSION" 2>/dev/null; then
         tmux kill-session -t "$SESSION"
         echo "  ✓ Sessão '$SESSION' encerrada."

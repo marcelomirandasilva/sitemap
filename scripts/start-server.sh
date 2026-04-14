@@ -52,10 +52,14 @@ start_tmux "fila" "php artisan queue:work --sleep=3 --tries=3 --backoff=10" "Que
 start_tmux "scheduler" "php artisan schedule:work" "Scheduler"
 
 # -------------------------------------
-# 3. Reverb (WebSocket — opcional)
-#    Comente as 3 linhas abaixo se estiver usando BROADCAST_CONNECTION=log
+# 3. Reverb (WebSocket)
 # -------------------------------------
-# start_tmux "reverb" "php artisan reverb:start --host=0.0.0.0 --port=8080" "Reverb WebSocket"
+start_tmux "reverb" "php artisan reverb:start --host=0.0.0.0 --port=8080" "Reverb WebSocket"
+
+# -------------------------------------
+# 4. Stripe Webhook Listener
+# -------------------------------------
+start_tmux "stripe" "stripe listen --forward-to http://sitemap.test/stripe/webhook" "Stripe Listener"
 
 echo ""
 echo "==================================================="
