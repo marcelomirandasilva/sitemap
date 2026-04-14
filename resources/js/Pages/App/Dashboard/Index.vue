@@ -29,6 +29,15 @@ const projetoSelecionado = ref(null);
 const termoBusca = ref('');
 const modoVisualizacao = ref('grid'); // 'grid' | 'list'
 const filtroAtivo = ref('todos'); // 'todos' | 'progresso'
+const limiteProjetos = computed(() => Number(props.userPlan?.max_projects ?? 1));
+const limiteProjetosAtingido = computed(() => limiteProjetos.value !== -1 && props.projetos.length >= limiteProjetos.value);
+const textoLimiteProjetos = computed(() => {
+    if (limiteProjetos.value === -1) {
+        return '';
+    }
+
+    return `${props.projetos.length}/${limiteProjetos.value}`;
+});
 
 onMounted(() => {
     const saved = localStorage.getItem('sitemap_viewMode');
@@ -44,6 +53,10 @@ watch(modoVisualizacao, (novoModo) => {
 });
 
 const salvarProjeto = () => {
+    if (limiteProjetosAtingido.value) {
+        return;
+    }
+
     formulario.post(route('projects.store'), {
         onSuccess: () => {
             formulario.reset();
@@ -135,13 +148,18 @@ const projetosFiltrados = computed(() => {
                 <!-- Action Bar -->
                 <div
                     class="flex flex-col md:flex-row justify-between items-center bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-6 gap-4">
-                    <PrimaryButton @click="mostrarModalAdicionar = !mostrarModalAdicionar">
+                    <PrimaryButton @click="mostrarModalAdicionar = !mostrarModalAdicionar" :disabled="limiteProjetosAtingido">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4">
                             </path>
                         </svg>
                         {{ $t('dashboard.add_another') }}
                     </PrimaryButton>
+
+                    <div class="text-sm text-gray-500 md:ml-auto">
+                        <span class="font-semibold text-gray-700">{{ $t('dashboard.project_limit_label') }}:</span>
+                        {{ textoLimiteProjetos }}
+                    </div>
 
                     <div class="relative w-full md:w-96" v-if="modoVisualizacao === 'grid'">
                         <input v-model="termoBusca" type="text" :placeholder="$t('dashboard.search_placeholder')"
@@ -195,13 +213,20 @@ const projetosFiltrados = computed(() => {
                     class="mb-8 p-6 bg-gray-50 border border-primary-100 rounded-lg animate-fade-in-down">
                     <h3 class="text-lg font-light text-gray-600 mb-4 text-center">{{ $t('dashboard.add_new_title') }}
                     </h3>
+                    <div v-if="limiteProjetosAtingido" class="mb-4 rounded-md border border-warning-500/30 bg-warning-50 px-4 py-3 text-sm text-warning-600">
+                        {{ $t('dashboard.project_limit_reached', { count: limiteProjetos, plan: userPlan?.name || 'Free' }) }}
+                    </div>
                     <form @submit.prevent="salvarProjeto" class="max-w-md mx-auto flex gap-2">
                         <input v-model="formulario.url" type="url" required placeholder="https://example.com"
-                            class="flex-1 border border-gray-300 shadow-inner px-4 py-3 text-gray-600 focus:ring-1 focus:ring-primary-400 focus:border-primary-400 rounded-md">
-                        <PrimaryButton :processing="formulario.processing" type="submit">
+                            :disabled="limiteProjetosAtingido"
+                            class="flex-1 border border-gray-300 shadow-inner px-4 py-3 text-gray-600 focus:ring-1 focus:ring-primary-400 focus:border-primary-400 rounded-md disabled:bg-gray-100 disabled:text-gray-400">
+                        <PrimaryButton :processing="formulario.processing" :disabled="limiteProjetosAtingido" type="submit">
                             {{ $t('dashboard.add_submit') }}
                         </PrimaryButton>
                     </form>
+                    <p v-if="formulario.errors.url" class="mx-auto mt-3 max-w-md text-sm text-danger-600">
+                        {{ formulario.errors.url }}
+                    </p>
                 </div>
 
                 <!-- Project Grid / List -->

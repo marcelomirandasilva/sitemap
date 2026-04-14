@@ -10,6 +10,7 @@ use App\Services\SitemapGeneratorService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class ProjetoController extends Controller
@@ -98,6 +99,17 @@ class ProjetoController extends Controller
 
         $user = $request->user();
         $planoEfetivo = $user->planoEfetivo();
+        $limiteProjetos = (int) ($planoEfetivo?->max_projects ?? 1);
+        $quantidadeProjetos = $user->projetos()->count();
+
+        if ($limiteProjetos !== -1 && $quantidadeProjetos >= $limiteProjetos) {
+            throw ValidationException::withMessages([
+                'url' => __('dashboard.project_limit_reached', [
+                    'count' => $limiteProjetos,
+                    'plan' => $planoEfetivo?->name ?? 'Free',
+                ]),
+            ]);
+        }
 
         $projeto = $user->projetos()->create([
             'name' => $name,
