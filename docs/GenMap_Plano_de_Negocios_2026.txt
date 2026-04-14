@@ -1,0 +1,755 @@
+﻿GENMAP � genmap.app
+
+Plano de
+Neg�cios
+
+Estrat�gia, Valores, Pol�ticas e Posicionamento
+
+Vers�o 1.0 � Abril 2026
+Confiado por 380.000+ propriet�rios de sites em todo o mundo.
+
+Documento confidencial � Produzido com Perplexity Computer � genmap.app/pt
+GENMAP                                               Confidencial � Abril 2026
+
+Sum�rio Executivo
+
+O GenMap � uma plataforma SaaS de gera��o, hospedagem e atualiza��o autom�tica
+de sitemaps XML, desenvolvida para atender desde criadores de conte�do
+independentes at� grandes ag�ncias de SEO e portais de alto volume. Com mais de
+380.000 propriet�rios de sites confiando na plataforma e 23 milh�es de sitemaps
+entregues ao redor do mundo, o GenMap j� validou seu produto no mercado global.
+
+Este documento consolida a vis�o estrat�gica da empresa, an�lise competitiva
+detalhada, estrutura de pre�os, valores institucionais, pol�tica de privacidade e de uso,
+e o roteiro de crescimento para os pr�ximos 3 anos.
+
+380K                23M+                       99,9  6
+  +                                             %
+
+Sites confiando no                  Sitemaps   Uptime garantido Planos dispon�veis
+       GenMap                      entregues
+                                  globalmente
+
+        1 Vis�o & Miss�o                             3
+
+        2 An�lise de Mercado                         4
+
+        3 An�lise Competitiva                        5
+
+        4 Produto & Funcionalidades                  7
+
+        5 Estrutura de Pre�os                        8
+
+        6 Estrat�gia de Go-to-Market                 9
+
+        7 Modelo de Receita                          10
+
+        8 Valores & Cultura                          11
+
+        9 Pol�tica de Privacidade                    12
+
+GenMap -- Plano de Neg�cios 2026                                                    P�g. 2
+GENMAP                                Confidencial � Abril 2026
+
+            10 Termos de Uso                   13
+            11 Roadmap 2026�2028               14
+            12 Proje��es Financeiras           15
+
+GenMap -- Plano de Neg�cios 2026      P�g. 3
+GENMAP                            Confidencial � Abril 2026
+
+1. Vis�o & Miss�o
+
+Miss�o
+
+Tornar a indexa��o t�cnica acess�vel, automatizada e confi�vel para qualquer pessoa
+que publique conte�do na web -- do blogueiro individual ao portal de not�cias de
+escala global.
+
+Vis�o
+
+Ser a infraestrutura de descoberta de conte�do mais confi�vel do mundo, garantindo
+que nenhuma p�gina relevante fique invis�vel para os mecanismos de busca.
+
+Prop�sito
+
+Acreditamos que visibilidade na internet � um direito, n�o um privil�gio t�cnico. O
+GenMap existe para eliminar a barreira entre a cria��o de conte�do e sua descoberta.
+
+Valores Fundamentais
+
+Confiabilidade acima              99,9% de uptime n�o � meta -- � compromisso.
+de tudo                           Sistemas cr�ticos exigem infraestrutura cr�tica.
+
+Simplicidade radical              Complexidade t�cnica deve ser invis�vel para o
+                                  usu�rio. A interface mais poderosa � aquela que n�o
+                                  precisa de manual.
+
+Crescimento com o                 Nossos planos escalam junto com os projetos dos
+cliente                           nossos usu�rios. Nunca cobraremos por recursos
+                                  que o cliente ainda n�o precisa.
+
+Transpar�ncia total               Pre�os claros, sem surpresas. Status de uptime
+                                  p�blico. Changelog aberto. O usu�rio sempre sabe o
+                                  que est� acontecendo.
+
+GenMap -- Plano de Neg�cios 2026                                                    P�g. 4
+GENMAP                            Confidencial � Abril 2026
+
+SEO como ci�ncia                  Decis�es de produto s�o orientadas por dados de
+Comunidade global                 rastreamento e indexa��o reais, n�o por suposi��es
+                                  de mercado.
+
+                                  Servimos sites em todos os continentes. Nossas
+                                  pol�ticas, suporte e documenta��o refletem essa
+                                  diversidade.
+
+GenMap -- Plano de Neg�cios 2026  P�g. 5
+GENMAP                                                   Confidencial � Abril 2026
+
+2. An�lise de Mercado
+
+Tamanho e Crescimento
+
+O mercado global de ferramentas para websites (incluindo geradores de sitemap,
+auditores t�cnicos de SEO e infraestrutura de indexa��o) foi avaliado em USD 1,89
+bilh�o em 2025, com proje��o de atingir USD 3,06 bilh�es at� 2032, crescendo a um
+CAGR de 7,3%.1 O segmento de ferramentas SaaS para SEO t�cnico cresce ainda mais
+rapidamente, impulsionado pelo aumento do n�mero de sites, pelas exig�ncias
+crescentes dos algoritmos do Google e pela ado��o de IA em workflows de conte�do.
+
+Drivers de Crescimento
+
+ � Aumento de 40% no n�mero de dom�nios ativos globalmente entre 2020 e 2025
+ � Algoritmos do Google Core Web Vitals e indexa��o mobile-first exigem sitemaps
+
+    precisos e atualizados
+ � Crescimento do e-commerce: cada novo produto precisa ser indexado rapidamente
+ � Expans�o de portais de not�cias digitais que dependem de News Sitemaps para
+
+    apari��o no Google Discover
+ � Ado��o crescente de IndexNow (protocolo da Microsoft/Bing) que exige integra��o
+
+    com sistemas de sitemap
+ � Migra��o de pequenas ag�ncias para ferramentas SaaS especializadas,
+
+    substituindo solu��es gen�ricas
+
+Segmentos de Mercado Endere��veis
+
+Segmento       Perfil             Necessidade Principal  Plano GenMap
+                                                         Ideal
+Criadores      Blogueiros,        Indexa��o b�sica e     Free / Solo
+Individuais    freelancers        r�pida
+                                                         Growth / Pro
+PMEs Digitais  E-commerce,        Atualiza��o di�ria
+               portais            autom�tica             Scale
+
+Ag�ncias de    Gerenciam 10+      Multi-site, API,
+SEO            clientes           relat�rios
+
+GenMap -- Plano de Neg�cios 2026                                       P�g. 6
+GENMAP                                                               Confidencial � Abril 2026
+
+Segmento      Perfil              Necessidade Principal              Plano GenMap
+                                                                     Ideal
+Grandes       Sites com 100K+     Crawl delta, SLA                   Enterprise
+Portais       p�ginas             garantido
+                                                                     Pro / Scale
+Times de SEO  Equipes internas    Controle t�cnico
+Corporativo                       avan�ado, webhooks
+
+1 Fonte: Intel Market Research -- Website Builders Market 2025-2032
+
+GenMap -- Plano de Neg�cios 2026                                                   P�g. 7
+GENMAP                                                   Confidencial � Abril 2026
+
+3. An�lise Competitiva
+
+O mercado de geradores de sitemap possui concorrentes em tr�s categorias:
+ferramentas gratuitas pontuais, plugins para CMS (especialmente WordPress) e
+plataformas SaaS dedicadas. O GenMap compete diretamente na categoria SaaS
+dedicada, onde o diferencial de localiza��o (PT-BR), precifica��o em reais e suporte
+para o mercado latino-americano representa uma vantagem competitiva significativa.
+
+PRO Sitemaps -- An�lise Detalhada do Principal
+Concorrente
+
+O PRO Sitemaps (pro-sitemaps.com) � a refer�ncia mais pr�xima ao GenMap em
+termos de proposta de valor: gera��o, hospedagem e atualiza��o autom�tica de
+sitemaps XML via SaaS. Abaixo, uma compara��o detalhada:
+
+Crit�rio             PRO Sitemaps       GenMap                Vantagem
+Pre�o inicial pago
+                     USD 4,19/m�s (~R$  R$ 25,14/m�s          PRO Site
+                     21)                (anual)               maps�
+
+Limite URLs (b�sico) 500 URLs           500 (Free) / 1.600    GenMap
+                                        (Solo)
+
+Idioma / Localiza��o Ingl�s             Portugu�s brasileiro  GenMap
+                                                              (BR)
+
+Sitemap de imagens   PRO (pago)         Todos os planos       GenMap
+
+Sitemap de v�deos    PRO (pago)         Todos os planos       GenMap
+
+Sitemap de not�cias  PRO (pago)         Growth+               Empate
+
+API & Webhooks       N�o documentado    Growth+               GenMap
+
+Pol�ticas de crawl   Configura��o       Pol�ticas reutiliz�veis GenMap
+                     avan�ada
+
+Crawl delta          N�o dispon�vel     Scale+                GenMap
+
+GenMap -- Plano de Neg�cios 2026                              P�g. 8
+GENMAP                                                                  Confidencial � Abril 2026
+
+Crit�rio            PRO Sitemaps                      GenMap                         Vantagem
+SEO Health Reports  PRO (pago)                        Em roadmap
+                                                                                     PRO
+                                                                                     Sitemaps
+
+Suporte a IndexNow  Sim                               Em roadmap                     PRO
+                                                                                     Sitemaps
+
+M�ltiplos sites     B�sico (free)                     Solo+ (pago)                   PRO
+                                                                                     Sitemaps
+
+N�mero de planos    2 (Basic / PRO)                   6 (FreeEnterprise) GenMap
+
+Uptime garantido    N�o declarado                     99,9%                          GenMap
+
+Segmenta��o por     N�o                               Sim (por perfil)               GenMap
+
+perfil
+
+� Pre�os do PRO Sitemaps em USD convertidos aproximadamente para BRL (taxa ~R$5,05). O GenMap
+opera em reais, eliminando varia��o cambial para clientes brasileiros.
+
+Outros Concorrentes do Mercado
+
+Al�m do PRO Sitemaps, o GenMap compete indiretamente com as seguintes
+ferramentas:2
+
+Ferramenta          Pre�o                             Diferen�a do GenMap
+XML-Sitemaps.com                                      Simples, sem hospedagem cont�nua
+                    Free + $49,99
+                    �nico
+
+Screaming Frog      $279/ano                          Desktop, foco em auditoria t�cnica
+                                                      completa
+
+Yoast SEO           $99/ano                           Plugin WordPress, n�o standalone
+
+Semrush Sitemap     $129/m�s                          Feature dentro de su�te maior
+Tool                (suite)
+
+DYNO Mapper         $49�$399/m�s                      Visual + XML, foco em grandes
+                                                      empresas
+
+Octopus.do          $12�$48/m�s                       Visual sitemaps, n�o t�cnico
+
+2 Fontes: Mangools Blog; Semrush Blog; Search Atlas.
+
+GenMap -- Plano de Neg�cios 2026                                                               P�g. 9
+GENMAP                            Confidencial � Abril 2026
+
+Vantagens Competitivas Sustent�veis do GenMap
+
+  �nico SaaS de sitemap com interface e pre�os nativos em portugu�s brasileiro
+  Granularidade de planos (6 tiers) que acompanha o crescimento do cliente sem
+
+    for�ar upgrades abruptos
+  Sitemap de imagens e v�deos dispon�vel desde o plano gratuito (concorrentes
+
+    cobram por isso)
+  API e webhooks dispon�veis a partir do plano Growth, habilitando integra��es com
+
+    CI/CD e CMS
+  Pol�ticas reutiliz�veis de crawl -- configura��o uma vez, aplicada em m�ltiplos
+
+    projetos
+  Crawl delta (plano Scale+) para sites de alto volume: re-rastreamento apenas das
+
+    p�ginas alteradas
+  Uptime de 99,9% declarado e monitorado publicamente
+
+GenMap -- Plano de Neg�cios 2026  P�g. 10
+GENMAP                              Confidencial � Abril 2026
+
+4. Produto & Funcionalidades
+
+O GenMap � uma plataforma web que automatiza o ciclo completo de vida de
+sitemaps XML: cria��o, hospedagem, atualiza��o peri�dica e envio aos mecanismos
+de busca. Diferente de geradores est�ticos (que produzem um arquivo para download
+manual), o GenMap mant�m o sitemap sempre atualizado e hospedado em URL fixa,
+pronta para ser referenciada no robots.txt e enviada ao Google Search Console.
+
+Tipos de Sitemap Suportados
+
+Tipo               Disponibilidade  Descri��o
+
+Sitemap XML        Todos os         Indexa��o de p�ginas, com suporte a
+Padr�o             planos           lastmod, changefreq e priority
+
+Sitemap de         Todos os         Garante que imagens apare�am no Google
+Imagens            planos           Images; inclui caption e licen�a
+
+Sitemap de V�deos  Todos os         Metadados de v�deo para indexa��o no
+                   planos           Google V�deos
+
+Sitemap de         Growth+          Publica��o acelerada no Google Discover
+Not�cias                            e Google Not�cias
+
+Sitemap Mobile     Growth+          Indica vers�es otimizadas para
+                                    dispositivos m�veis
+
+Sitemap            Growth+          Arquivos .gz para publica��o eficiente em
+Compactado                          sites de grande volume
+
+Funcionalidades T�cnicas Avan�adas
+
+Exclus�es por                     Define regras de exclus�o de URLs usando padr�es
+Padr�o e Regex                    glob ou express�es regulares. Ideal para excluir
+                                  p�ginas de administra��o, sess�es, par�metros de
+                                  rastreamento.
+
+GenMap -- Plano de Neg�cios 2026                                                    P�g. 11
+GENMAP                            Confidencial � Abril 2026
+
+Pol�ticas                         Configure uma vez e aplique em m�ltiplos projetos.
+Reutiliz�veis de                  Inclui User-Agent personalizado, delay entre
+Crawl                             requisi��es, profundidade m�xima.
+
+Recrawls com                      O sistema armazena em cache o estado anterior do
+Cache Inteligente                 site e re-rastreia apenas o diff, reduzindo tempo e
+                                  consumo de recursos.
+
+Crawl Delta (Scale+)              Re-rastreamento incremental: apenas p�ginas novas
+                                  ou alteradas desde o �ltimo crawl s�o processadas.
+                                  Essencial para sites com 100K+ p�ginas.
+
+API REST &                        Integre o GenMap ao seu pipeline de publica��o.
+Webhooks                          Dispare um novo crawl via API ap�s cada deploy.
+                                  Receba notifica��es via webhook ao concluir.
+
+Hospedagem de                     Cada sitemap tem uma URL p�blica permanente
+Sitemap em URL                    hospedada nos servidores do GenMap com uptime de
+Fixa                              99,9%. Sem necessidade de servidor pr�prio.
+
+GenMap -- Plano de Neg�cios 2026                                                       P�g. 12
+GENMAP                                                        Confidencial � Abril 2026
+
+5. Estrutura de Pre�os
+
+O GenMap adota um modelo de precifica��o em camadas (tiered pricing) com foco em
+acompanhar o crescimento do cliente. Todos os planos pagos possuem desconto de
+30% no plano anual, incentivando comprometimento de longo prazo e reduzindo
+churn.
+
+Plano     Mensal  Anual/m�s URLs       Recorr�ncia            Perfil Ideal
+Free      R$ 0                                                Teste em 1 site
+                  --              500  Sob
+                                       demanda
+
+Solo      R$ 35,90 R$ 25,14 1.600      Semanal                At� 3 sites
+
+Growth R$ 71,90 R$ 50,34 16.000 Di�ria                        Blogs e
+                                                              e-commerce
+
+Pro       R$ 143,90 R$ 100,74 80.000 Di�ria                   Times de SEO
+
+Scale     R$      R$ 201,54 320.000 Di�ria +                  Ag�ncias
+          287,90                                       Delta
+
+Enterpri  R$      R$              1.600.00 Customizada Grandes
+se        899,90  629,94
+                                  0                           portais
+
+Filosofia de Pre�os
+
+ � Plano Free funciona como aquisi��o -- sem limite de tempo, sem cart�o de cr�dito
+
+ � Escalada de pre�os segue progress�o de 2x (n�o 10x), tornando upgrades
+    psicologicamente acess�veis
+
+ � Desconto anual de ~30% alinha incentivos: cliente comprometido, menor churn,
+    previsibilidade de receita
+
+ � Enterprise sob medida permite acomodar casos de uso �nicos sem criar planos
+    intermedi�rios
+
+ � Pre�os em BRL eliminam fric��o cambial para o mercado brasileiro -- principal
+    diferencial frente ao PRO Sitemaps
+
+GenMap -- Plano de Neg�cios 2026                                           P�g. 13
+GENMAP                            Confidencial � Abril 2026
+
+Comparativo de Valor por Real Gasto
+
+No plano Growth (R$ 50,34/m�s anual), o GenMap entrega 16.000 URLs com
+atualiza��o di�ria e inclui sitemap de imagens, v�deos, not�cias, mobile, API e
+webhooks. O equivalente no PRO Sitemaps em USD (~USD 10/m�s, cota��o
+aproximada) entrega funcionalidades similares, por�m sem localiza��o em portugu�s,
+sem crawl delta e sem pol�ticas reutiliz�veis. O GenMap entrega mais por um pre�o
+competitivo para o mercado local.
+
+GenMap -- Plano de Neg�cios 2026  P�g. 14
+GENMAP                                  Confidencial � Abril 2026
+
+6. Estrat�gia de Go-to-Market
+
+Canais de Aquisi��o
+
+SEO Org�nico                      Produ��o de conte�do t�cnico sobre indexa��o,
+(Principal)                       sitemaps e SEO t�cnico em PT-BR. Captura de tr�fego
+                                  de cauda longa com inten��o de solu��o (ex.: 'como
+                                  criar sitemap XML para e-commerce').
+
+Product-Led                       O plano Free funciona como principal ve�culo de
+Growth                            aquisi��o. Usu�rios gratuitos atingem limites
+                                  naturalmente e fazem upgrade. Sem necessidade de
+                                  vendas ativas nos primeiros planos.
+
+Comunidades de                    Participa��o ativa em grupos do Facebook, Discord e
+SEO e WordPress                   f�runs de SEO em portugu�s. Parcerias com
+                                  influenciadores de SEO no Brasil.
+
+Integra��es e                     Disponibiliza��o de plugin para WordPress,
+Marketplace                       integra��o nativa com Google Search Console e
+                                  parceria com plataformas de e-commerce (VTEX,
+                                  Nuvemshop, Shopify PT).
+
+Inside Sales para                 Time pequeno de vendas consultivas para contas de
+Scale/Enterprise                  alto valor (ag�ncias e grandes portais). Foco em
+                                  demonstra��es personalizadas e POC (prova de
+                                  conceito).
+
+M�tricas de Aquisi��o (Metas Ano 1)
+
+        5.00       500            R$25  <3%
+          0                         K
+
+GenMap -- Plano de Neg�cios 2026                                                 P�g. 15
+GENMAP                                                     Confidencial � Abril 2026
+
+        Usu�rios Free  Assinantes pagos MRR ao fim do ano  Churn mensal
+
+GenMap -- Plano de Neg�cios 2026                                         P�g. 16
+GENMAP                                                        Confidencial � Abril 2026
+
+7. Modelo de Receita
+
+O GenMap opera sob modelo de receita recorrente (MRR/ARR) com assinaturas
+mensais e anuais. A estrutura de 6 planos garante receita distribu�da entre m�ltiplos
+segmentos, reduzindo depend�ncia de qualquer tier espec�fico.
+
+Fontes de Receita
+
+Fonte                             % da Receita  Descri��o
+Assinaturas Mensais               70%           Base principal de receita
+
+Assinaturas Anuais                20%           Maior LTV, menor churn, fluxo de
+                                                caixa antecipado
+Enterprise Customizado            8%
+                                                Alto valor por contrato, negociado
+Add-ons Futuros                   2%            individualmente
+
+                                                Relat�rios avan�ados, white-label,
+                                                consultoria t�cnica
+
+Proje��o de MRR -- Cen�rio Base
+
+Considerando convers�o de 10% do base Free para planos pagos, ticket m�dio de R$
+80/m�s e crescimento org�nico de usu�rios:
+
+Per�odo  Usu�rios Free            Pagantes      Ticket M�dio  MRR Estimado
+M6       2.000                    200           R$ 70         R$ 14.000
+
+M12      5.000                    500           R$ 80         R$ 40.000
+
+M18      12.000                   1.200         R$ 90         R$ 108.000
+
+M24      25.000                   2.500         R$ 100        R$ 250.000
+
+M36      60.000                   6.000         R$ 110        R$ 660.000
+
+GenMap -- Plano de Neg�cios 2026                                            P�g. 17
+GENMAP                            Confidencial � Abril 2026
+
+8. Valores & Cultura
+Organizacional
+
+A cultura do GenMap � orientada por princ�pios que guiam decis�es de produto,
+atendimento ao cliente e crescimento da equipe. Estes valores n�o s�o aspiracionais
+-- s�o crit�rios operacionais aplicados no dia a dia.
+
+Os 6 Princ�pios Operacionais
+
+1. Cliente em Primeiro            Toda decis�o come�a com a pergunta: isso
+Lugar                             melhora a vida do nosso usu�rio? NPS e
+                                  feedbacks s�o discutidos em toda reuni�o de
+                                  produto.
+
+2. C�digo Aberto por              Sempre que poss�vel, contribu�mos com a
+Padr�o                            comunidade open-source de ferramentas de
+                                  SEO. Bibliotecas auxiliares s�o publicadas no
+                                  GitHub.
+
+3. Documenta��o �                 Uma funcionalidade n�o est� pronta at� que a
+Produto                           documenta��o esteja publicada. A
+                                  documenta��o � mantida pelo mesmo time que
+                                  desenvolveu o recurso.
+
+4. Dados antes de                 Mudan�as de UI, pre�os e posicionamento s�o
+Opini�o                           validados com testes A/B ou entrevistas com
+                                  usu�rios antes de ir para produ��o.
+
+5. Equipe Pequena e               Priorizamos autonomia, clareza de escopo e
+Eficaz                            resultados sobre processos e reuni�es. Cada
+                                  pessoa do time tem ownership claro de uma �rea.
+
+6. Sustentabilidade               Crescimento respons�vel, sem queima de caixa
+Financeira                        predat�ria. O GenMap cresce � medida que
+                                  entrega valor real ao cliente.
+
+GenMap -- Plano de Neg�cios 2026                                                 P�g. 18
+GENMAP                            Confidencial � Abril 2026
+
+9. Pol�tica de Privacidade
+
+�ltima atualiza��o: Abril de 2026
+
+9.1 Quais dados coletamos
+
+Coletamos apenas os dados estritamente necess�rios para a presta��o do servi�o:
+ � Dados de conta: nome, e-mail e senha (armazenada em hash bcrypt)
+ � Dados de pagamento: processados por gateway PCI-DSS certificado. N�o
+
+    armazenamos dados de cart�o
+ � URLs de sites cadastrados: necess�rias para o processo de rastreamento
+ � Logs de acesso: endere�o IP, data/hora e endpoints acessados (retidos por 90 dias)
+ � Dados de uso: p�ginas visitadas na plataforma, funcionalidades utilizadas (analytics
+
+    anonimizados)
+
+9.2 Como usamos os dados
+
+ � Presta��o do servi�o: gera��o, atualiza��o e hospedagem de sitemaps
+ � Comunica��o transacional: confirma��es de pagamento, alertas de crawl e
+
+    notifica��es de status
+ � Melhoria do produto: an�lise agregada de uso para prioriza��o de funcionalidades
+ � Suporte ao cliente: hist�rico de tickets para resolu��o eficiente de problemas
+
+9.3 Compartilhamento de dados
+
+N�o vendemos, alugamos ou compartilhamos dados pessoais com terceiros para fins
+comerciais. Dados podem ser compartilhados apenas:
+ � Com prestadores de servi�o essenciais (hospedagem, pagamentos) sob acordos de
+
+    confidencialidade
+ � Por exig�ncia legal, mediante ordem judicial v�lida
+ � Em caso de fus�o/aquisi��o, com notifica��o pr�via ao usu�rio
+
+9.4 Seguran�a
+
+ � Transmiss�o de dados protegida por TLS 1.3
+ � Dados em repouso criptografados com AES-256
+ � Autentica��o com suporte a 2FA (autentica��o de dois fatores)
+
+GenMap -- Plano de Neg�cios 2026  P�g. 19
+GENMAP                            Confidencial � Abril 2026
+
+ � Auditorias de seguran�a semestrais
+ � Programa de divulga��o respons�vel de vulnerabilidades (responsible disclosure)
+
+9.5 Direitos do titular (LGPD)
+
+Em conformidade com a Lei Geral de Prote��o de Dados (Lei n� 13.709/2018), voc�
+tem direito a:
+ � Confirma��o e acesso aos seus dados pessoais
+ � Corre��o de dados incompletos ou desatualizados
+ � Anonimiza��o, bloqueio ou elimina��o de dados desnecess�rios
+ � Portabilidade dos dados a outro fornecedor de servi�o
+ � Revoga��o do consentimento a qualquer momento
+ � Oposi��o ao tratamento realizado com fundamento diverso do consentimento
+Para exercer estes direitos: privacidade@genmap.app
+
+9.6 Cookies
+
+Utilizamos cookies essenciais (sess�o e autentica��o) e cookies de analytics
+(anonimizados, sem identifica��o pessoal). N�o utilizamos cookies de rastreamento
+publicit�rio de terceiros. Voc� pode gerenciar prefer�ncias de cookies nas
+configura��es da conta.
+
+9.7 Reten��o de dados
+
+Dados de conta s�o retidos enquanto a conta estiver ativa. Ap�s cancelamento, dados
+pessoais s�o exclu�dos em at� 30 dias, exceto quando a reten��o for exigida por
+obriga��o legal (ex.: registros fiscais, 5 anos).
+
+9.8 Contato DPO
+
+Encarregado de Dados (DPO): privacidade@genmap.app
+Endere�o: Barra, Minas Gerais, Brasil
+Para reclama��es: Autoridade Nacional de Prote��o de Dados (ANPD) -- gov.br/anpd
+
+GenMap -- Plano de Neg�cios 2026  P�g. 20
+GENMAP                            Confidencial � Abril 2026
+
+10. Termos de Uso
+
+�ltima atualiza��o: Abril de 2026
+
+10.1 Aceita��o dos Termos
+
+Ao criar uma conta ou utilizar qualquer funcionalidade do GenMap, voc� concorda
+integralmente com estes Termos de Uso. Se voc� representa uma empresa, declara
+ter autoridade para vincul�-la a estes termos.
+
+10.2 Descri��o do Servi�o
+
+O GenMap oferece uma plataforma SaaS para gera��o, hospedagem e atualiza��o
+autom�tica de sitemaps XML. O servi�o � fornecido 'como est�' nos planos gratuitos e
+com SLA garantido nos planos pagos conforme especificado em cada plano.
+
+10.3 Uso Aceit�vel
+
+� permitido:
+ � Gerar sitemaps para sites pr�prios ou de clientes sob sua responsabilidade
+ � Integrar via API em sistemas internos e pipelines de publica��o
+ � Usar os sitemaps gerados em qualquer mecanismo de busca
+� proibido:
+ � Usar o servi�o para rastrear sites sem autoriza��o do propriet�rio
+ � Revender ou sublicenciar o servi�o sem acordo Enterprise
+ � Usar automa��o para criar contas em massa ou burlar limites de plano
+ � Usar o servi�o para gerar sitemaps de conte�do ilegal, spam ou malware
+
+10.4 Pagamentos e Cancelamento
+
+ � Assinaturas mensais renovam automaticamente no dia do ciclo
+ � Assinaturas anuais s�o cobradas integralmente no in�cio do per�odo
+ � Cancelamento pode ser realizado a qualquer momento nas configura��es da conta
+ � Ap�s cancelamento, o acesso permanece ativo at� o fim do per�odo pago
+ � Reembolsos s�o concedidos em at� 7 dias ap�s a cobran�a, mediante solicita��o
+
+10.5 SLA e Disponibilidade
+
+GenMap -- Plano de Neg�cios 2026  P�g. 21
+GENMAP                            Confidencial � Abril 2026
+
+ � Planos pagos: SLA de 99,9% de disponibilidade mensal
+ � Manuten��es programadas ser�o avisadas com 48h de anteced�ncia
+ � Em caso de indisponibilidade superior ao SLA, cr�ditos ser�o concedidos
+
+    automaticamente
+ � O plano Free n�o possui SLA garantido
+
+10.6 Propriedade Intelectual
+
+Os sitemaps gerados pelo GenMap com os dados do seu site s�o de sua propriedade.
+A plataforma GenMap, incluindo c�digo, design e marca, � propriedade exclusiva da
+empresa. � vedada a c�pia, reprodu��o ou engenharia reversa da plataforma.
+
+10.7 Limita��o de Responsabilidade
+
+O GenMap n�o se responsabiliza por perdas de posicionamento em mecanismos de
+busca decorrentes de mudan�as de algoritmo, nem por conte�do de sites rastreados
+pelos usu�rios. A responsabilidade m�xima do GenMap em qualquer caso � limitada ao
+valor pago nos �ltimos 3 meses de assinatura.
+
+10.8 Lei Aplic�vel
+
+Estes termos s�o regidos pelas leis da Rep�blica Federativa do Brasil. Qualquer
+disputa ser� resolvida no foro da comarca de Belo Horizonte, Minas Gerais, com
+ren�ncia a qualquer outro, por mais privilegiado que seja.
+
+10.9 Contato
+
+Para quest�es sobre estes termos: legal@genmap.app
+
+Para suporte t�cnico: suporte@genmap.app
+
+Site: genmap.app/pt
+
+GenMap -- Plano de Neg�cios 2026  P�g. 22
+GENMAP                                 Confidencial � Abril 2026
+
+11. Roadmap 2026�2028
+
+O roadmap do GenMap � orientado por tr�s horizontes: consolida��o (2026),
+expans�o (2027) e lideran�a de mercado (2028).
+
+Horizonte        Per�odo               Iniciativas Principais
+
+H1 -- Consolida��o 2026                � Lan�amento de relat�rios de sa�de de SEO
+                                Q1�Q2  � Integra��o nativa com Google Search
+                                       Console
+                                       � Suporte a IndexNow (Bing/Microsoft)
+                                       � Dashboard anal�tico de crawl com hist�rico
+
+H1 -- Consolida��o 2026                � Plugin WordPress oficial
+                                Q3�Q4  � Integra��o com Nuvemshop e VTEX
+                                       � App m�vel para monitoramento de status
+                                       � Programa de parceiros para ag�ncias
+
+H2 -- Expans�o   2027                  � Expans�o para mercado hisp�nico (ES)
+                                       � White-label para ag�ncias Enterprise
+                                       � Monitoramento de broken links integrado
+                                       � IA para sugest�es de otimiza��o de crawl
+
+H3 -- Lideran�a  2028                  � Marketplace de integra��es (Zapier, Make)
+                                       � Sitemap visual interativo
+                                       � Expans�o para mercados EN e outros
+                                       idiomas
+                                       � Certifica��o ISO 27001
+
+GenMap -- Plano de Neg�cios 2026       P�g. 23
+GENMAP                                      Confidencial � Abril 2026
+
+12. Proje��es Financeiras
+
+As proje��es abaixo s�o baseadas em crescimento org�nico conservador, sem
+considerar investimento externo. O modelo assume convers�o de 10% de free para
+pago e churn mensal de 2,5%.
+
+Receita Anual Recorrente (ARR) -- Cen�rio Base
+
+Ano     MRR Final  ARR            Usu�rios  Custo Op. Est.  Margem
+                   R$ 480.000     Pagantes                  Est.
+
+2026 R$ 40.000                    500       R$ 180.000 62%
+
+2027 R$ 150.000 R$ 1.800.000 1.800          R$ 500.000 72%
+
+2028    R$         R$             5.000     R$ 1.200.000 78%
+        450.000    5.400.000
+
+Premissas e Riscos
+
+ � Premissa: crescimento org�nico de 20% ao m�s em novos usu�rios Free nos
+    primeiros 12 meses
+
+ � Premissa: convers�o FreePago de 10% (benchmarks SaaS PLG: 5�15%)
+
+ � Risco: mudan�a de algoritmo do Google que reduza import�ncia de sitemaps
+    (mitigado por diversifica��o de produto)
+
+ � Risco: entrada de big tech (Google, Semrush) com produto free similar (mitigado por
+    localiza��o e especializa��o)
+
+ � Risco: aumento de custo de infraestrutura de crawl em larga escala (mitigado por
+    crawl delta no Scale+)
+
+ � Oportunidade: mercado latino-americano ainda pouco atendido por solu��es em
+    portugu�s
+
+Este documento foi produzido com Perplexity Computer com base em an�lise dos sites genmap.app/pt e
+pro-sitemaps.com, pesquisa de mercado e dados p�blicos de concorrentes. Proje��es financeiras s�o
+estimativas e n�o constituem garantia de resultados.
+
+GenMap -- Plano de Neg�cios 2026                            P�g. 24
+

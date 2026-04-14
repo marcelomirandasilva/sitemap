@@ -1,3 +1,79 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+    :root {
+        --color-brand-primary: #0e4f8c;
+        --color-brand-secondary: #1670b8;
+        --color-brand-accent: #16b8b0;
+        --color-brand-accent-soft: #52d6d0;
+        --color-brand-gradient-start: #0e4f8c;
+        --color-brand-gradient-end: #18c2b7;
+        --color-bg-page: #ffffff;
+        --color-bg-subtle: #f7fafc;
+        --color-surface-muted: #eef4f7;
+        --color-border-soft: #e8eef3;
+        --color-border-strong: #c8d4de;
+        --color-text-primary: #183247;
+        --color-text-secondary: #5f7486;
+        --color-success: #18a874;
+        --color-warning: #d99a1a;
+        --color-error: #d6455d;
+        --color-info: #1670b8;
+    }
+
+    html {
+        background-color: var(--color-bg-page);
+    }
+
+    body {
+        background:
+            radial-gradient(circle at top center, rgba(82, 214, 208, 0.14), transparent 28%),
+            linear-gradient(180deg, #ffffff 0%, #f7fafc 100%);
+        color: var(--color-text-primary);
+    }
+
+    ::selection {
+        background-color: rgba(22, 112, 184, 0.18);
+        color: var(--color-text-primary);
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        color: var(--color-text-primary);
+    }
+
+    a {
+        color: var(--color-brand-secondary);
+    }
+
+    a:hover {
+        color: var(--color-brand-primary);
+    }
+}
+
+@layer components {
+    .texto-gradiente-marca {
+        background-image: linear-gradient(
+            135deg,
+            var(--color-brand-gradient-start) 0%,
+            var(--color-brand-gradient-end) 100%
+        );
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+    }
+
+    .superficie-marca {
+        @apply rounded-2xl border border-border-soft bg-white shadow-brand-soft;
+    }
+
+    .superficie-suave-marca {
+        @apply rounded-2xl border border-border-soft bg-bg-subtle;
+    }
+}

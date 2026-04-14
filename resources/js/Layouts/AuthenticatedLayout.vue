@@ -24,7 +24,8 @@ const showingNavigationDropdown = ref(false);
                             <div class="flex shrink-0 items-center">
                                 <Link :href="route('dashboard')">
                                     <ApplicationLogo
-                                        class="block h-9 w-auto fill-current text-gray-800"
+                                        class="block h-10 w-auto"
+                                        :alt="$page.props.auth.user?.name || 'Sitemap Gen'"
                                     />
                                 </Link>
                             </div>

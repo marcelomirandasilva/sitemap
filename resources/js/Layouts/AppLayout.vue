@@ -20,8 +20,8 @@ const theme = computed(() => user.value?.ui_preferences?.theme || 'light');
 </script>
 
 <template>
-    <div :class="{'dark': theme === 'dark'}" class="min-h-screen font-sans text-gray-700 flex flex-col">
-        <div class="min-h-screen bg-gradient-to-b from-primary-50 to-[#f5f5f5] dark:from-gray-900 dark:to-gray-800 dark:text-gray-100 flex flex-col flex-grow">
+    <div :class="{'dark': theme === 'dark'}" class="min-h-screen font-sans text-text-primary flex flex-col">
+        <div class="min-h-screen bg-gradient-to-b from-bg-page via-bg-page to-bg-subtle dark:from-gray-900 dark:to-gray-800 dark:text-gray-100 flex flex-col flex-grow">
         
         <div>
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -38,7 +38,7 @@ const theme = computed(() => user.value?.ui_preferences?.theme || 'light');
         </div>
 
         <main class="flex-grow">
-            <header v-if="$slots.header" class="bg-white/50 backdrop-blur-sm shadow-sm border-b border-gray-100">
+            <header v-if="$slots.header" class="border-b border-border-soft bg-white/80 shadow-sm backdrop-blur-sm">
                 <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
                     <slot name="header" />
                 </div>

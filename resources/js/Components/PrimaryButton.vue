@@ -15,7 +15,7 @@ defineProps({
     <button 
         :type="type" 
         :disabled="processing"
-        class="inline-flex items-center justify-center px-6 py-2.5 bg-primary-600 border border-transparent rounded-lg font-bold text-xs text-white uppercase tracking-wider hover:bg-primary-700 focus:bg-primary-700 active:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-all duration-200 ease-in-out shadow-sm hover:shadow-md active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
+        class="inline-flex items-center justify-center rounded-lg border border-transparent bg-brand-primary px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-white shadow-sm transition-all duration-200 ease-in-out hover:bg-primary-700 hover:shadow-md focus:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 active:scale-95 active:bg-primary-800 disabled:pointer-events-none disabled:opacity-50"
     >
         <svg v-if="processing" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>

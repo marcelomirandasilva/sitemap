@@ -1,6 +1,5 @@
 import defaultTheme from 'tailwindcss/defaultTheme';
 import forms from '@tailwindcss/forms';
-import colors from 'tailwindcss/colors';
 
 /** @type {import('tailwindcss').Config} */
 export default {
@@ -17,41 +16,78 @@ export default {
                 sans: ['Figtree', ...defaultTheme.fontFamily.sans],
             },
             colors: {
-                // PRIMÁRIO (Os botões principais azuis)
+                brand: {
+                    primary: '#0E4F8C',
+                    secondary: '#1670B8',
+                    accent: '#16B8B0',
+                    accentSoft: '#52D6D0',
+                    gradientStart: '#0E4F8C',
+                    gradientEnd: '#18C2B7',
+                },
+                bg: {
+                    page: '#FFFFFF',
+                    subtle: '#F7FAFC',
+                    muted: '#EEF4F7',
+                },
+                border: {
+                    soft: '#E8EEF3',
+                    strong: '#C8D4DE',
+                },
+                text: {
+                    primary: '#183247',
+                    secondary: '#5F7486',
+                },
                 primary: {
-                    50: '#e8f4fc',
-                    100: '#d1e9f9',
-                    400: '#5bc0de',
-                    500: '#008cba',
-                    600: '#007da0',
-                    700: '#006480',
-                    800: '#31708f',
-                    900: '#1e4b63',
+                    50: '#F7FAFC',
+                    100: '#EEF4F7',
+                    400: '#52D6D0',
+                    500: '#1670B8',
+                    600: '#0E4F8C',
+                    700: '#0B4478',
+                    800: '#183247',
+                    900: '#132B3B',
                 },
-                // ACCENT (Os botões vermelhos/vinho e logo)
                 accent: {
-                    50: '#fdf2f2',
-                    100: '#fbe5e5',
-                    500: '#d9534f',
-                    600: '#c0392b',
-                    700: '#a93226',
-                    800: '#a4332b',
-                    900: '#752823',
+                    50: '#F1FCFB',
+                    100: '#DDF8F5',
+                    500: '#16B8B0',
+                    600: '#129C95',
+                    700: '#0F7F7A',
+                    800: '#0D6662',
+                    900: '#0B4F4C',
                 },
-                // SURFACE (Fundos e bordas)
                 surface: {
-                    50: '#f5f5f5',
-                    100: '#eeeeee',
-                    200: '#d2d6de',
+                    50: '#FFFFFF',
+                    100: '#F7FAFC',
+                    200: '#EEF4F7',
                 },
-
-                // Novas Modalidades Semânticas
-                premium: colors.amber, // Ou colors.amber para dourado
-                success: colors.emerald,
-                danger: colors.red,
-                warning: colors.orange,
-                info: colors.sky,
-            }
+                success: {
+                    50: '#EDF9F4',
+                    500: '#18A874',
+                    600: '#12865C',
+                },
+                danger: {
+                    50: '#FEF1F4',
+                    500: '#D6455D',
+                    600: '#B9354C',
+                },
+                warning: {
+                    50: '#FFF7E8',
+                    500: '#D99A1A',
+                    600: '#B67F15',
+                },
+                info: {
+                    50: '#EEF5FD',
+                    500: '#1670B8',
+                    600: '#0E4F8C',
+                },
+            },
+            backgroundImage: {
+                'brand-gradient': 'linear-gradient(135deg, #0E4F8C 0%, #18C2B7 100%)',
+            },
+            boxShadow: {
+                'brand-soft': '0 18px 50px -24px rgba(14, 79, 140, 0.28)',
+            },
         },
     },
     plugins: [forms],

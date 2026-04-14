@@ -134,10 +134,10 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <nav class="flex items-center justify-end gap-3 text-sm font-bold text-accent-800 uppercase tracking-wide">
+    <nav class="flex items-center justify-end gap-3 text-sm font-bold text-brand-primary uppercase tracking-wide">
         
         <div class="group relative">
-            <button class="p-1 text-gray-500 hover:text-accent-800 transition">
+            <button class="p-1 text-text-secondary transition hover:text-brand-primary">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
             </button>
             <div class="absolute right-0 mt-2 w-64 bg-gray-50 border border-gray-200 shadow-lg rounded-sm p-3 hidden group-hover:block z-50 text-xs text-gray-500 font-normal normal-case text-center">
@@ -149,7 +149,7 @@ onUnmounted(() => {
         <div class="mr-4">
              <Dropdown align="right" width="64">
                 <template #trigger>
-                    <button class="relative p-1 text-gray-500 hover:text-accent-800 transition flex items-center">
+                    <button class="relative flex items-center p-1 text-text-secondary transition hover:text-brand-primary">
                          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
                          <span v-if="quantidadeNotificacoesNaoLidas > 0" class="absolute -right-1 -top-1 inline-flex min-w-[18px] items-center justify-center rounded-full bg-danger-600 px-1.5 py-0.5 text-[10px] font-bold leading-none text-white">
                             {{ quantidadeNotificacoesNaoLidas }}
@@ -195,7 +195,7 @@ onUnmounted(() => {
         <Dropdown align="right" width="64">
             <template #trigger>
                 <button class="flex items-center gap-1 hover:opacity-80 transition cursor-pointer">
-                    <span class="border border-accent-800 rounded px-1.5 py-0.5 text-xs">{{ $page.props.userProjectsCount }}</span>
+                    <span class="rounded border border-brand-primary px-1.5 py-0.5 text-xs">{{ $page.props.userProjectsCount }}</span>
                     <span>{{ $t('nav.my_sites') }}</span>
                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                 </button>
@@ -256,7 +256,7 @@ onUnmounted(() => {
                 </div>
 
                 <DropdownLink v-if="$page.props.auth.user.role === 'admin'" :href="route('admin.dashboard')" class="flex items-center gap-2 border-b border-gray-100 mb-1">
-                    <svg class="w-4 h-4 text-accent-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                    <svg class="w-4 h-4 text-brand-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
                     Painel Administrativo
                 </DropdownLink>
 
