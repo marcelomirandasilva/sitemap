@@ -36,12 +36,16 @@ class ExecucaoRastreamentoService
         $usuario = $projeto->user()->first();
         $planoEfetivo = $usuario?->planoEfetivo();
         $limitePlano = $planoEfetivo?->max_pages ?? 500;
-        $limiteEfetivo = min($projeto->max_pages ?? $limitePlano, $limitePlano);
+        $limiteApi = $this->sitemapService->limiteMaximoPaginasApi();
+        $limitePlanoEfetivo = $planoEfetivo?->limitePaginasEfetivo($limiteApi) ?? min($limitePlano, $limiteApi);
+        $limiteEfetivo = min($projeto->max_pages ?? $limitePlanoEfetivo, $limitePlanoEfetivo);
 
         Log::info("ExecucaoRastreamentoService: iniciando job com limite de {$limiteEfetivo} paginas", [
             'project_id' => $projeto->id,
             'user_id' => $usuario?->id,
             'limite_plano' => $limitePlano,
+            'limite_api' => $limiteApi,
+            'limite_plano_efetivo' => $limitePlanoEfetivo,
             'limite_projeto' => $projeto->max_pages,
         ]);
 
@@ -118,6 +122,15 @@ class ExecucaoRastreamentoService
             $projeto->update($ajustesProjeto);
             $projeto->refresh();
         }
+
+        if (($projeto->max_pages ?? $limitePlanoEfetivo) > $limitePlanoEfetivo) {
+            $projeto->update([
+                'max_pages' => $limitePlanoEfetivo,
+            ]);
+            $projeto->refresh();
+        }
+
+        $limiteEfetivo = min($projeto->max_pages ?? $limitePlanoEfetivo, $limitePlanoEfetivo);
 
         $externalJobId = $this->sitemapService->startJob($projeto, $limiteEfetivo);
 

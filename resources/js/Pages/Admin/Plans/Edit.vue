@@ -17,6 +17,14 @@ const form = useForm({
     update_frequency: props.plano.update_frequency || '',
     max_projects: props.plano.max_projects ?? 10,
     max_pages: props.plano.max_pages ?? 500,
+    profundidade_maxima_padrao: props.plano.profundidade_maxima_padrao ?? 3,
+    profundidade_maxima_limite: props.plano.profundidade_maxima_limite ?? 3,
+    concorrencia_padrao: props.plano.concorrencia_padrao ?? 2,
+    concorrencia_limite: props.plano.concorrencia_limite ?? 2,
+    atraso_padrao_segundos: props.plano.atraso_padrao_segundos ?? 1,
+    atraso_minimo_segundos: props.plano.atraso_minimo_segundos ?? 1,
+    atraso_maximo_segundos: props.plano.atraso_maximo_segundos ?? 1,
+    intervalo_personalizado_padrao_horas: props.plano.intervalo_personalizado_padrao_horas ?? 24,
     has_advanced_features: !!props.plano.has_advanced_features,
     permite_imagens: !!props.plano.permite_imagens,
     permite_videos: !!props.plano.permite_videos,
@@ -89,6 +97,7 @@ const salvar = () => {
                                     <option value="quinzenal">Quinzenal</option>
                                     <option value="mensal">Mensal</option>
                                     <option value="anual">Anual</option>
+                                    <option value="customizado">Customizada por projeto</option>
                                     <option value="manual">Sob Demanda</option>
                                 </select>
                                 <InputError :message="form.errors.update_frequency" class="mt-2" />
@@ -108,6 +117,52 @@ const salvar = () => {
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Máximo de Páginas <span class="text-xs text-gray-400 font-normal">(-1 para ilimitado)</span></label>
                                 <input v-model="form.max_pages" type="number" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 dark:bg-gray-900 dark:border-gray-600 dark:text-white" required>
                                 <InputError :message="form.errors.max_pages" class="mt-2" />
+                            </div>
+                        </div>
+
+                        <div class="mt-6 border-t border-gray-200 dark:border-gray-700 pt-6">
+                            <h3 class="text-sm font-semibold uppercase tracking-wide text-gray-700 dark:text-gray-300 mb-4">Padrões Técnicos do Projeto</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Profundidade padrão</label>
+                                    <input v-model="form.profundidade_maxima_padrao" type="number" min="1" max="10" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 dark:bg-gray-900 dark:border-gray-600 dark:text-white" required>
+                                    <InputError :message="form.errors.profundidade_maxima_padrao" class="mt-2" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Profundidade máxima</label>
+                                    <input v-model="form.profundidade_maxima_limite" type="number" min="1" max="10" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 dark:bg-gray-900 dark:border-gray-600 dark:text-white" required>
+                                    <InputError :message="form.errors.profundidade_maxima_limite" class="mt-2" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Concorrência padrão</label>
+                                    <input v-model="form.concorrencia_padrao" type="number" min="1" max="100" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 dark:bg-gray-900 dark:border-gray-600 dark:text-white" required>
+                                    <InputError :message="form.errors.concorrencia_padrao" class="mt-2" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Concorrência máxima</label>
+                                    <input v-model="form.concorrencia_limite" type="number" min="1" max="100" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 dark:bg-gray-900 dark:border-gray-600 dark:text-white" required>
+                                    <InputError :message="form.errors.concorrencia_limite" class="mt-2" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Atraso padrão (s)</label>
+                                    <input v-model="form.atraso_padrao_segundos" type="number" min="0.1" max="10" step="0.1" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 dark:bg-gray-900 dark:border-gray-600 dark:text-white" required>
+                                    <InputError :message="form.errors.atraso_padrao_segundos" class="mt-2" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Atraso mínimo (s)</label>
+                                    <input v-model="form.atraso_minimo_segundos" type="number" min="0.1" max="10" step="0.1" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 dark:bg-gray-900 dark:border-gray-600 dark:text-white" required>
+                                    <InputError :message="form.errors.atraso_minimo_segundos" class="mt-2" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Atraso máximo (s)</label>
+                                    <input v-model="form.atraso_maximo_segundos" type="number" min="0.1" max="10" step="0.1" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 dark:bg-gray-900 dark:border-gray-600 dark:text-white" required>
+                                    <InputError :message="form.errors.atraso_maximo_segundos" class="mt-2" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Intervalo customizado padrão (h)</label>
+                                    <input v-model="form.intervalo_personalizado_padrao_horas" type="number" min="1" max="720" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 dark:bg-gray-900 dark:border-gray-600 dark:text-white" required>
+                                    <InputError :message="form.errors.intervalo_personalizado_padrao_horas" class="mt-2" />
+                                </div>
                             </div>
                         </div>
                     </div>

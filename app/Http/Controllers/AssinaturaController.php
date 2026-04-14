@@ -68,26 +68,28 @@ class AssinaturaController extends Controller
             } catch (IncompletePayment $excecao) {
                 // CENÁRIO DE ERRO: O cartão foi recusado ou pede autenticação 3DS.
                 // Redireciona para a página de pagamento seguro do Cashier.
-                return redirect()->route(
+                return Inertia::location(route(
                     'cashier.payment',
                     [$excecao->payment->id, 'redirect' => route('subscription.index')]
-                );
+                ));
 
             } catch (\Exception $e) {
                 // Erro genérico? Manda para o portal para ele ver o que houve.
-                return redirect()->route('subscription.portal')
-                    ->with('error', 'Houve um problema no pagamento automático. Por favor, verifique seu cartão.');
+                session()->flash('error', 'Houve um problema no pagamento automático. Por favor, verifique seu cartão.');
+                return Inertia::location(route('subscription.portal'));
             }
         }
 
         // ----------------------------------------------------------------------
         // CENÁRIO 2: Novo Assinante (Checkout Padrão)
         // ----------------------------------------------------------------------
-        return $usuario->newSubscription('default', $id_preco)
+        $checkout = $usuario->newSubscription('default', $id_preco)
             ->checkout([
                 'success_url' => route('dashboard') . '?checkout=success',
                 'cancel_url' => route('subscription.index') . '?checkout=cancel',
             ]);
+
+        return Inertia::location($checkout->url);
     }
 
     /**
@@ -95,6 +97,8 @@ class AssinaturaController extends Controller
      */
     public function portal(Request $request)
     {
-        return $request->user()->redirectToBillingPortal(route('subscription.index'));
+        $url = $request->user()->billingPortalUrl(route('subscription.index'));
+
+        return Inertia::location($url);
     }
 }

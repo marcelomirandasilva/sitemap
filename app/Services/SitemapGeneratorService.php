@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Log;
 
 class SitemapGeneratorService
 {
+    public const LIMITE_MAXIMO_PAGINAS_API = 100000;
+
     protected string $baseUrl;
     protected string $internalSecret;
     protected int $timeout;
@@ -20,6 +22,11 @@ class SitemapGeneratorService
         $this->timeout = config('services.sitemap_generator.timeout', 3);
 
         Log::info("SitemapGeneratorService initialized with BaseURL: {$this->baseUrl}");
+    }
+
+    public function limiteMaximoPaginasApi(): int
+    {
+        return self::LIMITE_MAXIMO_PAGINAS_API;
     }
 
     /**
@@ -417,7 +424,7 @@ class SitemapGeneratorService
         try {
             $response = Http::withHeaders($this->internalHeaders(0))
                 ->timeout($this->timeout)
-                ->get("{$this->baseUrl}/api/v1/health");
+                ->get("{$this->baseUrl}/health");
 
             $duration = round((microtime(true) - $start) * 1000, 2);
 

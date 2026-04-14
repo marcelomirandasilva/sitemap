@@ -204,6 +204,13 @@ CREATE TABLE `plans` (
   `price_monthly_usd` int DEFAULT NULL,
   `price_yearly_usd` int DEFAULT NULL,
   `max_projects` int NOT NULL DEFAULT '10',
+  `profundidade_maxima_padrao` int unsigned NOT NULL DEFAULT '3',
+  `profundidade_maxima_limite` int unsigned NOT NULL DEFAULT '3',
+  `concorrencia_padrao` int unsigned NOT NULL DEFAULT '2',
+  `concorrencia_limite` int unsigned NOT NULL DEFAULT '2',
+  `atraso_padrao_segundos` decimal(6,2) NOT NULL DEFAULT '1.00',
+  `atraso_minimo_segundos` decimal(6,2) NOT NULL DEFAULT '1.00',
+  `atraso_maximo_segundos` decimal(6,2) NOT NULL DEFAULT '1.00',
   `has_advanced_features` tinyint(1) NOT NULL DEFAULT '0',
   `permite_imagens` tinyint(1) NOT NULL DEFAULT '0',
   `permite_videos` tinyint(1) NOT NULL DEFAULT '0',
@@ -213,7 +220,8 @@ CREATE TABLE `plans` (
   `permite_cache_crawler` tinyint(1) NOT NULL DEFAULT '0',
   `permite_padroes_exclusao` tinyint(1) NOT NULL DEFAULT '0',
   `permite_politicas_crawl` tinyint(1) NOT NULL DEFAULT '0',
-  `update_frequency` enum('diario','semanal','quinzenal','mensal','anual','manual') COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `update_frequency` enum('diario','semanal','quinzenal','mensal','anual','manual','customizado') COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `intervalo_personalizado_padrao_horas` int unsigned NOT NULL DEFAULT '24',
   `ideal_for` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
@@ -249,6 +257,7 @@ CREATE TABLE `projects` (
   `compress_output` tinyint(1) NOT NULL DEFAULT '1',
   `enable_cache` tinyint(1) NOT NULL DEFAULT '1',
   `frequency` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'manual',
+  `intervalo_personalizado_horas` int unsigned DEFAULT NULL,
   `last_crawled_at` timestamp NULL DEFAULT NULL,
   `next_scheduled_crawl_at` timestamp NULL DEFAULT NULL,
   `status` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'active',
@@ -496,3 +505,6 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (30,'2026_04_02_114
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (31,'2026_04_02_143000_normalize_plan_feature_hierarchy',18);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (32,'2026_04_02_160000_add_next_scheduled_crawl_at_to_projects_table',19);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (33,'2026_04_02_170000_create_notifications_table',20);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (34,'2026_04_14_100000_add_intervalo_personalizado_horas_to_projects_table',21);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (35,'2026_04_14_100100_add_customizado_to_plans_update_frequency_enum',22);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (36,'2026_04_14_160000_add_advanced_defaults_to_plans_table',22);

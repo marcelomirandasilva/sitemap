@@ -34,6 +34,14 @@ class PlanoController extends Controller
                 'has_advanced_features' => false,
                 'max_projects' => 1,
                 'max_pages' => 500,
+                'profundidade_maxima_padrao' => 3,
+                'profundidade_maxima_limite' => 3,
+                'concorrencia_padrao' => 2,
+                'concorrencia_limite' => 2,
+                'atraso_padrao_segundos' => 1,
+                'atraso_minimo_segundos' => 1,
+                'atraso_maximo_segundos' => 1,
+                'intervalo_personalizado_padrao_horas' => 24,
                 'permite_noticias' => false,
                 'permite_mobile' => false,
                 'permite_compactacao' => false,
@@ -75,9 +83,17 @@ class PlanoController extends Controller
             'name' => 'required|string|max:255',
             'slug' => 'required|string|max:255|unique:plans,slug' . ($id ? ",{$id}" : ''),
             'ideal_for' => 'nullable|string|max:255',
-            'update_frequency' => 'required|string|in:diario,semanal,quinzenal,mensal,anual,manual',
+            'update_frequency' => 'required|string|in:diario,semanal,quinzenal,mensal,anual,manual,customizado',
             'max_projects' => 'required|integer|min:-1',
             'max_pages' => 'required|integer|min:-1',
+            'profundidade_maxima_padrao' => 'required|integer|min:1|max:10',
+            'profundidade_maxima_limite' => 'required|integer|min:1|max:10',
+            'concorrencia_padrao' => 'required|integer|min:1|max:100',
+            'concorrencia_limite' => 'required|integer|min:1|max:100',
+            'atraso_padrao_segundos' => 'required|numeric|min:0.1|max:10',
+            'atraso_minimo_segundos' => 'required|numeric|min:0.1|max:10',
+            'atraso_maximo_segundos' => 'required|numeric|min:0.1|max:10',
+            'intervalo_personalizado_padrao_horas' => 'required|integer|min:1|max:720',
             'has_advanced_features' => 'boolean',
             'permite_imagens' => 'boolean',
             'permite_videos' => 'boolean',
@@ -96,6 +112,14 @@ class PlanoController extends Controller
         ]);
 
         $data['slug'] = Str::slug($data['slug']);
+        $data['profundidade_maxima_limite'] = max($data['profundidade_maxima_padrao'], $data['profundidade_maxima_limite']);
+        $data['concorrencia_limite'] = max($data['concorrencia_padrao'], $data['concorrencia_limite']);
+        $data['atraso_minimo_segundos'] = min((float) $data['atraso_minimo_segundos'], (float) $data['atraso_maximo_segundos']);
+        $data['atraso_maximo_segundos'] = max((float) $data['atraso_minimo_segundos'], (float) $data['atraso_maximo_segundos']);
+        $data['atraso_padrao_segundos'] = max(
+            (float) $data['atraso_minimo_segundos'],
+            min((float) $data['atraso_padrao_segundos'], (float) $data['atraso_maximo_segundos'])
+        );
 
         return $data;
     }

@@ -9,12 +9,17 @@ use Illuminate\Support\Carbon;
 
 class FrequenciaRastreamentoService
 {
+    public const INTERVALO_PERSONALIZADO_MINIMO_HORAS = 1;
+    public const INTERVALO_PERSONALIZADO_MAXIMO_HORAS = 720;
+    public const INTERVALO_PERSONALIZADO_PADRAO_HORAS = 24;
+
     public function normalizarFrequencia(?string $frequencia): string
     {
         $normalizada = mb_strtolower(trim((string) $frequencia));
 
         return match (true) {
             str_contains($normalizada, 'manual') => 'manual',
+            str_contains($normalizada, 'custom') || str_contains($normalizada, 'person') => 'customizado',
             str_contains($normalizada, 'di') => 'diario',
             str_contains($normalizada, 'seman') => 'semanal',
             str_contains($normalizada, 'quinzen') => 'quinzenal',
@@ -33,15 +38,41 @@ class FrequenciaRastreamentoService
             'quinzenal' => 3,
             'semanal' => 4,
             'diario' => 5,
+            'customizado' => 6,
         ];
 
-        $ordemExibicao = ['manual', 'diario', 'semanal', 'quinzenal', 'mensal', 'anual'];
+        $ordemExibicao = ['manual', 'diario', 'semanal', 'quinzenal', 'mensal', 'anual', 'customizado'];
         $frequenciaNormalizada = $this->normalizarFrequencia($frequenciaPlano);
         $nivelPlano = $niveis[$frequenciaNormalizada] ?? 0;
 
         return array_values(array_filter($ordemExibicao, function ($valor) use ($niveis, $nivelPlano) {
             return ($niveis[$valor] ?? 0) <= $nivelPlano || $valor === 'manual';
         }));
+    }
+
+    public function limitesIntervaloPersonalizadoHoras(): array
+    {
+        return [
+            'minimo' => self::INTERVALO_PERSONALIZADO_MINIMO_HORAS,
+            'maximo' => self::INTERVALO_PERSONALIZADO_MAXIMO_HORAS,
+            'padrao' => self::INTERVALO_PERSONALIZADO_PADRAO_HORAS,
+        ];
+    }
+
+    public function normalizarIntervaloPersonalizadoHoras(?int $intervalo): int
+    {
+        $limites = $this->limitesIntervaloPersonalizadoHoras();
+        $intervaloNormalizado = (int) ($intervalo ?? $limites['padrao']);
+
+        if ($intervaloNormalizado < $limites['minimo']) {
+            return $limites['minimo'];
+        }
+
+        if ($intervaloNormalizado > $limites['maximo']) {
+            return $limites['maximo'];
+        }
+
+        return $intervaloNormalizado;
     }
 
     public function frequenciaEfetivaProjeto(Projeto $projeto, ?Plano $plano = null): string
@@ -83,6 +114,7 @@ class FrequenciaRastreamentoService
         $base = Carbon::instance($base instanceof Carbon ? $base : $base->toDateTime());
 
         return match ($frequencia) {
+            'customizado' => $base->copy()->addHours($this->normalizarIntervaloPersonalizadoHoras($projeto->intervalo_personalizado_horas)),
             'diario' => $base->copy()->addDay(),
             'semanal' => $base->copy()->addWeek(),
             'quinzenal' => $base->copy()->addDays(14),
@@ -95,11 +127,27 @@ class FrequenciaRastreamentoService
     public function sincronizarFrequenciaProjeto(Projeto $projeto, ?Plano $plano = null): Projeto
     {
         $frequenciaEfetiva = $this->frequenciaEfetivaProjeto($projeto, $plano);
+        $atributosAtualizados = [
+            'frequency' => $frequenciaEfetiva,
+        ];
 
-        if ($projeto->frequency !== $frequenciaEfetiva) {
-            $projeto->forceFill([
-                'frequency' => $frequenciaEfetiva,
-            ])->saveQuietly();
+        if ($frequenciaEfetiva === 'customizado') {
+            $atributosAtualizados['intervalo_personalizado_horas'] = $this->normalizarIntervaloPersonalizadoHoras($projeto->intervalo_personalizado_horas);
+        } elseif ($projeto->intervalo_personalizado_horas !== null) {
+            $atributosAtualizados['intervalo_personalizado_horas'] = null;
+        }
+
+        $houveMudanca = false;
+
+        foreach ($atributosAtualizados as $campo => $valor) {
+            if ($projeto->{$campo} !== $valor) {
+                $houveMudanca = true;
+                break;
+            }
+        }
+
+        if ($houveMudanca) {
+            $projeto->forceFill($atributosAtualizados)->saveQuietly();
         }
 
         return $projeto->refresh();

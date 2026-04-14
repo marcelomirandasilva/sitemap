@@ -76,6 +76,9 @@ const props = defineProps({
             permite_politicas_crawl: false,
             plan_max_pages: 500,
             allowed_frequencies: ['manual'],
+            intervalo_personalizado_min_horas: 1,
+            intervalo_personalizado_max_horas: 720,
+            intervalo_personalizado_padrao_horas: 24,
             max_depth_limit: 10,
             max_concurrent_requests_limit: 10,
             delay_between_requests_min: 0,
@@ -112,7 +115,8 @@ const seoBilingue = ref(props.seo_bilingue || {});
 const salvandoConfiguracoes = ref(false);
 const configForm = reactive({
     frequency: props.projeto.frequency || 'manual',
-    max_pages: props.projeto.max_pages ?? props.features.plan_max_pages ?? 500,
+    intervalo_personalizado_horas: props.projeto.intervalo_personalizado_horas ?? props.features.intervalo_personalizado_padrao_horas ?? 24,
+    max_pages: Math.min(props.projeto.max_pages ?? props.features.plan_max_pages ?? 500, props.features.plan_max_pages ?? 500),
     max_depth: props.projeto.max_depth ?? 3,
     max_concurrent_requests: props.projeto.max_concurrent_requests ?? 2,
     delay_between_requests: props.projeto.delay_between_requests ?? 1,
@@ -238,6 +242,10 @@ const permitePadroesExclusao = computed(() => !!props.features.permite_padroes_e
 const permitePoliticasCrawl = computed(() => !!props.features.permite_politicas_crawl);
 const planMaxPages = computed(() => props.features.plan_max_pages ?? 500);
 const allowedFrequencyOptions = computed(() => props.features.allowed_frequencies ?? ['manual']);
+const intervaloPersonalizadoMinimoHoras = computed(() => props.features.intervalo_personalizado_min_horas ?? 1);
+const intervaloPersonalizadoMaximoHoras = computed(() => props.features.intervalo_personalizado_max_horas ?? 720);
+const intervaloPersonalizadoPadraoHoras = computed(() => props.features.intervalo_personalizado_padrao_horas ?? 24);
+const usaFrequenciaCustomizada = computed(() => configForm.frequency === 'customizado');
 const presetsPoliticaCrawl = computed(() => props.politicas_crawl?.presets ?? []);
 const exemplosPoliticaCrawl = computed(() => {
     const opcoes = props.politicas_crawl?.options ?? {};
@@ -448,7 +456,8 @@ const normalizarPadroesExclusao = () => {
 
 const resetConfigForm = () => {
     configForm.frequency = props.projeto.frequency || 'manual';
-    configForm.max_pages = props.projeto.max_pages ?? planMaxPages.value;
+    configForm.intervalo_personalizado_horas = props.projeto.intervalo_personalizado_horas ?? intervaloPersonalizadoPadraoHoras.value;
+    configForm.max_pages = Math.min(props.projeto.max_pages ?? planMaxPages.value, planMaxPages.value);
     configForm.max_depth = props.projeto.max_depth ?? 3;
     configForm.max_concurrent_requests = props.projeto.max_concurrent_requests ?? 2;
     configForm.delay_between_requests = props.projeto.delay_between_requests ?? 1;
@@ -472,6 +481,12 @@ watch(() => props.job_history, (jobs) => {
 watch(() => props.seo_bilingue, (value) => {
     seoBilingue.value = value ?? {};
 }, { deep: true });
+
+watch(() => configForm.frequency, (frequencia) => {
+    if (frequencia === 'customizado' && !configForm.intervalo_personalizado_horas) {
+        configForm.intervalo_personalizado_horas = intervaloPersonalizadoPadraoHoras.value;
+    }
+});
 
 watch(abaAtiva, (value) => {
     if (!exibirSeoBilingue && value === 'seo_bilingue') {
@@ -506,6 +521,7 @@ watch(abaAtiva, (novaAba) => {
 const frequencyLabel = (value) => {
     const map = {
         manual: t('freq.manual'),
+        customizado: t('freq.custom'),
         diario: t('freq.daily'),
         semanal: t('freq.weekly'),
         quinzenal: t('freq.biweekly'),
@@ -929,6 +945,7 @@ const salvarConfiguracoes = () => {
 
     router.patch(route('projects.update', { projeto: props.projeto.id }), {
         frequency: configForm.frequency,
+        intervalo_personalizado_horas: usaFrequenciaCustomizada.value ? configForm.intervalo_personalizado_horas : null,
         max_pages: configForm.max_pages,
         max_depth: configForm.max_depth,
         max_concurrent_requests: configForm.max_concurrent_requests,
@@ -946,6 +963,7 @@ const salvarConfiguracoes = () => {
             const projetoAtualizado = page?.props?.projeto ?? {};
 
             props.projeto.frequency = projetoAtualizado.frequency || configForm.frequency;
+            props.projeto.intervalo_personalizado_horas = projetoAtualizado.intervalo_personalizado_horas ?? (usaFrequenciaCustomizada.value ? configForm.intervalo_personalizado_horas : null);
             props.projeto.max_pages = projetoAtualizado.max_pages ?? configForm.max_pages;
             props.projeto.max_depth = projetoAtualizado.max_depth ?? configForm.max_depth;
             props.projeto.max_concurrent_requests = projetoAtualizado.max_concurrent_requests ?? configForm.max_concurrent_requests;
@@ -960,6 +978,7 @@ const salvarConfiguracoes = () => {
             props.projeto.next_scheduled_crawl_at = projetoAtualizado.next_scheduled_crawl_at ?? null;
 
             configForm.frequency = props.projeto.frequency;
+            configForm.intervalo_personalizado_horas = props.projeto.intervalo_personalizado_horas ?? intervaloPersonalizadoPadraoHoras.value;
 
             Swal.fire({
                 title: t('project.settings_saved'),
@@ -1648,6 +1667,19 @@ const toggleFeature = (feature) => {
                                                 </option>
                                             </select>
                                             <p class="mt-2 text-xs text-gray-500">{{ $t('project.field_frequency_help') }}</p>
+                                            <div v-if="usaFrequenciaCustomizada" class="mt-4">
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('project.field_custom_interval_hours') }}</label>
+                                                <input
+                                                    v-model.number="configForm.intervalo_personalizado_horas"
+                                                    type="number"
+                                                    :min="intervaloPersonalizadoMinimoHoras"
+                                                    :max="intervaloPersonalizadoMaximoHoras"
+                                                    class="w-full rounded-md border-gray-300 focus:border-primary-500 focus:ring-primary-500"
+                                                />
+                                                <p class="mt-2 text-xs text-gray-500">
+                                                    {{ $t('project.field_custom_interval_hours_help', { min: intervaloPersonalizadoMinimoHoras, max: intervaloPersonalizadoMaximoHoras }) }}
+                                                </p>
+                                            </div>
                                             <div class="mt-3 rounded-md border border-primary-100 bg-primary-50 px-4 py-3">
                                                 <div class="text-[11px] font-bold uppercase tracking-wide text-primary-700">{{ $t('project.next_scheduled_run_label') }}</div>
                                                 <div class="mt-1 text-sm font-medium text-primary-900">{{ proximoRastreamentoDescricao }}</div>

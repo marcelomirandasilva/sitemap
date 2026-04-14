@@ -20,6 +20,7 @@ class Projeto extends Model
         'bing_site_url',
         'status',
         'frequency',
+        'intervalo_personalizado_horas',
         'user_agent_custom',
         'delay_between_requests',
         'max_concurrent_requests',
@@ -48,6 +49,7 @@ class Projeto extends Model
         'exclude_patterns' => 'array',
         'last_crawled_at' => 'datetime',
         'next_scheduled_crawl_at' => 'datetime',
+        'intervalo_personalizado_horas' => 'integer',
         'max_depth' => 'integer',
         'max_pages' => 'integer',
     ];
