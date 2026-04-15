@@ -1,0 +1,53 @@
+commit d9b8a2d0e077c2c5cbf4a8c1aa6d98294f3572eb
+Author: marcelomirandasilva <marcelo.miranda.pp@gmail.com>
+Date:   Tue Apr 14 17:21:42 2026 -0300
+
+    feat(site): aplicar limites efetivos e configuracoes avancadas por plano
+    
+    - adiciona recorrencia personalizada e padroes avancados nos projetos
+    
+    - limita max_pages ao teto tecnico da API Python
+    
+    - ajusta telas, textos, seeds e testes para a nova regra de planos
+
+ app/Http/Controllers/Admin/PlanoController.php     |  26 +++-
+ app/Http/Controllers/AssinaturaController.php      |  16 ++-
+ app/Http/Controllers/ProjetoController.php         |  83 +++++++++++--
+ app/Models/Plano.php                               |  69 +++++++++++
+ app/Models/Projeto.php                             |   2 +
+ app/Services/ExecucaoRastreamentoService.php       |  15 ++-
+ app/Services/FrequenciaRastreamentoService.php     |  58 ++++++++-
+ app/Services/SitemapGeneratorService.php           |   9 +-
+ ...rvalo_personalizado_horas_to_projects_table.php |  24 ++++
+ ..._customizado_to_plans_update_frequency_enum.php |  63 ++++++++++
+ ...160000_add_advanced_defaults_to_plans_table.php | 106 ++++++++++++++++
+ database/schema/mysql-schema.sql                   |  14 ++-
+ database/seeders/PlanSeeder.php                    |  50 +++++++-
+ lang/en.json                                       |   3 +
+ lang/pt.json                                       |   5 +-
+ resources/js/Pages/Admin/Plans/Edit.vue            |  55 +++++++++
+ resources/js/Pages/App/Projects/Show.vue           |  36 +++++-
+ resources/js/echo.js                               |  25 +++-
+ tests/Feature/ProjetoFrequenciaCustomizadaTest.php |  70 +++++++++++
+ tests/Feature/ProjetoPadroesPorPlanoTest.php       | 135 +++++++++++++++++++++
+ tests/Unit/FrequenciaRastreamentoServiceTest.php   |  43 +++++++
+ 21 files changed, 872 insertions(+), 35 deletions(-)
+
+commit 48da30511647088ee899a258cf6154116799f4bb
+Author: marcelomirandasilva <marcelo.miranda.pp@gmail.com>
+Date:   Wed Apr 8 12:39:20 2026 -0300
+
+    fix(projetos): restaurar lista de urls com fallback remoto
+
+ app/Http/Controllers/RastreadorController.php |  19 ++-
+ app/Services/SitemapDataReaderService.php     | 190 +++++++++++++++++---------
+ 2 files changed, 138 insertions(+), 71 deletions(-)
+
+commit 8376809ed55a45094dc08e4d0b64d5598aa2d799
+Author: marcelomirandasilva <marcelo.miranda.pp@gmail.com>
+Date:   Wed Apr 8 10:21:27 2026 -0300
+
+    Update AdminSeeder.php
+
+ database/seeders/AdminSeeder.php | 5 +++++
+ 1 file changed, 5 insertions(+)

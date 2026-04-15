@@ -1,0 +1,15 @@
+5f2353e|feat(billing/scripts): corrige redirect inertia x stripe e automatiza processos locais|2026-04-14
+d9b8a2d|feat(site): aplicar limites efetivos e configuracoes avancadas por plano|2026-04-14
+1452789|feat(billing): aplica restricao de limite de projetos baseada no plano|2026-04-14
+4f27853|feat(ui): readequacao global de layout no sistema|2026-04-14
+abd3152|feat(security): implementa validador de url contra ssrf e unifica testes de seguranca|2026-04-13
+323f524|feat(security): insere restricoes de acesso a dono de projeto e rota dev|2026-04-13
+48da305|fix(projetos): restaurar lista de urls com fallback remoto|2026-04-08
+8376809|Update AdminSeeder.php|2026-04-08
+69f8efd|fix(ingest): prefixa streams/ para download de pages_stream|2026-04-08
+f33ef3d|fix(ingest): adiciona header X-User-Id ausente na requisicao HTTP|2026-04-07
+608dde2|fix(ops): corrige leitura da URL da API no health check do start-server.sh|2026-04-07
+dcf6f83|Merge branch 'feat/arquitetura'|2026-04-07
+4e43b07|feat(ops): adiciona scripts de inicializacao do servidor com tmux|2026-04-07
+0a42a0b|Merge branch 'feat/arquitetura'|2026-04-07
+61b2337|refactor(ingest): suporta download http do arquivo jsonl para arquitetura de servidores separados|2026-04-07

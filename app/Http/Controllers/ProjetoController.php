@@ -6,6 +6,7 @@ use App\Models\Projeto;
 use App\Services\ExecucaoRastreamentoService;
 use App\Services\FrequenciaRastreamentoService;
 use App\Services\RelatorioSeoBilingueService;
+use App\Services\RelatorioSeoProjetoService;
 use App\Services\SitemapGeneratorService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -17,18 +18,21 @@ class ProjetoController extends Controller
 {
     protected $sitemapService;
     protected $relatorioSeoBilingue;
+    protected $relatorioSeoProjeto;
     protected $frequenciaRastreamento;
     protected $execucaoRastreamento;
 
     public function __construct(
         SitemapGeneratorService $sitemapService,
         RelatorioSeoBilingueService $relatorioSeoBilingue,
+        RelatorioSeoProjetoService $relatorioSeoProjeto,
         FrequenciaRastreamentoService $frequenciaRastreamento,
         ExecucaoRastreamentoService $execucaoRastreamento
     )
     {
         $this->sitemapService = $sitemapService;
         $this->relatorioSeoBilingue = $relatorioSeoBilingue;
+        $this->relatorioSeoProjeto = $relatorioSeoProjeto;
         $this->frequenciaRastreamento = $frequenciaRastreamento;
         $this->execucaoRastreamento = $execucaoRastreamento;
     }
@@ -195,6 +199,7 @@ class ProjetoController extends Controller
             'ultimo_job' => $ultimoJob,
             'job_history' => $jobHistory,
             'preview_urls' => [],
+            'relatorio_seo' => $this->relatorioSeoProjeto->montarParaProjeto($projeto),
             'seo_bilingue' => $this->relatorioSeoBilingue->montarParaProjeto($projeto),
             'features' => $this->buildProjectFeatures($usuario),
             'politicas_crawl' => [

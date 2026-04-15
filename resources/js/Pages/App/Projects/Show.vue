@@ -6,6 +6,7 @@ import Swal from 'sweetalert2';
 import { trans as t } from "laravel-vue-i18n";
 import axios from 'axios';
 import UrlDataTable from '@/Components/Project/UrlDataTable.vue';
+import PainelSeoProjeto from '@/Components/Project/PainelSeoProjeto.vue';
 import PainelSeoBilingue from '@/Components/Project/PainelSeoBilingue.vue';
 
 // Funcionalidade estacionada: mantemos o SEO bilíngue no código para eventual
@@ -28,6 +29,33 @@ const props = defineProps({
     preview_urls: {
         type: Array,
         default: () => []
+    },
+    relatorio_seo: {
+        type: Object,
+        default: () => ({
+            disponivel: false,
+            fonte: null,
+            total_paginas: 0,
+            total_links: 0,
+            total_links_internos: 0,
+            total_links_externos: 0,
+            total_links_quebrados: 0,
+            paginas_com_links_quebrados: 0,
+            paginas_sem_links_entrada: 0,
+            paginas_sem_links_saida: 0,
+            profundidade_maxima: 0,
+            estrutura: {
+                diretorios_principais: [],
+                distribuicao_profundidade: [],
+                paginas_mais_referenciadas: [],
+                paginas_sem_links_entrada: [],
+                paginas_sem_links_saida: [],
+            },
+            amostras: {
+                links_quebrados: [],
+                links_externos: [],
+            },
+        }),
     },
     seo_bilingue: {
         type: Object,
@@ -111,6 +139,7 @@ const cancelando = ref(false);
 const tarefa = ref(props.ultimo_job || {});
 const historicoJobs = ref([]);
 const listaUrls = ref(props.preview_urls || []);
+const relatorioSeo = ref(props.relatorio_seo || {});
 const seoBilingue = ref(props.seo_bilingue || {});
 const salvandoConfiguracoes = ref(false);
 const configForm = reactive({
@@ -413,6 +442,10 @@ const buscarDetalhesJob = async () => {
             seoBilingue.value = data.seo_bilingue;
         }
 
+        if (data.relatorio_seo) {
+            relatorioSeo.value = data.relatorio_seo;
+        }
+
         // Se finalizou o crawler durante o polling, para o interval e recarrega página opcionalmente
         if (['completed', 'failed', 'cancelled'].includes(tarefa.value.status)) {
             if (pollingInterval) clearInterval(pollingInterval);
@@ -480,6 +513,10 @@ watch(() => props.job_history, (jobs) => {
 
 watch(() => props.seo_bilingue, (value) => {
     seoBilingue.value = value ?? {};
+}, { deep: true });
+
+watch(() => props.relatorio_seo, (value) => {
+    relatorioSeo.value = value ?? {};
 }, { deep: true });
 
 watch(() => configForm.frequency, (frequencia) => {
@@ -1230,6 +1267,10 @@ const toggleFeature = (feature) => {
                             :class="['px-6 py-3 text-sm font-bold uppercase border-t border-l border-r rounded-t-lg transition-all mr-1 translate-y-[1px]', abaAtiva === 'files' ? 'bg-white text-accent-600 border-gray-200 border-b-white shadow-sm' : 'bg-gray-100 text-gray-500 border-transparent hover:bg-white/50']">
                             <span class="mr-2">☁</span> {{ $t('project.download_files') }}
                         </button>
+                        <button @click="abaAtiva = 'seo'"
+                            :class="['px-6 py-3 text-sm font-bold uppercase border-t border-l border-r rounded-t-lg transition-all mr-1 translate-y-[1px]', abaAtiva === 'seo' ? 'bg-white text-accent-600 border-gray-200 border-b-white shadow-sm' : 'bg-gray-100 text-gray-500 border-transparent hover:bg-white/50']">
+                            <span class="mr-2">SEO</span> {{ $t('project.seo_report_tab') }}
+                        </button>
                         <button v-if="exibirSeoBilingue" @click="abaAtiva = 'seo_bilingue'"
                             :class="['px-6 py-3 text-sm font-bold uppercase border-t border-l border-r rounded-t-lg transition-all mr-1 translate-y-[1px]', abaAtiva === 'seo_bilingue' ? 'bg-white text-accent-600 border-gray-200 border-b-white shadow-sm' : 'bg-gray-100 text-gray-500 border-transparent hover:bg-white/50']">
                             <span class="mr-2">SEO</span> {{ $t('project.seo_bilingual_tab') }}
@@ -1322,6 +1363,10 @@ const toggleFeature = (feature) => {
                             </div>
                         </div>
                         
+
+                        <div v-else-if="abaAtiva === 'seo'">
+                            <PainelSeoProjeto :relatorio-seo="relatorioSeo" />
+                        </div>
 
                         <div v-else-if="exibirSeoBilingue && abaAtiva === 'seo_bilingue'">
                             <PainelSeoBilingue :seo-bilingue="seoBilingue" />

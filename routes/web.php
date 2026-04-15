@@ -16,6 +16,8 @@ use App\Http\Controllers\RastreadorController;
 use App\Models\Projeto;
 
 Route::get('/', [PaginaPublicaController::class, 'redirecionarRaiz'])->name('public.root');
+Route::get('/changelog', [PaginaPublicaController::class, 'redirecionarChangelog'])->name('public.changelog.redirect');
+Route::get('/status', [PaginaPublicaController::class, 'redirecionarStatus'])->name('public.status.redirect');
 Route::get('/robots.txt', [SeoSiteController::class, 'robots'])->name('seo.robots');
 Route::get('/sitemap.xml', [SeoSiteController::class, 'sitemap'])->name('seo.sitemap');
 
@@ -23,6 +25,14 @@ Route::middleware('idioma.publico')->group(function () {
     Route::get('/{locale}', [PaginaPublicaController::class, 'landing'])
         ->whereIn('locale', ['pt', 'en'])
         ->name('public.landing');
+
+    Route::get('/{locale}/changelog', [PaginaPublicaController::class, 'changelog'])
+        ->whereIn('locale', ['pt', 'en'])
+        ->name('public.changelog');
+
+    Route::get('/{locale}/status', [PaginaPublicaController::class, 'status'])
+        ->whereIn('locale', ['pt', 'en'])
+        ->name('public.status');
 
     Route::get('/{locale}/info/{slug}', [\App\Http\Controllers\ArtigoInfoController::class, 'show'])
         ->whereIn('locale', ['pt', 'en'])

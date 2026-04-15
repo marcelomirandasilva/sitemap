@@ -37,6 +37,30 @@ class SeoPublico
     }
 
     /**
+     * @return array<string, string>
+     */
+    public static function alternativasChangelog(): array
+    {
+        return [
+            'pt' => route('public.changelog', ['locale' => 'pt']),
+            'en' => route('public.changelog', ['locale' => 'en']),
+            'x-default' => route('public.changelog', ['locale' => self::IDIOMA_PADRAO]),
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function alternativasStatus(): array
+    {
+        return [
+            'pt' => route('public.status', ['locale' => 'pt']),
+            'en' => route('public.status', ['locale' => 'en']),
+            'x-default' => route('public.status', ['locale' => self::IDIOMA_PADRAO]),
+        ];
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public static function dadosLanding(string $locale): array
@@ -49,6 +73,38 @@ class SeoPublico
             'canonical' => route('public.landing', ['locale' => $localeNormalizado]),
             'robots' => 'index,follow,max-image-preview:large',
             'alternativas' => self::alternativasLanding(),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public static function dadosChangelog(string $locale): array
+    {
+        $localeNormalizado = self::normalizarLocale($locale);
+
+        return [
+            'title' => __('seo_publico.changelog.title'),
+            'description' => __('seo_publico.changelog.description'),
+            'canonical' => route('public.changelog', ['locale' => $localeNormalizado]),
+            'robots' => 'index,follow,max-image-preview:large',
+            'alternativas' => self::alternativasChangelog(),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public static function dadosStatus(string $locale): array
+    {
+        $localeNormalizado = self::normalizarLocale($locale);
+
+        return [
+            'title' => __('seo_publico.status.title'),
+            'description' => __('seo_publico.status.description'),
+            'canonical' => route('public.status', ['locale' => $localeNormalizado]),
+            'robots' => 'index,follow,max-image-preview:large',
+            'alternativas' => self::alternativasStatus(),
         ];
     }
 }

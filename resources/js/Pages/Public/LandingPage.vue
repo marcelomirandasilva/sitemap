@@ -129,8 +129,15 @@ const recursosPlano = (plano) => {
                 </div>
 
                 <nav class="hidden items-center gap-5 text-sm font-semibold uppercase tracking-wide text-brand-primary md:flex">
-                    <a href="#" class="transition hover:text-brand-secondary">{{ $t('nav.support', { app_name: nomeAplicacao }) }}</a>
-                    <a href="#" class="transition hover:text-brand-secondary">{{ $t('nav.help', { app_name: nomeAplicacao }) }}</a>
+                    <Link :href="route('public.status', { locale: localeAtual })" class="transition hover:text-brand-secondary">
+                        {{ $t('nav.status', { app_name: nomeAplicacao }) }}
+                    </Link>
+                    <Link :href="route('public.changelog', { locale: localeAtual })" class="transition hover:text-brand-secondary">
+                        {{ $t('nav.changelog', { app_name: nomeAplicacao }) }}
+                    </Link>
+                    <Link :href="route('info.article', { locale: localeAtual, slug: 'terms-of-use' })" class="transition hover:text-brand-secondary">
+                        {{ $t('nav.help', { app_name: nomeAplicacao }) }}
+                    </Link>
                     <div class="ml-2 flex items-center gap-2 border-l border-border-soft pl-4">
                         <button @click="mudarIdioma('pt')" title="Portugues">
                             <img src="/flags/br.svg" alt="Portugues" class="w-5 rounded-sm shadow-sm" />
@@ -314,6 +321,8 @@ const recursosPlano = (plano) => {
                 <nav class="mb-6 flex flex-wrap justify-center gap-6 text-sm font-medium text-brand-secondary">
                     <Link :href="route('info.article', { locale: localeAtual, slug: 'privacy-policy' })" class="hover:text-brand-primary">{{ $t('footer.privacy', { app_name: nomeAplicacao }) }}</Link>
                     <Link :href="route('info.article', { locale: localeAtual, slug: 'terms-of-use' })" class="hover:text-brand-primary">{{ $t('footer.terms', { app_name: nomeAplicacao }) }}</Link>
+                    <Link :href="route('public.status', { locale: localeAtual })" class="hover:text-brand-primary">{{ $t('footer.status', { app_name: nomeAplicacao }) }}</Link>
+                    <Link :href="route('public.changelog', { locale: localeAtual })" class="hover:text-brand-primary">{{ $t('footer.changelog', { app_name: nomeAplicacao }) }}</Link>
                     <a href="#" class="hover:text-brand-primary">{{ $t('footer.api', { app_name: nomeAplicacao }) }}</a>
                     <a href="#" class="hover:text-brand-primary">{{ $t('footer.contact', { app_name: nomeAplicacao }) }}</a>
                     <a href="#" class="hover:text-brand-primary">{{ $t('footer.help', { app_name: nomeAplicacao }) }}</a>
