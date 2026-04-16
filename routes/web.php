@@ -179,6 +179,9 @@ Route::prefix('gestao')->name('admin.')->group(function () {
         // Planos
         Route::resource('plans', \App\Http\Controllers\Admin\PlanoController::class)->except(['show']);
 
+        // Changelog
+        Route::resource('changelog', \App\Http\Controllers\Admin\ChangelogController::class)->except(['show']);
+
         // Tickets
         Route::get('tickets', [\App\Http\Controllers\Admin\TicketController::class, 'index'])->name('tickets.index');
         Route::get('tickets/{ticket}', [\App\Http\Controllers\Admin\TicketController::class, 'show'])->name('tickets.show');

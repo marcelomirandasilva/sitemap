@@ -2,6 +2,9 @@
 
 namespace App\Support;
 
+use App\Models\RegistroChangelog;
+use Illuminate\Support\Facades\Schema;
+
 class ChangelogPublico
 {
     /**
@@ -11,15 +14,40 @@ class ChangelogPublico
     {
         $localeNormalizado = SeoPublico::normalizarLocale($locale);
 
+        $registros = self::buscarNoBanco($localeNormalizado);
+
+        if (!empty($registros)) {
+            return $registros;
+        }
+
         return $localeNormalizado === 'en'
-            ? self::itensEmIngles()
-            : self::itensEmPortugues();
+            ? self::itensFallbackEmIngles()
+            : self::itensFallbackEmPortugues();
     }
 
     /**
      * @return array<int, array<string, mixed>>
      */
-    protected static function itensEmPortugues(): array
+    protected static function buscarNoBanco(string $locale): array
+    {
+        if (!Schema::hasTable('registros_changelog')) {
+            return [];
+        }
+
+        return RegistroChangelog::query()
+            ->publicados()
+            ->orderByDesc('data_lancamento')
+            ->orderByDesc('ordem_exibicao')
+            ->orderByDesc('id')
+            ->get()
+            ->map(fn (RegistroChangelog $registro) => $registro->paraExibicao($locale))
+            ->all();
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    protected static function itensFallbackEmPortugues(): array
     {
         return [
             [
@@ -64,7 +92,7 @@ class ChangelogPublico
     /**
      * @return array<int, array<string, mixed>>
      */
-    protected static function itensEmIngles(): array
+    protected static function itensFallbackEmIngles(): array
     {
         return [
             [

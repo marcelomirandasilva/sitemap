@@ -1269,11 +1269,11 @@ const toggleFeature = (feature) => {
                         </button>
                         <button @click="abaAtiva = 'seo'"
                             :class="['px-6 py-3 text-sm font-bold uppercase border-t border-l border-r rounded-t-lg transition-all mr-1 translate-y-[1px]', abaAtiva === 'seo' ? 'bg-white text-accent-600 border-gray-200 border-b-white shadow-sm' : 'bg-gray-100 text-gray-500 border-transparent hover:bg-white/50']">
-                            <span class="mr-2">SEO</span> {{ $t('project.seo_report_tab') }}
+                            <span class="mr-2">🎯</span> {{ $t('project.seo_report_tab') }}
                         </button>
                         <button v-if="exibirSeoBilingue" @click="abaAtiva = 'seo_bilingue'"
                             :class="['px-6 py-3 text-sm font-bold uppercase border-t border-l border-r rounded-t-lg transition-all mr-1 translate-y-[1px]', abaAtiva === 'seo_bilingue' ? 'bg-white text-accent-600 border-gray-200 border-b-white shadow-sm' : 'bg-gray-100 text-gray-500 border-transparent hover:bg-white/50']">
-                            <span class="mr-2">SEO</span> {{ $t('project.seo_bilingual_tab') }}
+                            <span class="mr-2">🌐</span> {{ $t('project.seo_bilingual_tab') }}
                         </button>
                         <button @click="abaAtiva = 'submit'"
                             :class="['px-6 py-3 text-sm font-bold uppercase border-t border-l border-r rounded-t-lg transition-all mr-1 translate-y-[1px]', abaAtiva === 'submit' ? 'bg-white text-accent-600 border-gray-200 border-b-white shadow-sm' : 'bg-gray-100 text-gray-500 border-transparent hover:bg-white/50']">

@@ -286,10 +286,10 @@ onUnmounted(() => {
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
             {{ $t('nav.support') }}
         </Link>
-        <a href="#" class="flex items-center gap-1 hover:opacity-80 transition">
+        <Link :href="route('info.article', { locale: idiomaAtual, slug: 'terms-of-use' })" class="flex items-center gap-1 hover:opacity-80 transition">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
             {{ $t('nav.help') }}
-        </a>
+        </Link>
 
         <div class="flex items-center gap-2 border-l border-gray-300 pl-4 ml-2">
             <button @click="mudarIdioma('pt')" class="hover:scale-110 transition-transform cursor-pointer hover:opacity-100" :class="idiomaAtual === 'pt' ? 'opacity-100' : 'opacity-60'" title="PortuguÃªs">

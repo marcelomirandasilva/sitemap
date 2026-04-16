@@ -45,7 +45,6 @@ watch(
 
 <template>
     <nav class="flex items-center justify-end gap-6 text-sm font-bold text-gray-500 uppercase tracking-widest">
-        
         <Link :href="route('dashboard')" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-primary-50 text-gray-600 hover:text-primary-700 transition border border-gray-200 text-[11px]">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
             Voltar ao App

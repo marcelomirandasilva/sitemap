@@ -269,6 +269,28 @@ CREATE TABLE `projects` (
   CONSTRAINT `projects_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `registros_changelog`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `registros_changelog` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `versao` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `data_lancamento` date NOT NULL,
+  `ordem_exibicao` int NOT NULL DEFAULT '0',
+  `publicado` tinyint(1) NOT NULL DEFAULT '1',
+  `categoria_pt` varchar(120) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `categoria_en` varchar(120) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `titulo_pt` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `titulo_en` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `resumo_pt` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `resumo_en` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `itens_pt` json DEFAULT NULL,
+  `itens_en` json DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `respostas_tickets`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -508,3 +530,4 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (33,'2026_04_02_170
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (34,'2026_04_14_100000_add_intervalo_personalizado_horas_to_projects_table',21);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (35,'2026_04_14_100100_add_customizado_to_plans_update_frequency_enum',22);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (36,'2026_04_14_160000_add_advanced_defaults_to_plans_table',22);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (37,'2026_04_15_110000_create_registros_changelog_table',23);
