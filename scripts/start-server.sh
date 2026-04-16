@@ -81,7 +81,7 @@ fi
 HEALTH_URL="${HEALTH_URL%/}"
 
 if [ -n "$HEALTH_URL" ]; then
-    HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 "$HEALTH_URL/api/v1/health" 2>/dev/null || echo "000")
+     HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 "$HEALTH_URL" 2>/dev/null || echo "000")
     if [ "$HTTP_STATUS" = "200" ]; then
         echo "  ✓ API Python respondendo em $HEALTH_URL"
     else

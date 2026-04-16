@@ -63,6 +63,7 @@ class SitemapGeneratorService
             'start_urls' => [$projeto->url],
             'max_depth' => $projeto->max_depth ?? 3,
             'max_pages' => $maxPages ?? ($projeto->max_pages ?? 1000),
+            'user_agent' => $projeto->user_agent_custom ?: null,
             'include_images' => (bool) $projeto->check_images,
             'include_videos' => (bool) $projeto->check_videos,
             'include_news' => (bool) ($projeto->check_news ?? false),
