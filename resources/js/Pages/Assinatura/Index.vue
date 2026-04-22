@@ -50,27 +50,30 @@ const handleSubscribe = (plan) => {
 
     const isTargetFree = !plan.stripe_monthly_price_id && !plan.stripe_yearly_price_id;
 
-    // Se NÃO for free e NÃO tiver preço, aí sim é erro de configuração
-    if (!idPrecoAlvo && !isTargetFree) {
-        alert("Erro na configuração do plano. Contate o suporte.");
+    if (isTargetFree) {
+        if (props.assinatura_atual) {
+            if (confirm("Você deseja cancelar sua assinatura paga e voltar ao plano gratuito?\n\nVocê manterá o acesso aos recursos atuais até o fim do período já pago.")) {
+                router.get(route('subscription.checkout', { priceId: 'free' }));
+            }
+        }
+
+        return;
+    }
+
+    // Se o plano pago nao tem preco configurado para o ciclo escolhido, nao chama a rota.
+    if (!idPrecoAlvo) {
+        alert("Este plano ainda nao possui preco configurado para o ciclo selecionado. Contate o suporte.");
         return;
     }
 
     // 2. Se for um Novo Assinante (não tem plano), vai direto pro Checkout do Stripe
     if (!props.assinatura_atual) {
-        window.location.href = route('subscription.checkout', idPrecoAlvo);
+        window.location.href = route('subscription.checkout', { priceId: idPrecoAlvo });
         return;
     }
 
     // 3. Se for Assinante Existente (Troca de Plano ou Cancelamento), pede confirmação
     if (props.assinatura_atual) {
-        if (isTargetFree) {
-            if (confirm("Você deseja cancelar sua assinatura paga e voltar ao plano gratuito?\n\nVocê manterá o acesso aos recursos atuais até o fim do período já pago.")) {
-                router.get(route('subscription.checkout', 'free')); // Enviamos 'free' ou qualquer ID que o backend identifique como free
-            }
-            return;
-        }
-
         const infoCartao = props.cartao_final_4 
             ? `cartão final ${props.cartao_final_4}` 
             : 'seu cartão cadastrado';
@@ -82,7 +85,7 @@ const handleSubscribe = (plan) => {
                         `Clique em Cancelar se preferir trocar o cartão antes.`;
 
         if (confirm(message)) {
-            router.get(route('subscription.checkout', idPrecoAlvo));
+            router.get(route('subscription.checkout', { priceId: idPrecoAlvo }));
         } else {
             if(confirm("Deseja ir para o Portal do Cliente para gerenciar seus cartões?")) {
                 window.location.href = route('subscription.portal');

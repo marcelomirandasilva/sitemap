@@ -44,6 +44,10 @@ class AssinaturaController extends Controller
     {
         $usuario = $request->user();
 
+        if ($id_preco === 'free' && !$usuario->subscribed('default')) {
+            return redirect()->route('subscription.index');
+        }
+
         // ----------------------------------------------------------------------
         // CENÁRIO 1: Usuário já é assinante (UPGRADE/DOWNGRADE)
         // ----------------------------------------------------------------------
