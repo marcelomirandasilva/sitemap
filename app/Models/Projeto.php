@@ -35,6 +35,7 @@ class Projeto extends Model
         'crawl_policy_id',
         'compress_output',
         'enable_cache',
+        'notification_preferences',
         'last_crawled_at',
         'next_scheduled_crawl_at',
     ];
@@ -46,6 +47,7 @@ class Projeto extends Model
         'check_mobile' => 'boolean',
         'compress_output' => 'boolean',
         'enable_cache' => 'boolean',
+        'notification_preferences' => 'array',
         'exclude_patterns' => 'array',
         'last_crawled_at' => 'datetime',
         'next_scheduled_crawl_at' => 'datetime',

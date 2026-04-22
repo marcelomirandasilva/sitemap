@@ -256,6 +256,7 @@ CREATE TABLE `projects` (
   `crawl_policy_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `compress_output` tinyint(1) NOT NULL DEFAULT '1',
   `enable_cache` tinyint(1) NOT NULL DEFAULT '1',
+  `notification_preferences` json DEFAULT NULL,
   `frequency` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'manual',
   `intervalo_personalizado_horas` int unsigned DEFAULT NULL,
   `last_crawled_at` timestamp NULL DEFAULT NULL,
@@ -531,3 +532,4 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (34,'2026_04_14_100
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (35,'2026_04_14_100100_add_customizado_to_plans_update_frequency_enum',22);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (36,'2026_04_14_160000_add_advanced_defaults_to_plans_table',22);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (37,'2026_04_15_110000_create_registros_changelog_table',23);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (38,'2026_04_22_120000_add_notification_preferences_to_projects_table',24);

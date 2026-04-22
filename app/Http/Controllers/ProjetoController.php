@@ -280,6 +280,9 @@ class ProjetoController extends Controller
             'published_sitemap_url' => 'sometimes|nullable|url|max:2048',
             'google_site_property' => 'sometimes|nullable|string|max:255',
             'bing_site_url' => 'sometimes|nullable|url|max:2048',
+            'notification_preferences' => 'sometimes|array',
+            'notification_preferences.email_crawler_updates' => 'nullable|boolean',
+            'notification_preferences.email_search_engine_updates' => 'nullable|boolean',
         ]);
 
         if (isset($validated['check_images']) && $validated['check_images'] && !($planoEfetivo?->permite_imagens)) {
@@ -389,6 +392,13 @@ class ProjetoController extends Controller
 
         if (array_key_exists('bing_site_url', $validated)) {
             $validated['bing_site_url'] = trim((string) ($validated['bing_site_url'] ?? '')) ?: null;
+        }
+
+        if (array_key_exists('notification_preferences', $validated)) {
+            $validated['notification_preferences'] = array_merge(
+                $projeto->notification_preferences ?? [],
+                $validated['notification_preferences'] ?? []
+            );
         }
 
         $frequenciaAlterada = array_key_exists('frequency', $validated);

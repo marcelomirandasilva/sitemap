@@ -165,7 +165,37 @@ Sempre que houver alteracao na interface:
 
 Se a aplicacao estiver servindo assets antigos, faca limpeza de cache do navegador e confira o manifesto em `public/build`.
 
-## 9. Rotina minima de verificacao apos deploy
+## 9. E-mails transacionais
+
+O sistema envia e-mails para boas-vindas, ativacao de conta, redefinicao/alteracao de senha, conclusao/falha de rastreamento, envio aos buscadores, suporte e eventos de assinatura.
+
+Configuracao recomendada via SMTP, que funciona tanto com Mailgun quanto com Resend sem pacotes adicionais:
+
+```env
+MAIL_MAILER=smtp
+MAIL_FROM_ADDRESS=no-reply@genmap.app
+MAIL_FROM_NAME="GenMap"
+MAIL_HOST=
+MAIL_PORT=587
+MAIL_USERNAME=
+MAIL_PASSWORD=
+MAIL_SCHEME=tls
+```
+
+Se optar pelo transporte nativo do Laravel:
+
+- Resend: defina `MAIL_MAILER=resend` e `RESEND_API_KEY`.
+- Mailgun: defina `MAIL_MAILER=mailgun`, `MAILGUN_DOMAIN`, `MAILGUN_SECRET` e `MAILGUN_ENDPOINT`.
+- Confirme no `composer.lock` se os pacotes opcionais do transporte escolhido estao instalados.
+
+Observacoes operacionais:
+
+- Com `QUEUE_CONNECTION` diferente de `sync`, e-mails so saem se `php artisan queue:work` estiver ativo.
+- E-mails de seguranca, como alteracao de senha, nao devem ser desativados.
+- Preferencias globais ficam na tela de preferencias da conta.
+- Preferencias por projeto ficam na aba de configuracoes do projeto.
+
+## 10. Rotina minima de verificacao apos deploy
 
 Checklist objetivo:
 
@@ -175,6 +205,7 @@ Checklist objetivo:
 - scheduler ativo com `schedule:work` ou cron equivalente
 - worker de fila ativo se a fila nao for `sync`
 - Reverb ativo com `php artisan reverb:start` ou processo equivalente
+- provedor de e-mail configurado e `queue:work` ativo quando aplicavel
 - `npm run build` ou deploy dos assets gerados
 - endpoint `/api/v1/health` da API Python respondendo
 - webhook interno alcancavel entre Python e Laravel

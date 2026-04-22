@@ -58,6 +58,10 @@ const notifyForm = useForm({
         crawler_updates: props.user.notification_preferences?.crawler_updates ?? true,
         search_engine_updates: props.user.notification_preferences?.search_engine_updates ?? true,
         support_updates: props.user.notification_preferences?.support_updates ?? true,
+        email_crawler_updates: props.user.notification_preferences?.email_crawler_updates ?? true,
+        email_search_engine_updates: props.user.notification_preferences?.email_search_engine_updates ?? true,
+        email_support_updates: props.user.notification_preferences?.email_support_updates ?? true,
+        email_billing_updates: props.user.notification_preferences?.email_billing_updates ?? true,
     }
 });
 
@@ -182,6 +186,40 @@ const submitDeactivation = () => {
                                                 $t('preferences.notifications.support_updates_desc') }}</p>
                                         </div>
                                         <Toggle v-model="notifyForm.notification_preferences.support_updates" />
+                                    </div>
+
+                                    <div class="pt-4 border-t border-gray-100">
+                                        <p class="text-xs font-bold uppercase tracking-wide text-gray-500 mb-3">
+                                            E-mails
+                                        </p>
+                                    </div>
+
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="text-sm text-gray-500">Receber e-mail quando rastreamentos forem concluidos, cancelados ou falharem.</p>
+                                        </div>
+                                        <Toggle v-model="notifyForm.notification_preferences.email_crawler_updates" />
+                                    </div>
+
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="text-sm text-gray-500">Receber e-mail sobre envios de sitemap ao Google/Bing.</p>
+                                        </div>
+                                        <Toggle v-model="notifyForm.notification_preferences.email_search_engine_updates" />
+                                    </div>
+
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="text-sm text-gray-500">Receber e-mail sobre respostas de suporte.</p>
+                                        </div>
+                                        <Toggle v-model="notifyForm.notification_preferences.email_support_updates" />
+                                    </div>
+
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="text-sm text-gray-500">Receber e-mail sobre pagamentos, renovacoes, cancelamentos e mudancas de plano.</p>
+                                        </div>
+                                        <Toggle v-model="notifyForm.notification_preferences.email_billing_updates" />
                                     </div>
 
                                     <div class="pt-2 flex items-center gap-4">

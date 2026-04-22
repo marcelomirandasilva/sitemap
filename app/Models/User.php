@@ -223,4 +223,9 @@ class User extends Authenticatable implements MustVerifyEmail
         $token = Password::broker()->createToken($this);
         $this->notify(new \App\Notifications\WelcomeAndVerifyUser($token));
     }
+
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new \App\Notifications\RedefinirSenha($token));
+    }
 }
