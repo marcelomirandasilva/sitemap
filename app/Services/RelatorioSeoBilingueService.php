@@ -201,9 +201,10 @@ class RelatorioSeoBilingueService
             return collect();
         }
 
+        $baseArtefatos = $this->caminhoBaseArtefatos();
         $caminhos = [
-            base_path('../api-sitemap/sitemaps/projects/' . $projeto->id . '/streams/pages_stream.jsonl.gz'),
-            base_path('../api-sitemap/sitemaps/' . $ultimoJob->external_job_id . '/streams/pages_stream.jsonl.gz'),
+            $baseArtefatos . '/projects/' . $projeto->id . '/streams/pages_stream.jsonl.gz',
+            $baseArtefatos . '/' . $ultimoJob->external_job_id . '/streams/pages_stream.jsonl.gz',
         ];
 
         $caminhoValido = collect($caminhos)->first(fn ($caminho) => is_string($caminho) && is_file($caminho));
@@ -240,6 +241,13 @@ class RelatorioSeoBilingueService
         gzclose($handle);
 
         return collect($paginas);
+    }
+
+    protected function caminhoBaseArtefatos(): string
+    {
+        $caminhoConfigurado = trim((string) config('services.sitemap_generator.artifacts_path', ''));
+
+        return rtrim($caminhoConfigurado !== '' ? $caminhoConfigurado : base_path('../api-sitemap/sitemaps'), '/\\');
     }
 
     protected function normalizarIdioma(?string $idioma, bool $preservarXDefault = false): ?string

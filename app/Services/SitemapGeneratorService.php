@@ -63,6 +63,7 @@ class SitemapGeneratorService
             'start_urls' => [$projeto->url],
             'max_depth' => $projeto->max_depth ?? 3,
             'max_pages' => $maxPages ?? ($projeto->max_pages ?? 1000),
+            'user_agent' => $projeto->user_agent_custom ?: null,
             'include_images' => (bool) $projeto->check_images,
             'include_videos' => (bool) $projeto->check_videos,
             'include_news' => (bool) ($projeto->check_news ?? false),
@@ -296,14 +297,14 @@ class SitemapGeneratorService
      */
     public function getFileContent(string $jobId, string $filename): ?string
     {
-        $basePath = base_path('../api-sitemap/sitemaps/' . $jobId . '/');
+        $basePath = $this->caminhoBaseArtefatos() . '/' . $jobId . '/';
         $filePath = $basePath . $filename;
 
         if (!file_exists($filePath) && !file_exists($filePath . '.zip') && !file_exists($filePath . '.gz')) {
             try {
                 $job = \App\Models\TarefaSitemap::where('external_job_id', $jobId)->first();
                 if ($job && $job->project_id) {
-                    $projectPath = base_path('../api-sitemap/sitemaps/projects/' . $job->project_id . '/');
+                    $projectPath = $this->caminhoBaseArtefatos() . '/projects/' . $job->project_id . '/';
                     if (file_exists($projectPath . $filename) || file_exists($projectPath . $filename . '.zip') || file_exists($projectPath . $filename . '.gz')) {
                         $filePath = $projectPath . $filename;
                     }
@@ -396,6 +397,13 @@ class SitemapGeneratorService
         }
 
         return null;
+    }
+
+    protected function caminhoBaseArtefatos(): string
+    {
+        $caminhoConfigurado = trim((string) config('services.sitemap_generator.artifacts_path', ''));
+
+        return rtrim($caminhoConfigurado !== '' ? $caminhoConfigurado : base_path('../api-sitemap/sitemaps'), '/\\');
     }
 
     /**

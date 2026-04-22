@@ -58,6 +58,7 @@ return [
         // Timeout exclusivo para o download do arquivo de ingestão (pages_stream.jsonl.gz)
         // Arquivos grandes podem levar mais tempo para transferir. Ajuste conforme sua conexão.
         'ingest_download_timeout' => env('SITEMAP_INGEST_DOWNLOAD_TIMEOUT', 300),
+        'artifacts_path' => env('SITEMAP_ARTIFACTS_PATH'),
 
         // Legado - mantido para retrocompatibilidade com DevController/testConnection
         'username' => env('SITEMAP_API_USERNAME', 'admin'),

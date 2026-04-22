@@ -144,8 +144,9 @@ class ProcessSitemapArtifactsJob implements ShouldQueue
      */
     protected function resolverCaminhoArquivo(string $jobId, int $projectId, string $filename): ?string
     {
-        $basePath = base_path('../api-sitemap/sitemaps/' . $jobId . '/');
-        $projectPath = base_path('../api-sitemap/sitemaps/projects/' . $projectId . '/');
+        $baseArtefatos = $this->caminhoBaseArtefatos();
+        $basePath = $baseArtefatos . '/' . $jobId . '/';
+        $projectPath = $baseArtefatos . '/projects/' . $projectId . '/';
 
         clearstatcache();
 
@@ -164,6 +165,13 @@ class ProcessSitemapArtifactsJob implements ShouldQueue
         }
 
         return null;
+    }
+
+    protected function caminhoBaseArtefatos(): string
+    {
+        $caminhoConfigurado = trim((string) config('services.sitemap_generator.artifacts_path', ''));
+
+        return rtrim($caminhoConfigurado !== '' ? $caminhoConfigurado : base_path('../api-sitemap/sitemaps'), '/\\');
     }
 
     /**
