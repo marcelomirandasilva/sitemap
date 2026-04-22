@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Validation\Rule;
+use App\Notifications\SenhaAlterada;
 use Inertia\Inertia;
 
 class PreferenciasController extends Controller
@@ -65,6 +66,10 @@ class PreferenciasController extends Controller
             'notification_preferences.crawler_updates' => ['boolean'],
             'notification_preferences.search_engine_updates' => ['boolean'],
             'notification_preferences.support_updates' => ['boolean'],
+            'notification_preferences.email_crawler_updates' => ['boolean'],
+            'notification_preferences.email_search_engine_updates' => ['boolean'],
+            'notification_preferences.email_support_updates' => ['boolean'],
+            'notification_preferences.email_billing_updates' => ['boolean'],
         ]);
 
         $request->user()->update([
@@ -124,6 +129,8 @@ class PreferenciasController extends Controller
         $request->user()->update([
             'password' => \Illuminate\Support\Facades\Hash::make($validated['password']),
         ]);
+
+        $request->user()->notify(new SenhaAlterada($request->ip()));
 
         return back()->with('success', 'Senha alterada com sucesso.');
     }

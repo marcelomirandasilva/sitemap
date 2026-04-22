@@ -4,11 +4,16 @@ namespace App\Listeners;
 
 use App\Models\Plano;
 use App\Models\User;
+use App\Services\CentralNotificacoesService;
 use Illuminate\Support\Facades\Log;
 use Laravel\Cashier\Events\WebhookReceived;
 
 class StripeEventListener
 {
+    public function __construct(private CentralNotificacoesService $centralNotificacoes)
+    {
+    }
+
     /**
      * Handle received Stripe webhooks.
      */
@@ -71,6 +76,16 @@ class StripeEventListener
         $usuario->save();
         $usuario->setRelation('plano', $plano);
 
+        $this->centralNotificacoes->notificarPlano(
+            $usuario,
+            'Plano atualizado',
+            "Sua assinatura {$plano->name} esta ativa no GenMap.",
+            [
+                'Plano: ' . $plano->name,
+                'Status Stripe: ' . $status,
+            ]
+        );
+
         Log::info("Webhook Stripe: plano do usuario {$usuario->id} atualizado para {$plano->name}");
     }
 
@@ -85,12 +100,33 @@ class StripeEventListener
 
         $plano = $usuario->sincronizarPlanoComAssinatura();
 
+        $this->centralNotificacoes->notificarPlano(
+            $usuario,
+            'Assinatura cancelada',
+            'Sua assinatura paga foi cancelada ou encerrada. O acesso sera ajustado conforme o periodo vigente.',
+            [
+                'Plano atual: ' . ($plano?->name ?? 'Free'),
+            ]
+        );
+
         Log::info("Webhook Stripe: assinatura cancelada para usuario {$usuario->id}. Plano ajustado para " . ($plano?->name ?? 'nenhum') . '.');
     }
 
     protected function handlePaymentFailed($invoice): void
     {
         $stripeId = $invoice['customer'];
+        $usuario = $this->encontrarUsuarioPorClienteStripe($stripeId);
+
+        if ($usuario) {
+            $this->centralNotificacoes->notificarPlano(
+                $usuario,
+                'Falha no pagamento',
+                'Nao foi possivel confirmar o pagamento da sua assinatura. Verifique o metodo de pagamento para evitar interrupcao do plano.',
+                [
+                    'Cliente Stripe: ' . $stripeId,
+                ]
+            );
+        }
 
         Log::warning("Webhook Stripe: pagamento falhou para customer {$stripeId}. Verifique o status da assinatura.");
     }

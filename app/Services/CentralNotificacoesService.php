@@ -8,6 +8,7 @@ use App\Models\SearchEngineSubmission;
 use App\Models\Ticket;
 use App\Models\TarefaSitemap;
 use App\Models\User;
+use App\Notifications\EmailSistema;
 use App\Notifications\NotificacaoSistema;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Notifications\Channels\DatabaseChannel;
@@ -44,6 +45,26 @@ class CentralNotificacoesService
         return (bool) $preferencias[$chave];
     }
 
+    public function preferenciaEmailAtiva(User $usuario, string $chave, bool $padrao = true, ?Projeto $projeto = null): bool
+    {
+        $preferenciasProjeto = $projeto?->notification_preferences ?? [];
+
+        if (array_key_exists($chave, $preferenciasProjeto)) {
+            return (bool) $preferenciasProjeto[$chave];
+        }
+
+        return $this->preferenciaAtiva($usuario, $chave, $padrao);
+    }
+
+    public function enviarEmail(User $usuario, array $dados, string $chavePreferencia, bool $padrao = true, ?Projeto $projeto = null): void
+    {
+        if (!$this->preferenciaEmailAtiva($usuario, $chavePreferencia, $padrao, $projeto)) {
+            return;
+        }
+
+        $usuario->notify(new EmailSistema($dados));
+    }
+
     public function notificarCrawler(Projeto $projeto, TarefaSitemap $job): void
     {
         $usuario = $projeto->user;
@@ -78,6 +99,19 @@ class CentralNotificacoesService
                 'status' => $job->status,
             ],
         ]);
+
+        $this->enviarEmail($usuario, [
+            'assunto' => $titulo . ' - ' . $projeto->name,
+            'titulo' => $titulo,
+            'mensagem' => trim((string) $mensagem),
+            'linhas' => [
+                'Projeto: ' . $projeto->name,
+                'Status: ' . $job->status,
+                'Paginas encontradas: ' . (int) ($job->pages_count ?? $job->urls_found ?? 0),
+            ],
+            'acao_texto' => 'Ver projeto',
+            'url' => route('projects.show', $projeto->id),
+        ], 'email_crawler_updates', true, $projeto);
     }
 
     public function notificarEnvioBuscador(Projeto $projeto, SearchEngineSubmission $submissao): void
@@ -110,6 +144,19 @@ class CentralNotificacoesService
                 'status' => $submissao->status,
             ],
         ]);
+
+        $this->enviarEmail($usuario, [
+            'assunto' => $titulo,
+            'titulo' => $titulo,
+            'mensagem' => trim((string) $mensagem),
+            'linhas' => [
+                'Projeto: ' . $projeto->name,
+                'Buscador: ' . $provedor,
+                'Status: ' . $submissao->status,
+            ],
+            'acao_texto' => 'Ver envio',
+            'url' => route('projects.show', $projeto->id) . '#submit',
+        ], 'email_search_engine_updates', true, $projeto);
     }
 
     public function notificarRespostaTicket(Ticket $ticket): void
@@ -131,6 +178,48 @@ class CentralNotificacoesService
                 'status' => $ticket->status,
             ],
         ]);
+
+        $this->enviarEmail($usuario, [
+            'assunto' => 'Nova resposta no suporte',
+            'titulo' => 'Nova resposta da equipe',
+            'mensagem' => "O ticket \"{$ticket->titulo}\" recebeu uma nova resposta.",
+            'acao_texto' => 'Ver ticket',
+            'url' => route('support.show', $ticket->id),
+        ], 'email_support_updates', true);
+    }
+
+    public function notificarPlano(User $usuario, string $titulo, string $mensagem, array $linhas = []): void
+    {
+        $this->registrarNotificacao($usuario, [
+            'titulo' => $titulo,
+            'mensagem' => $mensagem,
+            'url' => route('billing.index'),
+            'tipo' => 'assinatura',
+            'categoria' => 'assinatura',
+            'metadata' => [],
+        ]);
+
+        $this->enviarEmail($usuario, [
+            'assunto' => $titulo,
+            'titulo' => $titulo,
+            'mensagem' => $mensagem,
+            'linhas' => $linhas,
+            'acao_texto' => 'Ver assinatura',
+            'url' => route('billing.index'),
+        ], 'email_billing_updates', true);
+    }
+
+    public function notificarSeguranca(User $usuario, string $titulo, string $mensagem, array $linhas = []): void
+    {
+        $this->enviarEmail($usuario, [
+            'assunto' => $titulo,
+            'titulo' => $titulo,
+            'mensagem' => $mensagem,
+            'linhas' => $linhas,
+            'acao_texto' => 'Abrir preferencias',
+            'url' => route('preferences.edit'),
+            'rodape' => 'Este e-mail de seguranca nao pode ser desativado nas preferencias.',
+        ], 'email_security_alerts', true);
     }
 
     public function serializar(DatabaseNotification $notificacao): array

@@ -155,6 +155,10 @@ const configForm = reactive({
     compress_output: props.projeto.compress_output ?? true,
     enable_cache: props.projeto.enable_cache ?? true,
     crawl_policy_id: props.projeto.crawl_policy_id ?? '',
+    notification_preferences: {
+        email_crawler_updates: props.projeto.notification_preferences?.email_crawler_updates ?? true,
+        email_search_engine_updates: props.projeto.notification_preferences?.email_search_engine_updates ?? true,
+    },
 });
 const textoPadroesExclusao = ref((props.projeto.exclude_patterns ?? []).join('\n'));
 const submitForm = reactive({
@@ -500,6 +504,8 @@ const resetConfigForm = () => {
     configForm.compress_output = props.projeto.compress_output ?? true;
     configForm.enable_cache = props.projeto.enable_cache ?? true;
     configForm.crawl_policy_id = props.projeto.crawl_policy_id ?? '';
+    configForm.notification_preferences.email_crawler_updates = props.projeto.notification_preferences?.email_crawler_updates ?? true;
+    configForm.notification_preferences.email_search_engine_updates = props.projeto.notification_preferences?.email_search_engine_updates ?? true;
     textoPadroesExclusao.value = (props.projeto.exclude_patterns ?? []).join('\n');
 };
 
@@ -994,6 +1000,7 @@ const salvarConfiguracoes = () => {
         crawl_policy_id: configForm.crawl_policy_id || null,
         compress_output: configForm.compress_output,
         enable_cache: configForm.enable_cache,
+        notification_preferences: configForm.notification_preferences,
     }, {
         preserveScroll: true,
         onSuccess: (page) => {
@@ -1012,6 +1019,7 @@ const salvarConfiguracoes = () => {
             props.projeto.crawl_policy_id = projetoAtualizado.crawl_policy_id ?? (configForm.crawl_policy_id || null);
             props.projeto.compress_output = projetoAtualizado.compress_output ?? configForm.compress_output;
             props.projeto.enable_cache = projetoAtualizado.enable_cache ?? configForm.enable_cache;
+            props.projeto.notification_preferences = projetoAtualizado.notification_preferences ?? configForm.notification_preferences;
             props.projeto.next_scheduled_crawl_at = projetoAtualizado.next_scheduled_crawl_at ?? null;
 
             configForm.frequency = props.projeto.frequency;
@@ -1834,6 +1842,31 @@ const toggleFeature = (feature) => {
                                             </p>
                                         </div>
                                     </div>
+                                </div>
+                            </div>
+
+                            <div class="border border-gray-200 rounded-lg p-5 bg-white">
+                                <h4 class="text-sm font-bold uppercase tracking-wide text-gray-700 mb-4">Notificacoes por e-mail deste projeto</h4>
+                                <p class="mb-4 text-sm text-gray-500">
+                                    Estes controles sobrescrevem as preferencias globais apenas para este site.
+                                </p>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <label class="flex items-start gap-3 rounded-md border border-gray-200 px-4 py-3">
+                                        <input v-model="configForm.notification_preferences.email_crawler_updates" type="checkbox" class="mt-1 rounded border-gray-300 text-primary-600 focus:ring-primary-500" />
+                                        <span>
+                                            <span class="block text-sm font-medium text-gray-700">Atualizacoes de rastreamento</span>
+                                            <span class="mt-1 block text-xs text-gray-500">Enviar e-mail quando o rastreamento concluir, falhar ou for cancelado.</span>
+                                        </span>
+                                    </label>
+
+                                    <label class="flex items-start gap-3 rounded-md border border-gray-200 px-4 py-3">
+                                        <input v-model="configForm.notification_preferences.email_search_engine_updates" type="checkbox" class="mt-1 rounded border-gray-300 text-primary-600 focus:ring-primary-500" />
+                                        <span>
+                                            <span class="block text-sm font-medium text-gray-700">Envio aos buscadores</span>
+                                            <span class="mt-1 block text-xs text-gray-500">Enviar e-mail sobre sucesso ou falha no envio do sitemap ao Google/Bing.</span>
+                                        </span>
+                                    </label>
                                 </div>
                             </div>
 
