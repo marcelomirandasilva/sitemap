@@ -23,6 +23,10 @@ const billingCycle = ref('monthly');
 // A verdade vem do banco de dados via props
 const displayPlans = props.planos;
 
+const planoGratuito = (plan) => {
+    return plan.slug === 'free' || (Number(plan.price_monthly_brl) === 0 && Number(plan.price_yearly_brl) === 0);
+};
+
 // Helper para verificar se o plano está ativo
 const isPlanActive = (plan) => {
     const idPlanoAtual = props.id_plano_atual ? Number(props.id_plano_atual) : null;
@@ -38,7 +42,7 @@ const isPlanActive = (plan) => {
     }
 
     // Ultimo fallback: sem plano informado, assume Free.
-    return plan.slug === 'free' || (!plan.stripe_monthly_price_id && !plan.stripe_yearly_price_id);
+    return planoGratuito(plan);
 };
 
 // --- LÓGICA DE ASSINATURA INTELIGENTE ---
@@ -48,7 +52,7 @@ const handleSubscribe = (plan) => {
         ? plan.stripe_yearly_price_id 
         : plan.stripe_monthly_price_id;
 
-    const isTargetFree = !plan.stripe_monthly_price_id && !plan.stripe_yearly_price_id;
+    const isTargetFree = planoGratuito(plan);
 
     if (isTargetFree) {
         if (props.assinatura_atual) {

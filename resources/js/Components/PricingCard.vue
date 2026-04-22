@@ -17,7 +17,7 @@ const props = defineProps({
 });
 
 const isPendingCancellation = computed(() => {
-    if (!props.onGracePeriod) return false;
+    if (!props.onGracePeriod || !props.currentPriceId) return false;
     
     // Este card é o plano que está sendo cancelado?
     return props.currentPriceId === props.plan.stripe_monthly_price_id || 
