@@ -2,21 +2,31 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\Plano;
+use Illuminate\Database\Seeder;
 
 class UpdatePlansSeeder extends Seeder
 {
     public function run(): void
     {
-        // Atualiza o plano Pro 1k (ID 2) com o ID fornecido pelo usuário
-        $plan = Plano::find(2);
-        if ($plan) {
-            $plan->stripe_id = 'price_1SwWEOFOqAJ7yJjnWumEVcQE';
-            $plan->save();
-            echo "Plano '{$plan->name}' atualizado com sucesso!\n";
-        } else {
-            echo "Plano ID 2 não encontrado.\n";
+        $idsPrecos = [
+            // Preencha aqui apenas quando for necessario fixar IDs ja existentes no Stripe.
+            // 'solo' => [
+            //     'stripe_monthly_price_id' => 'price_xxx',
+            //     'stripe_yearly_price_id' => 'price_yyy',
+            // ],
+        ];
+
+        foreach ($idsPrecos as $slug => $dadosStripe) {
+            $plano = Plano::where('slug', $slug)->first();
+
+            if (!$plano) {
+                echo "Plano '{$slug}' nao encontrado.\n";
+                continue;
+            }
+
+            $plano->fill(array_filter($dadosStripe))->save();
+            echo "Plano '{$plano->name}' atualizado com os precos Stripe.\n";
         }
     }
 }
