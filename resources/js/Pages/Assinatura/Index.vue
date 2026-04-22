@@ -8,6 +8,8 @@ const props = defineProps({
     planos: Array,
     assinatura_atual: Object,
     id_preco_atual: String,
+    id_plano_atual: Number,
+    slug_plano_atual: String,
     esta_cancelado: Boolean,
     em_periodo_carencia: Boolean,
     termina_em: String,
@@ -23,28 +25,20 @@ const displayPlans = props.planos;
 
 // Helper para verificar se o plano está ativo
 const isPlanActive = (plan) => {
-    const isFreePlan = !plan.stripe_monthly_price_id && !plan.stripe_yearly_price_id;
-    
-    // Se não tem assinatura nenhuma, o Free é o ativo
-    if (!props.assinatura_atual) {
-        return isFreePlan;
+    const idPlanoAtual = props.id_plano_atual ? Number(props.id_plano_atual) : null;
+
+    // O backend ja calcula o plano efetivo do usuario, inclusive fallback para Free.
+    if (idPlanoAtual) {
+        return Number(plan.id) === idPlanoAtual;
     }
 
-    // Se a assinatura está cancelada mas ainda no período de carência (onGracePeriod):
-    // O plano pago CONTINUA sendo o ativo até expirar.
-    if (props.esta_cancelado && props.em_periodo_carencia) {
-        const precoAtual = props.assinatura_atual?.stripe_price;
-        return precoAtual === plan.stripe_monthly_price_id || precoAtual === plan.stripe_yearly_price_id;
+    // Fallback para ambientes antigos que ainda nao enviem o ID do plano.
+    if (props.slug_plano_atual) {
+        return plan.slug === props.slug_plano_atual;
     }
 
-    // Se já expirou de vez (esta_cancelado e NÃO em_periodo_carencia), volta pro Free
-    if (props.esta_cancelado && !props.em_periodo_carencia) {
-        return isFreePlan;
-    }
-
-    // Caso normal: plano ativo sem cancelamento
-    const precoAtual = props.assinatura_atual?.stripe_price;
-    return precoAtual === plan.stripe_monthly_price_id || precoAtual === plan.stripe_yearly_price_id;
+    // Ultimo fallback: sem plano informado, assume Free.
+    return plan.slug === 'free' || (!plan.stripe_monthly_price_id && !plan.stripe_yearly_price_id);
 };
 
 // --- LÓGICA DE ASSINATURA INTELIGENTE ---

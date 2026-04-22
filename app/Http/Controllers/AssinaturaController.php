@@ -14,7 +14,9 @@ class AssinaturaController extends Controller
      */
     public function index()
     {
-        $assinatura = auth()->user()->subscription('default');
+        $usuario = auth()->user();
+        $assinatura = $usuario->subscription('default');
+        $planoAtual = $usuario->planoEfetivo();
 
         return Inertia::render('Assinatura/Index', [
             // Trazendo planos ordenados pelo preço
@@ -23,13 +25,15 @@ class AssinaturaController extends Controller
             // Dados da assinatura atual
             'assinatura_atual' => $assinatura,
             'id_preco_atual' => $assinatura ? $assinatura->stripe_price : null,
+            'id_plano_atual' => $planoAtual?->id,
+            'slug_plano_atual' => $planoAtual?->slug,
             'esta_cancelado' => $assinatura ? $assinatura->canceled() : false,
             'em_periodo_carencia' => $assinatura ? $assinatura->onGracePeriod() : false,
             'termina_em' => $assinatura && $assinatura->ends_at ? $assinatura->ends_at->format('d/m/Y') : null,
 
             // Dados parciais do cartão para a mensagem de confirmação
-            'cartao_final_4' => auth()->user()->pm_last_four,
-            'marca_do_cartao' => auth()->user()->pm_type,
+            'cartao_final_4' => $usuario->pm_last_four,
+            'marca_do_cartao' => $usuario->pm_type,
         ]);
     }
 
