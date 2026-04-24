@@ -6,6 +6,13 @@ use App\Http\Controllers\NotificacaoController;
 use App\Http\Controllers\ProjectSearchEngineController;
 use App\Http\Controllers\SearchEngineConnectionController;
 use App\Http\Controllers\SeoSiteController;
+use App\Notifications\EmailSistema;
+use App\Notifications\RedefinirSenha;
+use App\Notifications\SenhaAlterada;
+use App\Notifications\WelcomeAndVerifyUser;
+use App\Notifications\WelcomeNewUser;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
@@ -154,6 +161,80 @@ Route::middleware(['auth'])->group(function () {
 Route::middleware(['auth', 'admin'])->prefix('dev')->group(function () {
     Route::get('/api-test', [App\Http\Controllers\DevController::class, 'showApiTest'])->name('dev.api-test');
     Route::post('/api-test/run', [App\Http\Controllers\DevController::class, 'runApiTest'])->name('dev.api-test.run');
+
+    if (app()->isLocal()) {
+        Route::get('/email-test', function (Request $request) {
+            $usuario = $request->user();
+            $emailDestino = $usuario->email;
+            $tokenRedefinicao = Password::broker()->createToken($usuario);
+
+            $notificacoes = [
+                'ativacao_conta' => new WelcomeAndVerifyUser('token-local-ativacao-genmap'),
+                'boas_vindas' => new WelcomeNewUser('SenhaTemporaria#123'),
+                'redefinicao_senha' => new RedefinirSenha($tokenRedefinicao),
+                'senha_alterada' => new SenhaAlterada('127.0.0.1'),
+                'rastreamento_concluido' => new EmailSistema([
+                    'assunto' => 'Rastreamento concluido no GenMap',
+                    'titulo' => 'Projeto atualizado',
+                    'mensagem' => 'O rastreamento do projeto odia.ig.com.br foi concluido com sucesso.',
+                    'linhas' => [
+                        'Paginas encontradas: 500',
+                        'Imagens indexadas: 457',
+                        'Videos indexados: 0',
+                    ],
+                    'acao_texto' => 'Abrir projeto',
+                    'url' => route('dashboard'),
+                    'rodape' => 'Voce esta recebendo esta mensagem porque as notificacoes de projeto por e-mail estao ativas.',
+                ]),
+                'envio_buscadores' => new EmailSistema([
+                    'assunto' => 'Envio aos buscadores concluido',
+                    'titulo' => 'Sitemap enviado ao Google e Bing',
+                    'mensagem' => 'O envio do sitemap foi registrado com sucesso nos buscadores conectados.',
+                    'linhas' => [
+                        'Projeto: odia.ig.com.br',
+                        'Google Search Console: enviado',
+                        'Bing Webmaster Tools: enviado',
+                    ],
+                    'acao_texto' => 'Ver historico',
+                    'url' => route('dashboard'),
+                ]),
+                'suporte' => new EmailSistema([
+                    'assunto' => 'Resposta do suporte GenMap',
+                    'titulo' => 'Seu ticket recebeu uma resposta',
+                    'mensagem' => 'Nossa equipe respondeu sua solicitacao e ja existe uma atualizacao disponivel.',
+                    'linhas' => [
+                        'Ticket: #1234',
+                        'Assunto: Duvida sobre envio de sitemap',
+                    ],
+                    'acao_texto' => 'Abrir suporte',
+                    'url' => route('support.index'),
+                ]),
+                'plano' => new EmailSistema([
+                    'assunto' => 'Atualizacao no seu plano GenMap',
+                    'titulo' => 'Situacao de assinatura alterada',
+                    'mensagem' => 'Houve uma atualizacao relacionada ao seu plano e ao faturamento da conta.',
+                    'linhas' => [
+                        'Plano: Solo',
+                        'Status: ativo',
+                        'Proxima renovacao: 30/04/2026',
+                    ],
+                    'acao_texto' => 'Abrir faturamento',
+                    'url' => route('billing.index'),
+                ]),
+            ];
+
+            foreach ($notificacoes as $chave => $notificacao) {
+                $usuario->notifyNow($notificacao);
+            }
+
+            return response()->json([
+                'ok' => true,
+                'email_destino' => $emailDestino,
+                'quantidade' => count($notificacoes),
+                'tipos' => array_keys($notificacoes),
+            ]);
+        })->name('dev.email-test');
+    }
 });
 
 require __DIR__ . '/auth.php';
