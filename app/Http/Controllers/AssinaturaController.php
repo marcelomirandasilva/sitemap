@@ -19,7 +19,7 @@ class AssinaturaController extends Controller
      */
     public function index()
     {
-        $usuario = auth()->user();
+        $usuario = auth()->user()->fresh();
         $assinatura = $usuario->subscription('default');
         $planoAtual = $usuario->planoEfetivo();
 
@@ -62,6 +62,19 @@ class AssinaturaController extends Controller
 
             try {
                 $usuario->subscription('default')->swapAndInvoice($id_preco);
+                try {
+                    $sincronizado = $this->sincronizacaoAssinaturaStripe->sincronizarAssinaturaAtivaMaisRecente($usuario->fresh());
+
+                    if (!$sincronizado) {
+                        return redirect()->route('subscription.index')
+                            ->with('warning', 'O pagamento foi processado, mas o plano ainda esta sendo sincronizado. Atualize a tela em alguns instantes.');
+                    }
+                } catch (\Throwable $erroSincronizacao) {
+                    report($erroSincronizacao);
+
+                    return redirect()->route('subscription.index')
+                        ->with('warning', 'O pagamento foi processado, mas ainda nao foi possivel confirmar o novo plano localmente. Atualize a tela em alguns instantes.');
+                }
 
                 return redirect()->route('subscription.index')
                     ->with('success', 'Plano atualizado com sucesso! O acesso foi liberado.');
@@ -70,7 +83,8 @@ class AssinaturaController extends Controller
                     'cashier.payment',
                     [$excecao->payment->id, 'redirect' => route('subscription.index')]
                 ));
-            } catch (\Exception $erro) {
+            } catch (\Throwable $erro) {
+                report($erro);
                 session()->flash('error', 'Houve um problema no pagamento automatico. Por favor, verifique seu cartao.');
 
                 return Inertia::location(route('subscription.portal'));
