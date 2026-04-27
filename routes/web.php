@@ -114,6 +114,7 @@ Route::post('/api/internal/webhook/job-completed', [\App\Http\Controllers\Webhoo
 Route::middleware(['auth'])->group(function () {
     Route::get('/subscription', [App\Http\Controllers\AssinaturaController::class, 'index'])->name('subscription.index');
     Route::get('/subscription/checkout/{priceId}', [App\Http\Controllers\AssinaturaController::class, 'checkout'])->name('subscription.checkout');
+    Route::get('/subscription/checkout/success', [App\Http\Controllers\AssinaturaController::class, 'sucessoCheckout'])->name('subscription.checkout.success');
     Route::get('/portal', [App\Http\Controllers\AssinaturaController::class, 'portal'])->name('portal');
 
     // Rotas de Crawler movidas para o grupo verified acima
@@ -161,15 +162,18 @@ Route::middleware(['auth'])->group(function () {
 Route::middleware(['auth', 'admin'])->prefix('dev')->group(function () {
     Route::get('/api-test', [App\Http\Controllers\DevController::class, 'showApiTest'])->name('dev.api-test');
     Route::post('/api-test/run', [App\Http\Controllers\DevController::class, 'runApiTest'])->name('dev.api-test.run');
+});
 
-    if (app()->isLocal()) {
+if (app()->environment(['local', 'testing'])) {
+    Route::middleware(['auth'])->prefix('dev')->group(function () {
         Route::get('/email-test', function (Request $request) {
             $usuario = $request->user();
             $emailDestino = $usuario->email;
+            $tokenAtivacao = Password::broker()->createToken($usuario);
             $tokenRedefinicao = Password::broker()->createToken($usuario);
 
             $notificacoes = [
-                'ativacao_conta' => new WelcomeAndVerifyUser('token-local-ativacao-genmap'),
+                'ativacao_conta' => new WelcomeAndVerifyUser($tokenAtivacao),
                 'boas_vindas' => new WelcomeNewUser('SenhaTemporaria#123'),
                 'redefinicao_senha' => new RedefinirSenha($tokenRedefinicao),
                 'senha_alterada' => new SenhaAlterada('127.0.0.1'),
@@ -223,19 +227,39 @@ Route::middleware(['auth', 'admin'])->prefix('dev')->group(function () {
                 ]),
             ];
 
+            $tipoSolicitado = trim((string) $request->query('tipo', ''));
+
+            if ($tipoSolicitado !== '') {
+                abort_unless(array_key_exists($tipoSolicitado, $notificacoes), 422, 'Tipo de e-mail invalido.');
+                $notificacoes = [
+                    $tipoSolicitado => $notificacoes[$tipoSolicitado],
+                ];
+            }
+
+            $resultados = [];
+            $erros = [];
+
             foreach ($notificacoes as $chave => $notificacao) {
-                $usuario->notifyNow($notificacao);
+                try {
+                    $usuario->notifyNow($notificacao);
+                    $resultados[$chave] = 'enviado';
+                } catch (\Throwable $erro) {
+                    $resultados[$chave] = $erro->getMessage();
+                    $erros[$chave] = $erro->getMessage();
+                }
             }
 
             return response()->json([
-                'ok' => true,
+                'ok' => empty($erros),
                 'email_destino' => $emailDestino,
                 'quantidade' => count($notificacoes),
                 'tipos' => array_keys($notificacoes),
-            ]);
+                'resultados' => $resultados,
+                'erros' => $erros,
+            ], empty($erros) ? 200 : 500);
         })->name('dev.email-test');
-    }
-});
+    });
+}
 
 require __DIR__ . '/auth.php';
 
