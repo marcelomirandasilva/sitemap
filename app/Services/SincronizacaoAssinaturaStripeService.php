@@ -9,12 +9,16 @@ use Illuminate\Support\Facades\Log;
 
 class SincronizacaoAssinaturaStripeService
 {
+    public function __construct(private RastreabilidadeStripeService $rastreabilidadeStripe)
+    {
+    }
+
     public function sincronizarPorSessaoCheckout(User $usuario, string $idSessaoCheckout): bool
     {
         $this->configurarChaveStripe();
 
         $sessaoCheckout = \Stripe\Checkout\Session::retrieve($idSessaoCheckout, [
-            'expand' => ['subscription.items.data.price', 'customer'],
+            'expand' => ['subscription.items.data.price', 'subscription.latest_invoice', 'customer'],
         ]);
 
         if (($sessaoCheckout->mode ?? null) !== 'subscription') {
@@ -42,7 +46,7 @@ class SincronizacaoAssinaturaStripeService
 
         if (is_string($assinaturaStripe)) {
             $assinaturaStripe = \Stripe\Subscription::retrieve($assinaturaStripe, [
-                'expand' => ['items.data.price'],
+                'expand' => ['items.data.price', 'latest_invoice'],
             ]);
         }
 
@@ -68,7 +72,7 @@ class SincronizacaoAssinaturaStripeService
             'customer' => $idClienteStripe,
             'status' => 'all',
             'limit' => 10,
-            'expand' => ['data.items.data.price'],
+            'expand' => ['data.items.data.price', 'data.latest_invoice'],
         ]);
 
         $assinaturaStripe = collect($assinaturas->data ?? [])
@@ -167,6 +171,7 @@ class SincronizacaoAssinaturaStripeService
 
         $usuario->unsetRelation('subscriptions');
         $usuario->setRelation('plano', $plano);
+        $this->registrarUltimaFaturaConhecida($usuario, $assinaturaStripe);
 
         Log::info('Assinatura Stripe reconciliada com sucesso apos checkout.', [
             'user_id' => $usuario->id,
@@ -176,6 +181,30 @@ class SincronizacaoAssinaturaStripeService
         ]);
 
         return true;
+    }
+
+    protected function registrarUltimaFaturaConhecida(User $usuario, object $assinaturaStripe): void
+    {
+        $ultimaFatura = $assinaturaStripe->latest_invoice ?? null;
+
+        if (!$ultimaFatura) {
+            return;
+        }
+
+        if (is_string($ultimaFatura)) {
+            $ultimaFatura = \Stripe\Invoice::retrieve($ultimaFatura);
+        }
+
+        $dadosFatura = method_exists($ultimaFatura, 'toArray')
+            ? $ultimaFatura->toArray()
+            : (array) $ultimaFatura;
+
+        $this->rastreabilidadeStripe->registrarPagamentoPorInvoice(
+            $dadosFatura,
+            $usuario,
+            null,
+            'reconciliacao'
+        );
     }
 
     protected function validarSessaoPertenceAoUsuario(User $usuario, object $sessaoCheckout): void

@@ -58,6 +58,32 @@ CREATE TABLE `cache_locks` (
   PRIMARY KEY (`key`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `eventos_webhook_stripe`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `eventos_webhook_stripe` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` bigint unsigned DEFAULT NULL,
+  `stripe_event_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `tipo_evento` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `stripe_customer_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `stripe_subscription_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `stripe_invoice_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `stripe_payment_intent_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `status_processamento` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'recebido',
+  `erro_processamento` text COLLATE utf8mb4_unicode_ci,
+  `processado_em` timestamp NULL DEFAULT NULL,
+  `payload` json NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `eventos_webhook_stripe_stripe_event_id_unique` (`stripe_event_id`),
+  KEY `eventos_webhook_stripe_user_id_foreign` (`user_id`),
+  KEY `eventos_webhook_stripe_tipo_evento_created_at_index` (`tipo_evento`,`created_at`),
+  KEY `eventos_webhook_stripe_stripe_customer_id_created_at_index` (`stripe_customer_id`,`created_at`),
+  CONSTRAINT `eventos_webhook_stripe_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `failed_jobs`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -135,6 +161,40 @@ CREATE TABLE `migrations` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `movimentacoes_assinatura`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `movimentacoes_assinatura` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` bigint unsigned DEFAULT NULL,
+  `plano_origem_id` bigint unsigned DEFAULT NULL,
+  `plano_destino_id` bigint unsigned DEFAULT NULL,
+  `evento_webhook_stripe_id` bigint unsigned DEFAULT NULL,
+  `origem` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'webhook',
+  `tipo_movimentacao` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `status` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `stripe_customer_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `stripe_subscription_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `stripe_price_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `stripe_event_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `descricao` text COLLATE utf8mb4_unicode_ci,
+  `dados` json DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `movimentacoes_assinatura_stripe_event_id_unique` (`stripe_event_id`),
+  KEY `movimentacoes_assinatura_plano_origem_id_foreign` (`plano_origem_id`),
+  KEY `movimentacoes_assinatura_plano_destino_id_foreign` (`plano_destino_id`),
+  KEY `movimentacoes_assinatura_evento_webhook_stripe_id_foreign` (`evento_webhook_stripe_id`),
+  KEY `movimentacoes_assinatura_user_id_created_at_index` (`user_id`,`created_at`),
+  KEY `movimentacoes_assinatura_stripe_subscription_id_created_at_index` (`stripe_subscription_id`,`created_at`),
+  KEY `movimentacoes_assinatura_tipo_movimentacao_created_at_index` (`tipo_movimentacao`,`created_at`),
+  CONSTRAINT `movimentacoes_assinatura_evento_webhook_stripe_id_foreign` FOREIGN KEY (`evento_webhook_stripe_id`) REFERENCES `eventos_webhook_stripe` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `movimentacoes_assinatura_plano_destino_id_foreign` FOREIGN KEY (`plano_destino_id`) REFERENCES `plans` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `movimentacoes_assinatura_plano_origem_id_foreign` FOREIGN KEY (`plano_origem_id`) REFERENCES `plans` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `movimentacoes_assinatura_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `notifications`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -149,6 +209,45 @@ CREATE TABLE `notifications` (
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `notifications_notifiable_type_notifiable_id_index` (`notifiable_type`,`notifiable_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `pagamentos_stripe`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `pagamentos_stripe` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` bigint unsigned DEFAULT NULL,
+  `plano_id` bigint unsigned DEFAULT NULL,
+  `evento_webhook_stripe_id` bigint unsigned DEFAULT NULL,
+  `origem` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'webhook',
+  `stripe_invoice_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `stripe_payment_intent_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `stripe_charge_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `stripe_customer_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `stripe_subscription_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `stripe_price_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `moeda` varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `valor_total_centavos` bigint unsigned NOT NULL DEFAULT '0',
+  `valor_pago_centavos` bigint unsigned NOT NULL DEFAULT '0',
+  `status` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `descricao` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `motivo_cobranca` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `invoice_pdf_url` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `hosted_invoice_url` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `pago_em` timestamp NULL DEFAULT NULL,
+  `dados` json DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `pagamentos_stripe_stripe_invoice_id_unique` (`stripe_invoice_id`),
+  KEY `pagamentos_stripe_plano_id_foreign` (`plano_id`),
+  KEY `pagamentos_stripe_evento_webhook_stripe_id_foreign` (`evento_webhook_stripe_id`),
+  KEY `pagamentos_stripe_user_id_created_at_index` (`user_id`,`created_at`),
+  KEY `pagamentos_stripe_stripe_customer_id_created_at_index` (`stripe_customer_id`,`created_at`),
+  KEY `pagamentos_stripe_stripe_subscription_id_created_at_index` (`stripe_subscription_id`,`created_at`),
+  CONSTRAINT `pagamentos_stripe_evento_webhook_stripe_id_foreign` FOREIGN KEY (`evento_webhook_stripe_id`) REFERENCES `eventos_webhook_stripe` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `pagamentos_stripe_plano_id_foreign` FOREIGN KEY (`plano_id`) REFERENCES `plans` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `pagamentos_stripe_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `pages`;
@@ -533,3 +632,4 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (35,'2026_04_14_100
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (36,'2026_04_14_160000_add_advanced_defaults_to_plans_table',22);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (37,'2026_04_15_110000_create_registros_changelog_table',23);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (38,'2026_04_22_120000_add_notification_preferences_to_projects_table',24);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (39,'2026_04_27_200000_create_rastreabilidade_stripe_tables',25);

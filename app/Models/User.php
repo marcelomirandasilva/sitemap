@@ -203,6 +203,21 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(SearchEngineSubmission::class);
     }
 
+    public function eventosWebhookStripe()
+    {
+        return $this->hasMany(EventoWebhookStripe::class);
+    }
+
+    public function pagamentosStripe()
+    {
+        return $this->hasMany(PagamentoStripe::class);
+    }
+
+    public function movimentacoesAssinatura()
+    {
+        return $this->hasMany(MovimentacaoAssinatura::class);
+    }
+
     /**
      * Helper para saber se é Admin (útil para o futuro)
      */
