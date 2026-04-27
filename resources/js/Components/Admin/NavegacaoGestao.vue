@@ -11,6 +11,7 @@ const itemClass = (padrao) => route().current(padrao)
         <Link :href="route('admin.dashboard')" :class="itemClass('admin.dashboard')">Painel Executivo</Link>
         <Link :href="route('admin.users.index')" :class="itemClass('admin.users.*')">Usuarios</Link>
         <Link :href="route('admin.plans.index')" :class="itemClass('admin.plans.*')">Planos</Link>
+        <Link :href="route('admin.stripe-audit.index')" :class="itemClass('admin.stripe-audit.*')">Stripe</Link>
         <Link :href="route('admin.changelog.index')" :class="itemClass('admin.changelog.*')">Changelog</Link>
         <Link :href="route('admin.tickets.index')" :class="itemClass('admin.tickets.*')">Suporte</Link>
         <Link :href="route('admin.jobs.index')" :class="itemClass('admin.jobs.*')">Motor Crawler</Link>

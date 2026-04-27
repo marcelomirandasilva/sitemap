@@ -281,6 +281,9 @@ Route::prefix('gestao')->name('admin.')->group(function () {
         // Planos
         Route::resource('plans', \App\Http\Controllers\Admin\PlanoController::class)->except(['show']);
 
+        // Auditoria Stripe
+        Route::get('stripe-audit', [\App\Http\Controllers\Admin\StripeAuditController::class, 'index'])->name('stripe-audit.index');
+
         // Changelog
         Route::resource('changelog', \App\Http\Controllers\Admin\ChangelogController::class)->except(['show']);
 
