@@ -14,7 +14,7 @@ class SincronizacaoAssinaturaStripeService
         $this->configurarChaveStripe();
 
         $sessaoCheckout = \Stripe\Checkout\Session::retrieve($idSessaoCheckout, [
-            'expand' => ['subscription.items.data.price.product', 'customer'],
+            'expand' => ['subscription.items.data.price', 'customer'],
         ]);
 
         if (($sessaoCheckout->mode ?? null) !== 'subscription') {
@@ -42,7 +42,7 @@ class SincronizacaoAssinaturaStripeService
 
         if (is_string($assinaturaStripe)) {
             $assinaturaStripe = \Stripe\Subscription::retrieve($assinaturaStripe, [
-                'expand' => ['items.data.price.product'],
+                'expand' => ['items.data.price'],
             ]);
         }
 
@@ -68,7 +68,7 @@ class SincronizacaoAssinaturaStripeService
             'customer' => $idClienteStripe,
             'status' => 'all',
             'limit' => 10,
-            'expand' => ['data.items.data.price.product'],
+            'expand' => ['data.items.data.price'],
         ]);
 
         $assinaturaStripe = collect($assinaturas->data ?? [])
