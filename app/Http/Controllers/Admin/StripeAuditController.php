@@ -253,8 +253,8 @@ class StripeAuditController extends Controller
             'plano_destino' => $ancora->planoDestino?->name,
             'stripe_subscription_id' => $ancora->stripe_subscription_id,
             'stripe_price_id' => $ancora->stripe_price_id,
-            'valor_formatado' => $pagamentoPrincipal
-                ? $this->formatarValorCentavos($pagamentoPrincipal->valor_pago_centavos ?: $pagamentoPrincipal->valor_total_centavos, $pagamentoPrincipal->moeda ?: 'BRL')
+            'financeiro_resumo' => $pagamentoPrincipal
+                ? $this->montarResumoFinanceiroPagamento($pagamentoPrincipal)
                 : null,
             'criado_em' => optional($ancora->created_at)->toIso8601String(),
             'ultima_atividade_em' => optional($ultimaAtividade)->toIso8601String(),
@@ -271,19 +271,7 @@ class StripeAuditController extends Controller
                     'origem' => $movimentacao->origem,
                     'created_at' => optional($movimentacao->created_at)->toIso8601String(),
                 ])->values(),
-                'pagamentos' => $pagamentos->map(fn (PagamentoStripe $pagamento) => [
-                    'id' => $pagamento->id,
-                    'status' => $pagamento->status,
-                    'descricao' => $pagamento->descricao,
-                    'motivo_cobranca' => $pagamento->motivo_cobranca,
-                    'valor_formatado' => $this->formatarValorCentavos(
-                        $pagamento->valor_pago_centavos ?: $pagamento->valor_total_centavos,
-                        $pagamento->moeda ?: 'BRL'
-                    ),
-                    'stripe_invoice_id' => $pagamento->stripe_invoice_id,
-                    'stripe_payment_intent_id' => $pagamento->stripe_payment_intent_id,
-                    'created_at' => optional($pagamento->pago_em ?? $pagamento->created_at)->toIso8601String(),
-                ])->values(),
+                'pagamentos' => $pagamentos->map(fn (PagamentoStripe $pagamento) => $this->formatarPagamentoParaAuditoria($pagamento))->values(),
                 'eventos' => $eventos->map(fn (EventoWebhookStripe $evento) => [
                     'id' => $evento->id,
                     'tipo' => $evento->tipo_evento,
@@ -312,10 +300,7 @@ class StripeAuditController extends Controller
             'plano_destino' => $pagamento->plano?->name,
             'stripe_subscription_id' => $pagamento->stripe_subscription_id,
             'stripe_price_id' => $pagamento->stripe_price_id,
-            'valor_formatado' => $this->formatarValorCentavos(
-                $pagamento->valor_pago_centavos ?: $pagamento->valor_total_centavos,
-                $pagamento->moeda ?: 'BRL'
-            ),
+            'financeiro_resumo' => $this->montarResumoFinanceiroPagamento($pagamento),
             'criado_em' => optional($pagamento->created_at)->toIso8601String(),
             'ultima_atividade_em' => optional($pagamento->pago_em ?? $pagamento->created_at)->toIso8601String(),
             'movimentacoes_total' => 0,
@@ -324,19 +309,7 @@ class StripeAuditController extends Controller
             'descricao' => $pagamento->descricao,
             'andamentos' => [
                 'movimentacoes' => [],
-                'pagamentos' => [[
-                    'id' => $pagamento->id,
-                    'status' => $pagamento->status,
-                    'descricao' => $pagamento->descricao,
-                    'motivo_cobranca' => $pagamento->motivo_cobranca,
-                    'valor_formatado' => $this->formatarValorCentavos(
-                        $pagamento->valor_pago_centavos ?: $pagamento->valor_total_centavos,
-                        $pagamento->moeda ?: 'BRL'
-                    ),
-                    'stripe_invoice_id' => $pagamento->stripe_invoice_id,
-                    'stripe_payment_intent_id' => $pagamento->stripe_payment_intent_id,
-                    'created_at' => optional($pagamento->pago_em ?? $pagamento->created_at)->toIso8601String(),
-                ]],
+                'pagamentos' => [$this->formatarPagamentoParaAuditoria($pagamento)],
                 'eventos' => [],
             ],
         ];
@@ -410,6 +383,109 @@ class StripeAuditController extends Controller
             'checkout_sincronizacao_falhou' => 'Falha apos checkout',
             'troca_plano_falhou' => 'Falha na troca de plano',
             default => str_replace('_', ' ', ucfirst($tipoMovimentacao)),
+        };
+    }
+
+    protected function formatarPagamentoParaAuditoria(PagamentoStripe $pagamento): array
+    {
+        $dadosFinanceiros = $this->montarResumoFinanceiroPagamento($pagamento);
+
+        return [
+            'id' => $pagamento->id,
+            'status' => $pagamento->status,
+            'descricao' => $pagamento->descricao,
+            'motivo_cobranca' => $pagamento->motivo_cobranca,
+            'motivo_cobranca_legivel' => $this->traduzirMotivoCobranca($pagamento->motivo_cobranca),
+            'titulo_financeiro' => $dadosFinanceiros['titulo'],
+            'resumo_financeiro' => $dadosFinanceiros['resumo'],
+            'rotulo_valor_principal' => $dadosFinanceiros['rotulo_valor_principal'],
+            'valor_principal_formatado' => $dadosFinanceiros['valor_principal_formatado'],
+            'valor_fatura_formatado' => $dadosFinanceiros['valor_fatura_formatado'],
+            'valor_cobrado_agora_formatado' => $dadosFinanceiros['valor_cobrado_agora_formatado'],
+            'valor_credito_formatado' => $dadosFinanceiros['valor_credito_formatado'],
+            'valor_abatimento_formatado' => $dadosFinanceiros['valor_abatimento_formatado'],
+            'teve_credito' => $dadosFinanceiros['teve_credito'],
+            'teve_abatimento' => $dadosFinanceiros['teve_abatimento'],
+            'foi_prorrata' => $dadosFinanceiros['foi_prorrata'],
+            'stripe_invoice_id' => $pagamento->stripe_invoice_id,
+            'stripe_payment_intent_id' => $pagamento->stripe_payment_intent_id,
+            'created_at' => optional($pagamento->pago_em ?? $pagamento->created_at)->toIso8601String(),
+        ];
+    }
+
+    protected function montarResumoFinanceiroPagamento(PagamentoStripe $pagamento): array
+    {
+        $dados = is_array($pagamento->dados) ? $pagamento->dados : [];
+        $moeda = $pagamento->moeda ?: 'BRL';
+
+        $subtotalCentavos = (int) ($dados['subtotal'] ?? 0);
+        $totalFaturaCentavos = (int) ($dados['total'] ?? ($dados['amount_due'] ?? $pagamento->valor_total_centavos ?? 0));
+        $valorCobrancaCentavos = (int) ($dados['amount_paid'] ?? $pagamento->valor_pago_centavos ?? 0);
+        $creditoNotasCentavos = (int) ($dados['pre_payment_credit_notes_amount'] ?? 0) + (int) ($dados['post_payment_credit_notes_amount'] ?? 0);
+        $abatimentoCentavos = max(0, $subtotalCentavos - $totalFaturaCentavos);
+        $saldoInicialCentavos = (int) ($dados['starting_balance'] ?? 0);
+        $saldoFinalCentavos = (int) ($dados['ending_balance'] ?? 0);
+        $teveCredito = $creditoNotasCentavos > 0 || $saldoInicialCentavos < 0 || $saldoFinalCentavos < 0;
+        $teveAbatimento = $abatimentoCentavos > 0;
+        $foiProrrata = collect($dados['lines']['data'] ?? [])->contains(
+            fn (array $linha) => (bool) ($linha['proration'] ?? false)
+        );
+
+        $titulo = 'Cobrança registrada';
+        $rotuloValorPrincipal = 'Cobrado agora';
+        $valorPrincipalCentavos = $valorCobrancaCentavos;
+        $resumo = 'A Stripe confirmou uma cobrança financeira para este processo.';
+
+        if ($valorCobrancaCentavos <= 0 && $pagamento->status === 'paid') {
+            $titulo = $teveCredito
+                ? 'Ajuste liquidado com crédito'
+                : 'Ajuste sem cobrança imediata';
+            $rotuloValorPrincipal = $teveCredito ? 'Compensado' : 'Cobrado agora';
+            $valorPrincipalCentavos = $teveCredito
+                ? max($creditoNotasCentavos, $abatimentoCentavos, $totalFaturaCentavos)
+                : 0;
+            $resumo = $teveCredito
+                ? 'A invoice foi liquidada sem débito novo no cartão. A Stripe indica crédito e/ou abatimento aplicado ao ajuste.'
+                : 'A invoice foi liquidada sem débito novo no cartão. Isso normalmente acontece em ajustes de prorrata ou compensação do ciclo.';
+        } elseif ($teveCredito || $teveAbatimento) {
+            $titulo = 'Cobrança com abatimento';
+            $rotuloValorPrincipal = 'Cobrado agora';
+            $resumo = 'Houve cobrança financeira, mas parte do valor foi reduzida por crédito, abatimento ou ajuste de prorrata.';
+        }
+
+        if ($foiProrrata && !$teveCredito && !$teveAbatimento && $valorCobrancaCentavos <= 0) {
+            $resumo = 'A invoice foi fechada em ajuste de prorrata, sem débito imediato no cartão.';
+        }
+
+        return [
+            'titulo' => $titulo,
+            'rotulo_valor_principal' => $rotuloValorPrincipal,
+            'valor_principal_formatado' => $this->formatarValorCentavos($valorPrincipalCentavos, $moeda),
+            'valor_fatura_formatado' => $this->formatarValorCentavos($totalFaturaCentavos, $moeda),
+            'valor_cobrado_agora_formatado' => $this->formatarValorCentavos($valorCobrancaCentavos, $moeda),
+            'valor_credito_formatado' => $teveCredito
+                ? $this->formatarValorCentavos(max($creditoNotasCentavos, 0), $moeda)
+                : null,
+            'valor_abatimento_formatado' => $teveAbatimento
+                ? $this->formatarValorCentavos($abatimentoCentavos, $moeda)
+                : null,
+            'teve_credito' => $teveCredito,
+            'teve_abatimento' => $teveAbatimento,
+            'foi_prorrata' => $foiProrrata,
+            'resumo' => $resumo,
+        ];
+    }
+
+    protected function traduzirMotivoCobranca(?string $motivoCobranca): ?string
+    {
+        return match ($motivoCobranca) {
+            'subscription_create' => 'Criação da assinatura',
+            'subscription_update' => 'Alteração da assinatura',
+            'subscription_cycle' => 'Renovação do ciclo',
+            'subscription_threshold' => 'Cobrança por limite da assinatura',
+            'manual' => 'Fatura manual',
+            'upcoming' => 'Prévia de próxima cobrança',
+            default => $motivoCobranca,
         };
     }
 

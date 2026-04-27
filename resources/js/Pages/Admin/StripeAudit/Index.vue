@@ -70,7 +70,7 @@ const rotuloTipoProcesso = (tipo) => {
         assinatura_cancelada: 'Assinatura cancelada',
         pagamento_confirmado: 'Pagamento confirmado',
         pagamento_falhou: 'Pagamento falhou',
-        pagamento_avulso: 'Pagamento registrado',
+        pagamento_avulso: 'Lançamento financeiro avulso',
         evento_avulso: 'Evento Stripe avulso',
     };
 
@@ -141,7 +141,12 @@ const resumoNegocio = (processo) => {
     }
 
     if (processo.pagamentos_total > 0 && processo.status_resumo === 'concluido') {
-        return 'O processo possui pagamento registrado e foi concluido localmente.';
+        const resumoFinanceiro = processo.financeiro_resumo?.resumo;
+        if (resumoFinanceiro) {
+            return resumoFinanceiro;
+        }
+
+        return 'O processo possui registro financeiro e foi concluido localmente.';
     }
 
     if (processo.eventos_total > 0 && processo.movimentacoes_total === 0 && processo.pagamentos_total === 0) {
@@ -207,7 +212,7 @@ const resumoNegocio = (processo) => {
                                 <th class="px-4 py-3 text-left font-semibold text-gray-500">Processo</th>
                                 <th class="px-4 py-3 text-left font-semibold text-gray-500">Usuario</th>
                                 <th class="px-4 py-3 text-left font-semibold text-gray-500">Plano</th>
-                                <th class="px-4 py-3 text-left font-semibold text-gray-500">Valor</th>
+                                <th class="px-4 py-3 text-left font-semibold text-gray-500">Financeiro</th>
                                 <th class="px-4 py-3 text-left font-semibold text-gray-500">Ultima atividade</th>
                                 <th class="px-4 py-3 text-left font-semibold text-gray-500">Status</th>
                             </tr>
@@ -226,8 +231,13 @@ const resumoNegocio = (processo) => {
                                     <td class="px-4 py-3 text-gray-500">
                                         {{ processo.plano_origem || '-' }} -> {{ processo.plano_destino || '-' }}
                                     </td>
-                                    <td class="px-4 py-3 text-gray-900">
-                                        {{ processo.valor_formatado || '-' }}
+                                    <td class="px-4 py-3">
+                                        <div class="text-gray-900">
+                                            {{ processo.financeiro_resumo?.valor_principal_formatado || '-' }}
+                                        </div>
+                                        <div class="text-xs text-gray-400">
+                                            {{ processo.financeiro_resumo?.rotulo_valor_principal || '-' }}
+                                        </div>
                                     </td>
                                     <td class="px-4 py-3 text-gray-500">
                                         {{ formatarDataHora(processo.ultima_atividade_em || processo.criado_em) }}
@@ -269,6 +279,13 @@ const resumoNegocio = (processo) => {
                                                             {{ processo.eventos_total }} eventos
                                                         </dd>
                                                     </div>
+                                                    <div v-if="processo.financeiro_resumo">
+                                                        <dt class="text-xs uppercase tracking-wide text-gray-500">Leitura financeira</dt>
+                                                        <dd class="text-gray-700">
+                                                            {{ processo.financeiro_resumo.titulo }}:
+                                                            {{ processo.financeiro_resumo.valor_principal_formatado }}
+                                                        </dd>
+                                                    </div>
                                                 </dl>
                                             </div>
 
@@ -294,15 +311,40 @@ const resumoNegocio = (processo) => {
                                                     <div v-for="pagamento in processo.andamentos.pagamentos" :key="`pag-principal-${pagamento.id}`" class="rounded border border-green-200 bg-green-50/40 p-3">
                                                         <div class="flex items-center justify-between gap-3">
                                                             <div>
-                                                                <div class="font-medium text-gray-900">Pagamento registrado</div>
+                                                                <div class="font-medium text-gray-900">{{ pagamento.titulo_financeiro }}</div>
                                                                 <div class="text-xs text-gray-400">{{ formatarDataHora(pagamento.created_at) }}</div>
                                                             </div>
                                                             <span :class="['inline-flex rounded-full px-2 py-1 text-xs font-semibold', classeStatusDetalhe(pagamento.status)]">
                                                                 {{ pagamento.status || '-' }}
                                                             </span>
                                                         </div>
-                                                        <div class="mt-2 text-sm font-medium text-gray-900">{{ pagamento.valor_formatado }}</div>
-                                                        <div class="mt-1 text-sm text-gray-600">{{ pagamento.descricao || pagamento.motivo_cobranca || '-' }}</div>
+                                                        <div class="mt-2 text-sm font-medium text-gray-900">
+                                                            {{ pagamento.rotulo_valor_principal }}: {{ pagamento.valor_principal_formatado }}
+                                                        </div>
+                                                        <div class="mt-1 text-sm text-gray-600">{{ pagamento.resumo_financeiro }}</div>
+                                                        <dl class="mt-3 space-y-1 text-xs text-gray-600">
+                                                            <div class="flex justify-between gap-4">
+                                                                <dt>Valor final da invoice</dt>
+                                                                <dd class="font-medium text-gray-800">{{ pagamento.valor_fatura_formatado }}</dd>
+                                                            </div>
+                                                            <div class="flex justify-between gap-4">
+                                                                <dt>Valor cobrado agora</dt>
+                                                                <dd class="font-medium text-gray-800">{{ pagamento.valor_cobrado_agora_formatado }}</dd>
+                                                            </div>
+                                                            <div v-if="pagamento.valor_credito_formatado" class="flex justify-between gap-4">
+                                                                <dt>Credito identificado</dt>
+                                                                <dd class="font-medium text-gray-800">{{ pagamento.valor_credito_formatado }}</dd>
+                                                            </div>
+                                                            <div v-if="pagamento.valor_abatimento_formatado" class="flex justify-between gap-4">
+                                                                <dt>Abatimento identificado</dt>
+                                                                <dd class="font-medium text-gray-800">{{ pagamento.valor_abatimento_formatado }}</dd>
+                                                            </div>
+                                                            <div v-if="pagamento.motivo_cobranca_legivel" class="flex justify-between gap-4">
+                                                                <dt>Motivo Stripe</dt>
+                                                                <dd class="font-medium text-gray-800">{{ pagamento.motivo_cobranca_legivel }}</dd>
+                                                            </div>
+                                                        </dl>
+                                                        <div class="mt-2 text-xs text-gray-500">{{ pagamento.descricao || pagamento.motivo_cobranca || '-' }}</div>
                                                     </div>
 
                                                     <div v-for="evento in eventosWebhookPrincipais(processo)" :key="`evt-principal-${evento.id}`" class="rounded border border-blue-200 bg-blue-50/40 p-3">
