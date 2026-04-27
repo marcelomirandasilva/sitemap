@@ -6,6 +6,13 @@ use App\Http\Controllers\NotificacaoController;
 use App\Http\Controllers\ProjectSearchEngineController;
 use App\Http\Controllers\SearchEngineConnectionController;
 use App\Http\Controllers\SeoSiteController;
+use App\Notifications\EmailSistema;
+use App\Notifications\RedefinirSenha;
+use App\Notifications\SenhaAlterada;
+use App\Notifications\WelcomeAndVerifyUser;
+use App\Notifications\WelcomeNewUser;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
@@ -106,13 +113,11 @@ Route::post('/api/internal/webhook/job-completed', [\App\Http\Controllers\Webhoo
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/subscription', [App\Http\Controllers\AssinaturaController::class, 'index'])->name('subscription.index');
+    Route::get('/subscription/checkout/success', [App\Http\Controllers\AssinaturaController::class, 'sucessoCheckout'])->name('subscription.checkout.success');
     Route::get('/subscription/checkout/{priceId}', [App\Http\Controllers\AssinaturaController::class, 'checkout'])->name('subscription.checkout');
     Route::get('/portal', [App\Http\Controllers\AssinaturaController::class, 'portal'])->name('portal');
 
-    // Rotas de Crawler movidas para o grupo verified acima
-    // Assinaturas (Cashier)
-    Route::get('/subscription', [App\Http\Controllers\AssinaturaController::class, 'index'])->name('subscription.index');
-    Route::get('/subscription/checkout/{priceId}', [App\Http\Controllers\AssinaturaController::class, 'checkout'])->name('subscription.checkout');
+    // Rotas de crawler movidas para o grupo verified acima
     Route::get('/billing-portal', [App\Http\Controllers\AssinaturaController::class, 'portal'])->name('subscription.portal');
 
     // Preferências do Usuário
@@ -155,6 +160,103 @@ Route::middleware(['auth', 'admin'])->prefix('dev')->group(function () {
     Route::get('/api-test', [App\Http\Controllers\DevController::class, 'showApiTest'])->name('dev.api-test');
     Route::post('/api-test/run', [App\Http\Controllers\DevController::class, 'runApiTest'])->name('dev.api-test.run');
 });
+
+if (app()->environment(['local', 'testing'])) {
+    Route::middleware(['auth'])->prefix('dev')->group(function () {
+        Route::get('/email-test', function (Request $request) {
+            $usuario = $request->user();
+            $emailDestino = $usuario->email;
+            $tokenAtivacao = Password::broker()->createToken($usuario);
+            $tokenRedefinicao = Password::broker()->createToken($usuario);
+
+            $notificacoes = [
+                'ativacao_conta' => new WelcomeAndVerifyUser($tokenAtivacao),
+                'boas_vindas' => new WelcomeNewUser('SenhaTemporaria#123'),
+                'redefinicao_senha' => new RedefinirSenha($tokenRedefinicao),
+                'senha_alterada' => new SenhaAlterada('127.0.0.1'),
+                'rastreamento_concluido' => new EmailSistema([
+                    'assunto' => 'Rastreamento concluido no GenMap',
+                    'titulo' => 'Projeto atualizado',
+                    'mensagem' => 'O rastreamento do projeto odia.ig.com.br foi concluido com sucesso.',
+                    'linhas' => [
+                        'Paginas encontradas: 500',
+                        'Imagens indexadas: 457',
+                        'Videos indexados: 0',
+                    ],
+                    'acao_texto' => 'Abrir projeto',
+                    'url' => route('dashboard'),
+                    'rodape' => 'Voce esta recebendo esta mensagem porque as notificacoes de projeto por e-mail estao ativas.',
+                ]),
+                'envio_buscadores' => new EmailSistema([
+                    'assunto' => 'Envio aos buscadores concluido',
+                    'titulo' => 'Sitemap enviado ao Google e Bing',
+                    'mensagem' => 'O envio do sitemap foi registrado com sucesso nos buscadores conectados.',
+                    'linhas' => [
+                        'Projeto: odia.ig.com.br',
+                        'Google Search Console: enviado',
+                        'Bing Webmaster Tools: enviado',
+                    ],
+                    'acao_texto' => 'Ver historico',
+                    'url' => route('dashboard'),
+                ]),
+                'suporte' => new EmailSistema([
+                    'assunto' => 'Resposta do suporte GenMap',
+                    'titulo' => 'Seu ticket recebeu uma resposta',
+                    'mensagem' => 'Nossa equipe respondeu sua solicitacao e ja existe uma atualizacao disponivel.',
+                    'linhas' => [
+                        'Ticket: #1234',
+                        'Assunto: Duvida sobre envio de sitemap',
+                    ],
+                    'acao_texto' => 'Abrir suporte',
+                    'url' => route('support.index'),
+                ]),
+                'plano' => new EmailSistema([
+                    'assunto' => 'Atualizacao no seu plano GenMap',
+                    'titulo' => 'Situacao de assinatura alterada',
+                    'mensagem' => 'Houve uma atualizacao relacionada ao seu plano e ao faturamento da conta.',
+                    'linhas' => [
+                        'Plano: Solo',
+                        'Status: ativo',
+                        'Proxima renovacao: 30/04/2026',
+                    ],
+                    'acao_texto' => 'Abrir faturamento',
+                    'url' => route('billing.index'),
+                ]),
+            ];
+
+            $tipoSolicitado = trim((string) $request->query('tipo', ''));
+
+            if ($tipoSolicitado !== '') {
+                abort_unless(array_key_exists($tipoSolicitado, $notificacoes), 422, 'Tipo de e-mail invalido.');
+                $notificacoes = [
+                    $tipoSolicitado => $notificacoes[$tipoSolicitado],
+                ];
+            }
+
+            $resultados = [];
+            $erros = [];
+
+            foreach ($notificacoes as $chave => $notificacao) {
+                try {
+                    $usuario->notifyNow($notificacao);
+                    $resultados[$chave] = 'enviado';
+                } catch (\Throwable $erro) {
+                    $resultados[$chave] = $erro->getMessage();
+                    $erros[$chave] = $erro->getMessage();
+                }
+            }
+
+            return response()->json([
+                'ok' => empty($erros),
+                'email_destino' => $emailDestino,
+                'quantidade' => count($notificacoes),
+                'tipos' => array_keys($notificacoes),
+                'resultados' => $resultados,
+                'erros' => $erros,
+            ], empty($erros) ? 200 : 500);
+        })->name('dev.email-test');
+    });
+}
 
 require __DIR__ . '/auth.php';
 
