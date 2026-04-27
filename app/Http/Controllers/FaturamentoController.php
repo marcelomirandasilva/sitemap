@@ -15,6 +15,51 @@ class FaturamentoController extends Controller
         $user = $request->user();
         $planoEfetivo = $user->planoEfetivo();
         $faturas = [];
+        $pagamentosLocais = $user->pagamentosStripe()
+            ->with('plano')
+            ->latest('pago_em')
+            ->latest('id')
+            ->limit(20)
+            ->get()
+            ->map(function ($pagamento) {
+                return [
+                    'id' => $pagamento->id,
+                    'stripe_invoice_id' => $pagamento->stripe_invoice_id,
+                    'status' => $pagamento->status,
+                    'origem' => $pagamento->origem,
+                    'descricao' => $pagamento->descricao,
+                    'motivo_cobranca' => $pagamento->motivo_cobranca,
+                    'moeda' => strtoupper((string) $pagamento->moeda),
+                    'valor_pago_centavos' => $pagamento->valor_pago_centavos,
+                    'valor_total_centavos' => $pagamento->valor_total_centavos,
+                    'pago_em' => optional($pagamento->pago_em)->toIso8601String(),
+                    'invoice_pdf_url' => $pagamento->invoice_pdf_url,
+                    'hosted_invoice_url' => $pagamento->hosted_invoice_url,
+                    'plano' => $pagamento->plano?->name,
+                ];
+            })
+            ->values();
+
+        $movimentacoesLocais = $user->movimentacoesAssinatura()
+            ->with(['planoOrigem', 'planoDestino'])
+            ->latest()
+            ->limit(30)
+            ->get()
+            ->map(function ($movimentacao) {
+                return [
+                    'id' => $movimentacao->id,
+                    'origem' => $movimentacao->origem,
+                    'tipo_movimentacao' => $movimentacao->tipo_movimentacao,
+                    'status' => $movimentacao->status,
+                    'descricao' => $movimentacao->descricao,
+                    'stripe_subscription_id' => $movimentacao->stripe_subscription_id,
+                    'stripe_price_id' => $movimentacao->stripe_price_id,
+                    'plano_origem' => $movimentacao->planoOrigem?->name,
+                    'plano_destino' => $movimentacao->planoDestino?->name,
+                    'created_at' => optional($movimentacao->created_at)->toIso8601String(),
+                ];
+            })
+            ->values();
 
         // Verifica se o usuário tem faturas no Stripe
         if ($user->hasStripeId()) {
@@ -52,6 +97,8 @@ class FaturamentoController extends Controller
         return Inertia::render('Faturamento/Index', [
             'faturas' => $faturas,
             'assinatura_ativa' => $assinatura_ativa,
+            'pagamentos_locais' => $pagamentosLocais,
+            'movimentacoes_locais' => $movimentacoesLocais,
         ]);
     }
 }

@@ -6,6 +6,8 @@ import PrimaryButton from '@/Components/PrimaryButton.vue';
 defineProps({
     faturas: Array,
     assinatura_ativa: Object,
+    pagamentos_locais: Array,
+    movimentacoes_locais: Array,
 });
 </script>
 
@@ -132,6 +134,114 @@ defineProps({
                             </table>
                         </div>
 
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg border border-gray-200">
+                        <div class="p-6 border-b border-gray-200">
+                            <h3 class="text-lg font-medium text-gray-900">Pagamentos registrados localmente</h3>
+                            <p class="mt-1 text-sm text-gray-500">
+                                Historico interno de invoices e cobrancas confirmadas ou recusadas pela Stripe.
+                            </p>
+                        </div>
+
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Plano</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valor</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-200 bg-white">
+                                    <tr v-for="pagamento in pagamentos_locais" :key="pagamento.id">
+                                        <td class="px-4 py-3 text-sm text-gray-500">
+                                            {{ pagamento.pago_em ? new Date(pagamento.pago_em).toLocaleString() : '-' }}
+                                        </td>
+                                        <td class="px-4 py-3 text-sm text-gray-900">
+                                            <div>{{ pagamento.plano || '-' }}</div>
+                                            <div class="text-xs text-gray-400">{{ pagamento.motivo_cobranca || pagamento.origem }}</div>
+                                        </td>
+                                        <td class="px-4 py-3 text-sm font-medium text-gray-900">
+                                            {{ ((pagamento.valor_pago_centavos || pagamento.valor_total_centavos) / 100).toLocaleString(undefined, { style: 'currency', currency: pagamento.moeda || 'BRL' }) }}
+                                        </td>
+                                        <td class="px-4 py-3 text-sm">
+                                            <span
+                                                class="inline-flex rounded-full px-2 py-1 text-xs font-semibold"
+                                                :class="{
+                                                    'bg-green-100 text-green-800': pagamento.status === 'paid',
+                                                    'bg-yellow-100 text-yellow-800': pagamento.status === 'open' || pagamento.status === 'draft',
+                                                    'bg-red-100 text-red-800': pagamento.status === 'uncollectible' || pagamento.status === 'void',
+                                                }"
+                                            >
+                                                {{ pagamento.status || '-' }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    <tr v-if="pagamentos_locais.length === 0">
+                                        <td colspan="4" class="px-4 py-8 text-center text-sm italic text-gray-500">
+                                            Nenhum pagamento local registrado ainda.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg border border-gray-200">
+                        <div class="p-6 border-b border-gray-200">
+                            <h3 class="text-lg font-medium text-gray-900">Movimentacoes da assinatura</h3>
+                            <p class="mt-1 text-sm text-gray-500">
+                                Registro interno das trocas de plano, cancelamentos, sincronizacoes e falhas.
+                            </p>
+                        </div>
+
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Evento</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Planos</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-200 bg-white">
+                                    <tr v-for="movimentacao in movimentacoes_locais" :key="movimentacao.id">
+                                        <td class="px-4 py-3 text-sm text-gray-500">
+                                            {{ movimentacao.created_at ? new Date(movimentacao.created_at).toLocaleString() : '-' }}
+                                        </td>
+                                        <td class="px-4 py-3 text-sm text-gray-900">
+                                            <div>{{ movimentacao.tipo_movimentacao }}</div>
+                                            <div class="text-xs text-gray-400">{{ movimentacao.descricao || movimentacao.origem }}</div>
+                                        </td>
+                                        <td class="px-4 py-3 text-sm text-gray-500">
+                                            {{ movimentacao.plano_origem || '-' }} -> {{ movimentacao.plano_destino || '-' }}
+                                        </td>
+                                        <td class="px-4 py-3 text-sm">
+                                            <span
+                                                class="inline-flex rounded-full px-2 py-1 text-xs font-semibold"
+                                                :class="{
+                                                    'bg-green-100 text-green-800': movimentacao.status === 'active' || movimentacao.status === 'paid' || movimentacao.status === 'processado',
+                                                    'bg-yellow-100 text-yellow-800': movimentacao.status === 'processando' || movimentacao.status === 'trialing' || movimentacao.status === 'redirecionado',
+                                                    'bg-red-100 text-red-800': movimentacao.status === 'erro' || movimentacao.status === 'canceled' || movimentacao.status === 'incomplete_expired',
+                                                }"
+                                            >
+                                                {{ movimentacao.status || '-' }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    <tr v-if="movimentacoes_locais.length === 0">
+                                        <td colspan="4" class="px-4 py-8 text-center text-sm italic text-gray-500">
+                                            Nenhuma movimentacao local registrada ainda.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>

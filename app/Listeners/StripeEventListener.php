@@ -5,12 +5,16 @@ namespace App\Listeners;
 use App\Models\Plano;
 use App\Models\User;
 use App\Services\CentralNotificacoesService;
+use App\Services\RastreabilidadeStripeService;
 use Illuminate\Support\Facades\Log;
 use Laravel\Cashier\Events\WebhookReceived;
 
 class StripeEventListener
 {
-    public function __construct(private CentralNotificacoesService $centralNotificacoes)
+    public function __construct(
+        private CentralNotificacoesService $centralNotificacoes,
+        private RastreabilidadeStripeService $rastreabilidadeStripe
+    )
     {
     }
 
@@ -22,29 +26,42 @@ class StripeEventListener
         $payload = $event->payload;
         $type = $payload['type'];
         $data = $payload['data']['object'];
+        $usuario = isset($data['customer']) ? $this->encontrarUsuarioPorClienteStripe($data['customer']) : null;
+        $registroEvento = $this->rastreabilidadeStripe->registrarEventoWebhook($payload, $usuario);
 
-        switch ($type) {
-            case 'customer.subscription.created':
-            case 'customer.subscription.updated':
-                $this->handleSubscriptionUpdate($data);
-                break;
+        try {
+            switch ($type) {
+                case 'customer.subscription.created':
+                case 'customer.subscription.updated':
+                    $this->handleSubscriptionUpdate($data, $usuario, $registroEvento);
+                    break;
 
-            case 'customer.subscription.deleted':
-                $this->handleSubscriptionCancelled($data);
-                break;
+                case 'customer.subscription.deleted':
+                    $this->handleSubscriptionCancelled($data, $usuario, $registroEvento);
+                    break;
 
-            case 'invoice.payment_failed':
-                $this->handlePaymentFailed($data);
-                break;
+                case 'invoice.payment_succeeded':
+                    $this->handlePaymentSucceeded($data, $usuario, $registroEvento);
+                    break;
+
+                case 'invoice.payment_failed':
+                    $this->handlePaymentFailed($data, $usuario, $registroEvento);
+                    break;
+            }
+
+            $this->rastreabilidadeStripe->marcarEventoProcessado($registroEvento);
+        } catch (\Throwable $erro) {
+            $this->rastreabilidadeStripe->marcarEventoProcessado($registroEvento, 'erro', $erro->getMessage());
+            throw $erro;
         }
     }
 
-    protected function handleSubscriptionUpdate($subscription): void
+    protected function handleSubscriptionUpdate($subscription, ?User $usuario, $registroEvento): void
     {
         $stripeId = $subscription['customer'];
         $priceId = $subscription['items']['data'][0]['price']['id'] ?? null;
         $status = $subscription['status'];
-        $usuario = $this->encontrarUsuarioPorClienteStripe($stripeId);
+        $planoAnteriorId = $usuario?->plan_id;
 
         if (!in_array($status, ['active', 'trialing'], true)) {
             if ($usuario) {
@@ -76,6 +93,22 @@ class StripeEventListener
         $usuario->save();
         $usuario->setRelation('plano', $plano);
 
+        $this->rastreabilidadeStripe->registrarMovimentacaoAssinatura([
+            'user_id' => $usuario->id,
+            'plano_origem_id' => $planoAnteriorId,
+            'plano_destino_id' => $plano->id,
+            'evento_webhook_stripe_id' => $registroEvento->id,
+            'origem' => 'webhook',
+            'tipo_movimentacao' => 'assinatura_atualizada',
+            'status' => $status,
+            'stripe_customer_id' => $stripeId,
+            'stripe_subscription_id' => $subscription['id'] ?? null,
+            'stripe_price_id' => $priceId,
+            'stripe_event_id' => $registroEvento->stripe_event_id,
+            'descricao' => "Plano reconciliado para {$plano->name} via webhook Stripe.",
+            'dados' => $subscription,
+        ]);
+
         $this->centralNotificacoes->notificarPlano(
             $usuario,
             'Plano atualizado',
@@ -89,16 +122,30 @@ class StripeEventListener
         Log::info("Webhook Stripe: plano do usuario {$usuario->id} atualizado para {$plano->name}");
     }
 
-    protected function handleSubscriptionCancelled($subscription): void
+    protected function handleSubscriptionCancelled($subscription, ?User $usuario, $registroEvento): void
     {
-        $stripeId = $subscription['customer'];
-        $usuario = $this->encontrarUsuarioPorClienteStripe($stripeId);
-
         if (!$usuario) {
             return;
         }
 
+        $planoAnteriorId = $usuario->plan_id;
         $plano = $usuario->sincronizarPlanoComAssinatura();
+
+        $this->rastreabilidadeStripe->registrarMovimentacaoAssinatura([
+            'user_id' => $usuario->id,
+            'plano_origem_id' => $planoAnteriorId,
+            'plano_destino_id' => $plano?->id,
+            'evento_webhook_stripe_id' => $registroEvento->id,
+            'origem' => 'webhook',
+            'tipo_movimentacao' => 'assinatura_cancelada',
+            'status' => $subscription['status'] ?? null,
+            'stripe_customer_id' => $subscription['customer'] ?? null,
+            'stripe_subscription_id' => $subscription['id'] ?? null,
+            'stripe_price_id' => $subscription['items']['data'][0]['price']['id'] ?? null,
+            'stripe_event_id' => $registroEvento->stripe_event_id,
+            'descricao' => 'Assinatura cancelada ou encerrada via Stripe.',
+            'dados' => $subscription,
+        ]);
 
         $this->centralNotificacoes->notificarPlano(
             $usuario,
@@ -112,10 +159,33 @@ class StripeEventListener
         Log::info("Webhook Stripe: assinatura cancelada para usuario {$usuario->id}. Plano ajustado para " . ($plano?->name ?? 'nenhum') . '.');
     }
 
-    protected function handlePaymentFailed($invoice): void
+    protected function handlePaymentSucceeded($invoice, ?User $usuario, $registroEvento): void
+    {
+        $this->rastreabilidadeStripe->registrarPagamentoPorInvoice($invoice, $usuario, $registroEvento, 'webhook');
+
+        if ($usuario) {
+            $this->rastreabilidadeStripe->registrarMovimentacaoAssinatura([
+                'user_id' => $usuario->id,
+                'plano_origem_id' => $usuario->plan_id,
+                'plano_destino_id' => $usuario->plan_id,
+                'evento_webhook_stripe_id' => $registroEvento->id,
+                'origem' => 'webhook',
+                'tipo_movimentacao' => 'pagamento_confirmado',
+                'status' => $invoice['status'] ?? null,
+                'stripe_customer_id' => $invoice['customer'] ?? null,
+                'stripe_subscription_id' => $invoice['subscription'] ?? null,
+                'stripe_price_id' => $invoice['lines']['data'][0]['price']['id'] ?? null,
+                'stripe_event_id' => $registroEvento->stripe_event_id,
+                'descricao' => 'Pagamento confirmado pela Stripe.',
+                'dados' => $invoice,
+            ]);
+        }
+    }
+
+    protected function handlePaymentFailed($invoice, ?User $usuario, $registroEvento): void
     {
         $stripeId = $invoice['customer'];
-        $usuario = $this->encontrarUsuarioPorClienteStripe($stripeId);
+        $this->rastreabilidadeStripe->registrarPagamentoPorInvoice($invoice, $usuario, $registroEvento, 'webhook');
 
         if ($usuario) {
             $this->centralNotificacoes->notificarPlano(
@@ -126,6 +196,22 @@ class StripeEventListener
                     'Cliente Stripe: ' . $stripeId,
                 ]
             );
+
+            $this->rastreabilidadeStripe->registrarMovimentacaoAssinatura([
+                'user_id' => $usuario->id,
+                'plano_origem_id' => $usuario->plan_id,
+                'plano_destino_id' => $usuario->plan_id,
+                'evento_webhook_stripe_id' => $registroEvento->id,
+                'origem' => 'webhook',
+                'tipo_movimentacao' => 'pagamento_falhou',
+                'status' => $invoice['status'] ?? null,
+                'stripe_customer_id' => $invoice['customer'] ?? null,
+                'stripe_subscription_id' => $invoice['subscription'] ?? null,
+                'stripe_price_id' => $invoice['lines']['data'][0]['price']['id'] ?? null,
+                'stripe_event_id' => $registroEvento->stripe_event_id,
+                'descricao' => 'Pagamento recusado ou nao concluido na Stripe.',
+                'dados' => $invoice,
+                ]);
         }
 
         Log::warning("Webhook Stripe: pagamento falhou para customer {$stripeId}. Verifique o status da assinatura.");
