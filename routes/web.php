@@ -113,14 +113,11 @@ Route::post('/api/internal/webhook/job-completed', [\App\Http\Controllers\Webhoo
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/subscription', [App\Http\Controllers\AssinaturaController::class, 'index'])->name('subscription.index');
-    Route::get('/subscription/checkout/{priceId}', [App\Http\Controllers\AssinaturaController::class, 'checkout'])->name('subscription.checkout');
     Route::get('/subscription/checkout/success', [App\Http\Controllers\AssinaturaController::class, 'sucessoCheckout'])->name('subscription.checkout.success');
+    Route::get('/subscription/checkout/{priceId}', [App\Http\Controllers\AssinaturaController::class, 'checkout'])->name('subscription.checkout');
     Route::get('/portal', [App\Http\Controllers\AssinaturaController::class, 'portal'])->name('portal');
 
-    // Rotas de Crawler movidas para o grupo verified acima
-    // Assinaturas (Cashier)
-    Route::get('/subscription', [App\Http\Controllers\AssinaturaController::class, 'index'])->name('subscription.index');
-    Route::get('/subscription/checkout/{priceId}', [App\Http\Controllers\AssinaturaController::class, 'checkout'])->name('subscription.checkout');
+    // Rotas de crawler movidas para o grupo verified acima
     Route::get('/billing-portal', [App\Http\Controllers\AssinaturaController::class, 'portal'])->name('subscription.portal');
 
     // Preferências do Usuário

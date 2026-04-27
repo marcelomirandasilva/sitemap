@@ -79,7 +79,7 @@ class AssinaturaController extends Controller
 
         $checkout = $usuario->newSubscription('default', $id_preco)
             ->checkout([
-                'success_url' => route('subscription.checkout.success', ['session_id' => '{CHECKOUT_SESSION_ID}']),
+                'success_url' => route('subscription.checkout.success') . '?session_id={CHECKOUT_SESSION_ID}',
                 'cancel_url' => route('subscription.index') . '?checkout=cancel',
                 'client_reference_id' => (string) $usuario->id,
             ]);
