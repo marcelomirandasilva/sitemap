@@ -200,32 +200,50 @@ const recursosPlano = (plano) => {
                         </div>
 
                         <form v-if="abaAtiva === 'signup'" @submit.prevent="enviarCadastro" class="space-y-4">
-                            <input v-model="formularioCadastro.url" @blur="formatarUrl" type="url" required :placeholder="'* ' + $t('form.url_placeholder', { app_name: nomeAplicacao })" class="w-full rounded-xl border border-border-soft bg-bg-subtle px-4 py-3 text-sm placeholder:text-text-secondary focus:border-brand-secondary focus:ring-brand-secondary">
-                            <input v-model="formularioCadastro.email" type="email" required :placeholder="$t('form.email_create_account', { app_name: nomeAplicacao })" class="w-full rounded-xl border border-border-soft bg-bg-subtle px-4 py-3 text-sm placeholder:text-text-secondary focus:border-brand-secondary focus:ring-brand-secondary">
-                            <input v-model="formularioCadastro.name" type="text" required :placeholder="$t('form.name_placeholder', { app_name: nomeAplicacao })" class="w-full rounded-xl border border-border-soft bg-bg-subtle px-4 py-3 text-sm placeholder:text-text-secondary focus:border-brand-secondary focus:ring-brand-secondary">
-                            <label class="flex items-start gap-3 rounded-xl border border-border-soft bg-bg-subtle px-4 py-3 text-xs leading-6 text-text-secondary">
-                                <input v-model="formularioCadastro.terms" type="checkbox" required class="mt-1 h-4 w-4 rounded border-border-strong text-brand-primary focus:ring-brand-secondary">
-                                <span>
-                                    * {{ $t('auth.agree_prefix', { app_name: nomeAplicacao }) }}
-                                    <Link :href="route('info.article', { locale: localeAtual, slug: 'privacy-policy' })" class="font-semibold text-brand-secondary">{{ $t('auth.privacy_policy', { app_name: nomeAplicacao }) }}</Link>
-                                    {{ $t('auth.and', { app_name: nomeAplicacao }) }}
-                                    <Link :href="route('info.article', { locale: localeAtual, slug: 'terms-of-use' })" class="font-semibold text-brand-secondary">{{ $t('auth.terms_of_use', { app_name: nomeAplicacao }) }}</Link>
-                                    {{ $t('auth.service_suffix', { app_name: nomeAplicacao }) }}
-                                </span>
-                            </label>
+                            <div>
+                                <input v-model="formularioCadastro.url" @blur="formatarUrl" type="url" required :placeholder="'* ' + $t('form.url_placeholder', { app_name: nomeAplicacao })" class="w-full rounded-xl border bg-bg-subtle px-4 py-3 text-sm placeholder:text-text-secondary transition-colors" :class="formularioCadastro.errors.url ? 'border-danger-500 focus:border-danger-500 focus:ring-danger-500' : 'border-border-soft focus:border-brand-secondary focus:ring-brand-secondary'">
+                                <p v-if="formularioCadastro.errors.url" class="mt-1 text-xs font-medium text-danger-600">{{ formularioCadastro.errors.url }}</p>
+                            </div>
+                            <div>
+                                <input v-model="formularioCadastro.email" type="email" required :placeholder="$t('form.email_create_account', { app_name: nomeAplicacao })" class="w-full rounded-xl border bg-bg-subtle px-4 py-3 text-sm placeholder:text-text-secondary transition-colors" :class="formularioCadastro.errors.email ? 'border-danger-500 focus:border-danger-500 focus:ring-danger-500' : 'border-border-soft focus:border-brand-secondary focus:ring-brand-secondary'">
+                                <p v-if="formularioCadastro.errors.email" class="mt-1 text-xs font-medium text-danger-600">{{ formularioCadastro.errors.email }}</p>
+                            </div>
+                            <div>
+                                <input v-model="formularioCadastro.name" type="text" required :placeholder="$t('form.name_placeholder', { app_name: nomeAplicacao })" class="w-full rounded-xl border bg-bg-subtle px-4 py-3 text-sm placeholder:text-text-secondary transition-colors" :class="formularioCadastro.errors.name ? 'border-danger-500 focus:border-danger-500 focus:ring-danger-500' : 'border-border-soft focus:border-brand-secondary focus:ring-brand-secondary'">
+                                <p v-if="formularioCadastro.errors.name" class="mt-1 text-xs font-medium text-danger-600">{{ formularioCadastro.errors.name }}</p>
+                            </div>
+                            <div>
+                                <label class="flex items-start gap-3 rounded-xl border bg-bg-subtle px-4 py-3 text-xs leading-6 text-text-secondary" :class="formularioCadastro.errors.terms ? 'border-danger-500' : 'border-border-soft'">
+                                    <input v-model="formularioCadastro.terms" type="checkbox" required class="mt-1 h-4 w-4 rounded border-border-strong text-brand-primary focus:ring-brand-secondary">
+                                    <span>
+                                        * {{ $t('auth.agree_prefix', { app_name: nomeAplicacao }) }}
+                                        <Link :href="route('info.article', { locale: localeAtual, slug: 'privacy-policy' })" class="font-semibold text-brand-secondary">{{ $t('auth.privacy_policy', { app_name: nomeAplicacao }) }}</Link>
+                                        {{ $t('auth.and', { app_name: nomeAplicacao }) }}
+                                        <Link :href="route('info.article', { locale: localeAtual, slug: 'terms-of-use' })" class="font-semibold text-brand-secondary">{{ $t('auth.terms_of_use', { app_name: nomeAplicacao }) }}</Link>
+                                        {{ $t('auth.service_suffix', { app_name: nomeAplicacao }) }}
+                                    </span>
+                                </label>
+                                <p v-if="formularioCadastro.errors.terms" class="mt-1 text-xs font-medium text-danger-600">{{ formularioCadastro.errors.terms }}</p>
+                            </div>
                             <button :disabled="formularioCadastro.processing" class="w-full rounded-xl bg-brand-primary px-6 py-3 text-sm font-bold uppercase tracking-[0.2em] text-white transition hover:bg-primary-700 disabled:opacity-50">
                                 {{ formularioCadastro.processing ? 'PROCESSANDO...' : $t('hero.cta', { app_name: nomeAplicacao }) }}
                             </button>
                         </form>
 
                         <form v-else @submit.prevent="enviarLogin" class="space-y-4">
-                            <input v-model="formularioLogin.email" type="email" :placeholder="'* ' + $t('auth.email_placeholder', { app_name: nomeAplicacao })" class="w-full rounded-xl border border-border-soft bg-bg-subtle px-4 py-3 text-sm placeholder:text-text-secondary focus:border-brand-secondary focus:ring-brand-secondary">
-                            <input v-model="formularioLogin.password" type="password" :placeholder="'* ' + $t('auth.password_placeholder', { app_name: nomeAplicacao })" class="w-full rounded-xl border border-border-soft bg-bg-subtle px-4 py-3 text-sm placeholder:text-text-secondary focus:border-brand-secondary focus:ring-brand-secondary">
+                            <div>
+                                <input v-model="formularioLogin.email" type="email" :placeholder="'* ' + $t('auth.email_placeholder', { app_name: nomeAplicacao })" class="w-full rounded-xl border bg-bg-subtle px-4 py-3 text-sm placeholder:text-text-secondary transition-colors" :class="formularioLogin.errors.email ? 'border-danger-500 focus:border-danger-500 focus:ring-danger-500' : 'border-border-soft focus:border-brand-secondary focus:ring-brand-secondary'">
+                                <p v-if="formularioLogin.errors.email" class="mt-1 text-xs font-medium text-danger-600">{{ formularioLogin.errors.email }}</p>
+                            </div>
+                            <div>
+                                <input v-model="formularioLogin.password" type="password" :placeholder="'* ' + $t('auth.password_placeholder', { app_name: nomeAplicacao })" class="w-full rounded-xl border bg-bg-subtle px-4 py-3 text-sm placeholder:text-text-secondary transition-colors" :class="formularioLogin.errors.password ? 'border-danger-500 focus:border-danger-500 focus:ring-danger-500' : 'border-border-soft focus:border-brand-secondary focus:ring-brand-secondary'">
+                                <p v-if="formularioLogin.errors.password" class="mt-1 text-xs font-medium text-danger-600">{{ formularioLogin.errors.password }}</p>
+                            </div>
                             <button :disabled="formularioLogin.processing" class="w-full rounded-xl bg-brand-primary px-6 py-3 text-sm font-bold uppercase tracking-[0.2em] text-white transition hover:bg-primary-700 disabled:opacity-50">
                                 {{ formularioLogin.processing ? '...' : $t('auth.login_tab', { app_name: nomeAplicacao }).toUpperCase() }}
                             </button>
                             <div class="text-center">
-                                <a href="#" class="text-sm font-semibold text-brand-secondary">{{ $t('auth.forgot_password', { app_name: nomeAplicacao }) }}</a>
+                                <Link :href="route('password.request')" class="text-sm font-semibold text-brand-secondary">{{ $t('auth.forgot_password', { app_name: nomeAplicacao }) }}</Link>
                             </div>
                         </form>
 
