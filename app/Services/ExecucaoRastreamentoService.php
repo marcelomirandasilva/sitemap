@@ -69,6 +69,14 @@ class ExecucaoRastreamentoService
         }
 
         if (!$permiteOpcoesAvancadas) {
+            if ((int) ($projeto->max_concurrent_requests ?? 0) !== SitemapGeneratorService::CONCORRENCIA_PADRAO_API) {
+                $ajustesProjeto['max_concurrent_requests'] = SitemapGeneratorService::CONCORRENCIA_PADRAO_API;
+            }
+
+            if ((float) ($projeto->delay_between_requests ?? 0.0) !== SitemapGeneratorService::ATRASO_PADRAO_API) {
+                $ajustesProjeto['delay_between_requests'] = SitemapGeneratorService::ATRASO_PADRAO_API;
+            }
+
             if ($projeto->check_news) {
                 $ajustesProjeto['check_news'] = false;
             }
