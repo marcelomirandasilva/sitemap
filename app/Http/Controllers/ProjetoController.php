@@ -43,16 +43,29 @@ class ProjetoController extends Controller
         $limitesIntervaloPersonalizado = $this->frequenciaRastreamento->limitesIntervaloPersonalizadoHoras();
         $limitePaginasApi = $this->sitemapService->limiteMaximoPaginasApi();
         $profundidadeMaximaLimite = $plano?->profundidadeMaximaLimiteEfetiva() ?? 3;
-        $concorrenciaLimite = $plano?->concorrenciaLimiteEfetiva() ?? 2;
-        $atrasoMinimo = $plano?->atrasoMinimoEfetivo() ?? 1.0;
-        $atrasoMaximo = $plano?->atrasoMaximoEfetivo() ?? 1.0;
+        $usaAjustesAvancados = (bool) ($plano?->has_advanced_features);
+        $concorrenciaPadrao = $usaAjustesAvancados
+            ? ($plano?->concorrenciaPadraoEfetiva() ?? SitemapGeneratorService::CONCORRENCIA_PADRAO_API)
+            : SitemapGeneratorService::CONCORRENCIA_PADRAO_API;
+        $concorrenciaLimite = $usaAjustesAvancados
+            ? ($plano?->concorrenciaLimiteEfetiva() ?? SitemapGeneratorService::CONCORRENCIA_PADRAO_API)
+            : SitemapGeneratorService::CONCORRENCIA_PADRAO_API;
+        $atrasoPadrao = $usaAjustesAvancados
+            ? ($plano?->atrasoPadraoEfetivo() ?? SitemapGeneratorService::ATRASO_PADRAO_API)
+            : SitemapGeneratorService::ATRASO_PADRAO_API;
+        $atrasoMinimo = $usaAjustesAvancados
+            ? ($plano?->atrasoMinimoEfetivo() ?? SitemapGeneratorService::ATRASO_PADRAO_API)
+            : SitemapGeneratorService::ATRASO_PADRAO_API;
+        $atrasoMaximo = $usaAjustesAvancados
+            ? ($plano?->atrasoMaximoEfetivo() ?? SitemapGeneratorService::ATRASO_PADRAO_API)
+            : SitemapGeneratorService::ATRASO_PADRAO_API;
         $limitePaginasPlano = $plano?->max_pages ?? 500;
         $limitePaginasEfetivo = $plano?->limitePaginasEfetivo($limitePaginasApi) ?? min($limitePaginasPlano, $limitePaginasApi);
 
         return [
             'permite_imagens' => $plano ? (bool) $plano->permite_imagens : false,
             'permite_videos' => $plano ? (bool) $plano->permite_videos : false,
-            'advanced_settings_enabled' => $plano ? (bool) $plano->has_advanced_features : false,
+            'advanced_settings_enabled' => $usaAjustesAvancados,
             'permite_noticias' => $plano ? (bool) ($plano->has_advanced_features && $plano->permite_noticias) : false,
             'permite_mobile' => $plano ? (bool) ($plano->has_advanced_features && $plano->permite_mobile) : false,
             'permite_compactacao' => $plano ? (bool) ($plano->has_advanced_features && $plano->permite_compactacao) : false,
@@ -69,12 +82,12 @@ class ProjetoController extends Controller
             'intervalo_personalizado_padrao_horas' => $plano?->intervaloPersonalizadoPadraoHorasEfetivo() ?? $limitesIntervaloPersonalizado['padrao'],
             'default_max_depth' => $plano?->profundidadeMaximaPadraoEfetiva() ?? 3,
             'max_depth_limit' => $profundidadeMaximaLimite,
-            'default_max_concurrent_requests' => $plano?->concorrenciaPadraoEfetiva() ?? 2,
+            'default_max_concurrent_requests' => $concorrenciaPadrao,
             'max_concurrent_requests_limit' => $concorrenciaLimite,
-            'default_delay_between_requests' => $plano?->atrasoPadraoEfetivo() ?? 1.0,
+            'default_delay_between_requests' => $atrasoPadrao,
             'delay_between_requests_min' => $atrasoMinimo,
             'delay_between_requests_max' => $atrasoMaximo,
-            'supports_advanced_api_options' => $plano ? (bool) $plano->has_advanced_features : false,
+            'supports_advanced_api_options' => $usaAjustesAvancados,
         ];
     }
 
@@ -124,6 +137,13 @@ class ProjetoController extends Controller
             ?? $this->frequenciaRastreamento->limitesIntervaloPersonalizadoHoras()['padrao'];
         $limitePaginasApi = $this->sitemapService->limiteMaximoPaginasApi();
         $limitePaginasEfetivo = $planoEfetivo?->limitePaginasEfetivo($limitePaginasApi) ?? min(1000, $limitePaginasApi);
+        $usaAjustesAvancados = (bool) ($planoEfetivo?->has_advanced_features);
+        $concorrenciaPadrao = $usaAjustesAvancados
+            ? ($planoEfetivo?->concorrenciaPadraoEfetiva() ?? SitemapGeneratorService::CONCORRENCIA_PADRAO_API)
+            : SitemapGeneratorService::CONCORRENCIA_PADRAO_API;
+        $atrasoPadrao = $usaAjustesAvancados
+            ? ($planoEfetivo?->atrasoPadraoEfetivo() ?? SitemapGeneratorService::ATRASO_PADRAO_API)
+            : SitemapGeneratorService::ATRASO_PADRAO_API;
         $limiteProjetos = (int) ($planoEfetivo?->max_projects ?? 1);
         $quantidadeProjetos = $user->projetos()->count();
 
@@ -144,8 +164,8 @@ class ProjetoController extends Controller
             'intervalo_personalizado_horas' => $frequenciaPadrao === 'customizado' ? $intervaloPersonalizadoPadraoHoras : null,
             'max_pages' => $limitePaginasEfetivo,
             'max_depth' => $planoEfetivo?->profundidadeMaximaPadraoEfetiva() ?? 3,
-            'max_concurrent_requests' => $planoEfetivo?->concorrenciaPadraoEfetiva() ?? 2,
-            'delay_between_requests' => $planoEfetivo?->atrasoPadraoEfetivo() ?? 1.0,
+            'max_concurrent_requests' => $concorrenciaPadrao,
+            'delay_between_requests' => $atrasoPadrao,
             'check_images' => (bool) ($planoEfetivo?->permite_imagens),
             'check_videos' => (bool) ($planoEfetivo?->permite_videos),
             'check_news' => false,
