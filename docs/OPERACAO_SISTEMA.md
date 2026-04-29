@@ -179,8 +179,46 @@ MAIL_HOST=
 MAIL_PORT=587
 MAIL_USERNAME=
 MAIL_PASSWORD=
-MAIL_SCHEME=tls
+MAIL_SCHEME=smtp
 ```
+
+Padrao operacional atual para Mailgun via API nativa do Laravel:
+
+```env
+MAIL_MAILER=mailgun
+MAILGUN_DOMAIN=<dominio-configurado-no-mailgun>
+MAILGUN_SECRET=<private-api-key>
+MAILGUN_ENDPOINT=api.mailgun.net
+MAIL_FROM_ADDRESS=noreply@genmap.app
+MAIL_FROM_NAME="GenMap"
+```
+
+Observacoes para Mailgun API:
+
+- se a conta estiver na regiao EU, use `MAILGUN_ENDPOINT=api.eu.mailgun.net`;
+- `MAILGUN_DOMAIN` deve ser o dominio exato cadastrado no Mailgun, por exemplo `mg.genmap.app`;
+- erro `401 Forbidden` normalmente indica dominio incorreto, chave incorreta ou endpoint/regiao incorretos;
+- nao versione a credencial real em `.env.example` ou no repositorio.
+
+Se optar por SMTP do Mailgun, use credenciais SMTP reais do dominio:
+
+```env
+MAIL_MAILER=smtp
+MAIL_HOST=smtp.mailgun.org
+MAIL_PORT=587
+MAIL_SCHEME=smtp
+MAIL_USERNAME=<usuario-smtp-do-mailgun>
+MAIL_PASSWORD=<senha-smtp-do-mailgun>
+MAIL_FROM_ADDRESS=noreply@genmap.app
+MAIL_FROM_NAME="GenMap"
+```
+
+Observacoes para Mailgun SMTP:
+
+- para `587`, use `MAIL_SCHEME=smtp` e deixe o servidor negociar `STARTTLS`;
+- use `MAIL_SCHEME=smtps` apenas com a porta `465`, quando precisar de SSL implicito;
+- o usuario SMTP costuma ser algo como `postmaster@<dominio-mailgun>` e nao a string literal `api`;
+- a API key do Mailgun nao substitui automaticamente a credencial SMTP.
 
 Se optar pelo transporte nativo do Laravel:
 
