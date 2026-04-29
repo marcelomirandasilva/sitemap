@@ -1,69 +1,133 @@
 <script setup>
-import { ref, computed } from 'vue';
-import { Link } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
+import { Link, router } from '@inertiajs/vue3';
 import { trans as t } from 'laravel-vue-i18n';
+import Swal from 'sweetalert2';
 import StatusRastreador from '@/Components/Crawler/Status.vue';
 
 const props = defineProps({
     projetos: {
         type: Array,
-        required: true
-    }
+        required: true,
+    },
 });
 
-const emit = defineEmits(['click-status']);
-
-// --- Estado Interno do DataTable ---
 const searchQuery = ref('');
 const currentPage = ref(1);
 const pageSize = ref(10);
-const sortKey = ref('updated_at'); // Coluna padrão
-const sortOrder = ref('desc'); // 'asc' or 'desc'
+const sortKey = ref('updated_at');
+const sortOrder = ref('desc');
 
-// --- Colunas Configuráveis ---
 const columns = [
-    { key: 'status', label: 'table.status', sortable: true },
-    { key: 'url', label: 'table.domain', sortable: true },
-    { key: 'name', label: 'table.title', sortable: true },
-    { key: 'updated_at', label: 'table.updated', sortable: true },
-    { key: 'actions', label: 'Ações', sortable: false },
+    { key: 'project', label: 'Projeto', sortable: true },
+    { key: 'status', label: 'Status', sortable: true },
+    { key: 'coverage', label: 'Cobertura', sortable: true },
+    { key: 'updated_at', label: 'Atualizado', sortable: true },
+    { key: 'actions', label: 'Acoes', sortable: false },
 ];
 
-// --- Métodos Auxiliares ---
 const formataData = (data) => {
-    if (!data) return '';
+    if (!data) return '-';
+
     return new Date(data).toLocaleDateString(t('locale') === 'pt' ? 'pt-BR' : 'en-US', {
         day: '2-digit',
         month: 'short',
         hour: '2-digit',
-        minute: '2-digit'
+        minute: '2-digit',
     });
 };
 
+const normalizarDominio = (url) => {
+    if (!url) {
+        return '-';
+    }
 
+    return url.replace(/^https?:\/\//, '').replace(/\/$/, '');
+};
 
-// --- Lógica de Ordenação e Filtro ---
+const obterStatusJob = (projeto) => projeto.ultimo_job?.status || 'waiting';
+
+const obterTotalPaginas = (projeto) => Number(
+    projeto.ultimo_job?.pages_count
+    ?? projeto.ultimo_job?.urls_found
+    ?? projeto.ultimo_job?.urls_crawled
+    ?? 0
+);
+
+const obterTextoCobertura = (projeto) => {
+    const ultimoJob = projeto.ultimo_job;
+
+    if (!ultimoJob) {
+        return 'Sem execucao';
+    }
+
+    if (['queued', 'running'].includes(ultimoJob.status)) {
+        return `Processando (${Math.round(ultimoJob.progress || 0)}%)`;
+    }
+
+    return `${obterTotalPaginas(projeto)} paginas`;
+};
+
+const obterResumoProjeto = (projeto) => {
+    const partes = [];
+
+    if (projeto.name) {
+        partes.push(projeto.name);
+    }
+
+    if (projeto.ultimo_job?.external_job_id) {
+        partes.push(`Job ${projeto.ultimo_job.external_job_id.slice(0, 8)}`);
+    }
+
+    return partes.join(' • ');
+};
+
+const getSortableValue = (obj, key) => {
+    if (key === 'project') {
+        return `${normalizarDominio(obj.url)} ${obj.name || ''}`.trim();
+    }
+
+    if (key === 'status') {
+        return obterStatusJob(obj);
+    }
+
+    if (key === 'coverage') {
+        return obterTotalPaginas(obj);
+    }
+
+    if (key === 'updated_at') {
+        return obj.ultimo_job?.updated_at || obj.created_at || '';
+    }
+
+    return '';
+};
+
 const filteredProjects = computed(() => {
     let result = [...props.projetos];
 
-    // 1. Busca Local
     if (searchQuery.value) {
         const query = searchQuery.value.toLowerCase();
-        result = result.filter(p => 
-            p.url.toLowerCase().includes(query) || 
-            (p.name && p.name.toLowerCase().includes(query)) ||
-            (p.ultimo_job?.status && p.ultimo_job.status.toLowerCase().includes(query))
+        result = result.filter((projeto) =>
+            projeto.url.toLowerCase().includes(query)
+            || (projeto.name && projeto.name.toLowerCase().includes(query))
+            || obterStatusJob(projeto).toLowerCase().includes(query)
+            || String(projeto.id).includes(query)
         );
     }
 
-    // 2. Ordenação
     if (sortKey.value) {
         result.sort((a, b) => {
-            let valA = getSortableValue(a, sortKey.value);
-            let valB = getSortableValue(b, sortKey.value);
+            const valA = getSortableValue(a, sortKey.value);
+            const valB = getSortableValue(b, sortKey.value);
 
-            if (valA < valB) return sortOrder.value === 'asc' ? -1 : 1;
-            if (valA > valB) return sortOrder.value === 'asc' ? 1 : -1;
+            if (valA < valB) {
+                return sortOrder.value === 'asc' ? -1 : 1;
+            }
+
+            if (valA > valB) {
+                return sortOrder.value === 'asc' ? 1 : -1;
+            }
+
             return 0;
         });
     }
@@ -71,50 +135,56 @@ const filteredProjects = computed(() => {
     return result;
 });
 
-const getSortableValue = (obj, key) => {
-    if (key === 'status') return obj.ultimo_job?.status || '';
-    if (key === 'updated_at') return obj.ultimo_job?.updated_at || obj.created_at || '';
-    if (key === 'url') return obj.url || '';
-    if (key === 'name') return obj.name || '';
-    return '';
+const totalItems = computed(() => filteredProjects.value.length);
+const totalPages = computed(() => Math.max(1, Math.ceil(totalItems.value / pageSize.value)));
+const startItem = computed(() => (totalItems.value === 0 ? 0 : ((currentPage.value - 1) * pageSize.value) + 1));
+const endItem = computed(() => Math.min(currentPage.value * pageSize.value, totalItems.value));
+
+const paginatedProjects = computed(() => {
+    const start = (currentPage.value - 1) * pageSize.value;
+    return filteredProjects.value.slice(start, start + pageSize.value);
+});
+
+const onSearch = () => {
+    currentPage.value = 1;
 };
 
 const toggleSort = (key) => {
     if (sortKey.value === key) {
         sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc';
-    } else {
-        sortKey.value = key;
-        sortOrder.value = 'asc';
+        return;
     }
+
+    sortKey.value = key;
+    sortOrder.value = key === 'updated_at' ? 'desc' : 'asc';
 };
 
-// --- Lógica de Paginação ---
-const totalItems = computed(() => filteredProjects.value.length);
-const totalPages = computed(() => Math.ceil(totalItems.value / pageSize.value));
-const startItem = computed(() => (currentPage.value - 1) * pageSize.value + 1);
-const endItem = computed(() => Math.min(currentPage.value * pageSize.value, totalItems.value));
+const confirmarExclusao = async (projeto) => {
+    const confirmacao = await Swal.fire({
+        title: t('project.delete_confirm_title'),
+        text: t('project.delete_confirm_text'),
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: t('project.delete_confirm_btn'),
+        cancelButtonText: t('project.delete_cancel_btn'),
+    });
 
-const paginatedProjects = computed(() => {
-    const start = (currentPage.value - 1) * pageSize.value;
-    const end = start + pageSize.value;
-    return filteredProjects.value.slice(start, end);
-});
+    if (!confirmacao.isConfirmed) {
+        return;
+    }
 
-// Resetar página ao buscar
-const onSearch = () => {
-    currentPage.value = 1;
+    router.delete(route('projects.destroy', { projeto: projeto.id }));
 };
 </script>
 
 <template>
-    <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
-        <!-- DataTable Header (Controls) -->
-        <div class="p-4 border-b border-gray-200 bg-gray-50 flex flex-col md:flex-row justify-between items-center gap-4">
-            
-            <!-- Page Size -->
+    <div class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+        <div class="flex flex-col items-start justify-between gap-4 border-b border-gray-200 bg-gray-50 p-4 md:flex-row md:items-center">
             <div class="flex items-center gap-2 text-sm text-gray-600">
                 <span>{{ $t('table.show') }}</span>
-                <select v-model="pageSize" class="border-gray-300 focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50 rounded shadow-sm text-sm py-1">
+                <select v-model="pageSize" class="rounded border-gray-300 py-1 text-sm shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50">
                     <option :value="5">5</option>
                     <option :value="10">10</option>
                     <option :value="25">25</option>
@@ -123,119 +193,163 @@ const onSearch = () => {
                 <span>{{ $t('table.entries') }}</span>
             </div>
 
-            <!-- Search -->
-            <div class="relative w-full md:w-64">
-                <input 
+            <div class="relative w-full md:w-72">
+                <input
                     v-model="searchQuery"
+                    type="text"
+                    :placeholder="$t('table.search_placeholder') || 'Buscar projeto...'"
+                    class="w-full rounded border border-gray-300 py-2 pl-9 pr-3 text-sm focus:border-primary-400 focus:ring-1 focus:ring-primary-400"
                     @input="onSearch"
-                    type="text" 
-                    :placeholder="$t('table.search_placeholder') || 'Search...'" 
-                    class="w-full pl-9 pr-3 py-1.5 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-400 focus:border-primary-400"
                 >
-                <svg class="w-4 h-4 text-gray-400 absolute left-3 top-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                <svg class="absolute left-3 top-2.5 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
             </div>
         </div>
 
-        <!-- Table -->
         <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
+            <table class="w-full min-w-[1100px] border-collapse text-left">
                 <thead>
-                    <tr class="bg-gray-50 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">
-                        <th 
-                            v-for="col in columns" 
+                    <tr class="border-b border-gray-200 bg-gray-50 text-xs font-bold uppercase tracking-wider text-gray-500">
+                        <th
+                            v-for="col in columns"
                             :key="col.key"
+                            class="px-4 py-3 transition-colors"
+                            :class="col.sortable ? 'cursor-pointer select-none hover:bg-gray-100' : ''"
                             @click="col.sortable && toggleSort(col.key)"
-                            :class="['px-6 py-3 cursor-pointer hover:bg-gray-100 transition-colors select-none', {'text-primary-600': sortKey === col.key}]"
                         >
-                            <div class="flex items-center gap-1">
-                                {{ $t(col.label) }}
+                            <div class="flex items-center gap-1" :class="{ 'text-primary-600': sortKey === col.key }">
+                                <span>{{ $t(col.label) }}</span>
                                 <span v-if="sortKey === col.key" class="text-[10px]">
                                     {{ sortOrder === 'asc' ? '▲' : '▼' }}
                                 </span>
-                                <span v-else class="text-gray-300 text-[10px]">▲▼</span>
+                                <span v-else-if="col.sortable" class="text-[10px] text-gray-300">▲▼</span>
                             </div>
                         </th>
                     </tr>
                 </thead>
+
                 <tbody class="divide-y divide-gray-100">
-                    <tr v-for="projeto in paginatedProjects" :key="projeto.id" class="hover:bg-gray-50 transition-colors">
-                        
-                        <!-- Status -->
-                        <td class="px-6 py-4 align-top w-48">
-                            <div class="flex flex-col gap-2 items-start">
-                                <StatusRastreador :projeto="projeto" :ultima-tarefa="projeto.ultimo_job" :simple="true" />
-                            </div>
-                        </td>
+                    <tr v-for="projeto in paginatedProjects" :key="projeto.id" class="align-top transition-colors hover:bg-gray-50">
+                        <td class="w-[34%] px-4 py-4">
+                            <div class="space-y-2">
+                                <div class="flex items-start justify-between gap-3">
+                                    <div class="min-w-0">
+                                        <Link :href="route('projects.show', projeto.id)" class="block truncate text-lg font-semibold text-accent-600 hover:underline">
+                                            {{ normalizarDominio(projeto.url) }}
+                                        </Link>
+                                        <p class="mt-1 text-sm text-gray-500">
+                                            {{ obterResumoProjeto(projeto) || 'Projeto sem titulo' }}
+                                        </p>
+                                    </div>
 
-                        <!-- Domain -->
-                        <td class="px-6 py-4 align-top font-medium">
-                            <Link :href="route('projects.show', projeto.id)" class="text-accent-600 hover:underline block truncate">
-                                {{ projeto.url.replace(/^https?:\/\//, '').replace(/\/$/, '') }}
-                            </Link>
-                        </td>
-
-                        <!-- Title -->
-                        <td class="px-6 py-4 align-top text-gray-500 text-sm">
-                             {{ projeto.name || '-' }}
-                        </td>
-
-                        <!-- Updated / Crawler Status -->
-                        <td class="px-6 py-4 align-top w-1/4">
-                            <div class="flex flex-col gap-1">
-                                <div class="text-xs text-gray-500 mb-1" v-if="projeto.ultimo_job">
-                                   <span v-if="projeto.ultimo_job.status === 'completed'">
-                                        {{ formataData(projeto.ultimo_job.updated_at) }}<br>
-                                        <span class="text-primary-600 font-medium">{{ projeto.ultimo_job.pages_count }} {{ $t('project.pages_count') || 'Páginas' }}</span>
-                                   </span>
-                                   <span v-else>
-                                       Sitemap processing...
-                                   </span>
+                                    <span class="shrink-0 rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-xs font-semibold text-gray-500">
+                                        #{{ projeto.id }}
+                                    </span>
                                 </div>
+
+                                <a :href="projeto.url" target="_blank" rel="noopener noreferrer" class="block truncate text-xs text-gray-400 hover:text-accent-600">
+                                    {{ projeto.url }}
+                                </a>
                             </div>
                         </td>
 
-                        <!-- Actions -->
-                        <td class="px-6 py-4 align-top w-48 text-right bg-gray-50/50">
-                            <div class="flex flex-col gap-2 items-end">
-                                <Link :href="route('projects.show', projeto.id)" class="inline-flex items-center justify-center px-3 py-1.5 bg-white border border-gray-300 rounded text-[11px] font-semibold text-gray-700 uppercase tracking-widest hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-25 transition w-full text-center shadow-sm">
-                                    {{ $t('project.view_action') || 'Visualizar' }}
+                        <td class="w-[16%] px-4 py-4">
+                            <div class="space-y-2">
+                                <StatusRastreador :projeto="projeto" :ultima-tarefa="projeto.ultimo_job" :simple="true" />
+                                <p class="text-xs capitalize text-gray-500">
+                                    {{ obterStatusJob(projeto) }}
+                                </p>
+                            </div>
+                        </td>
+
+                        <td class="w-[18%] px-4 py-4">
+                            <div class="space-y-1 text-sm">
+                                <p class="font-semibold text-gray-700">
+                                    {{ obterTextoCobertura(projeto) }}
+                                </p>
+                                <p v-if="projeto.ultimo_job" class="text-xs text-gray-500">
+                                    Found: {{ projeto.ultimo_job.urls_found ?? 0 }}
+                                </p>
+                                <p v-if="projeto.ultimo_job" class="text-xs text-gray-500">
+                                    Crawled: {{ projeto.ultimo_job.urls_crawled ?? 0 }}
+                                </p>
+                                <p v-if="projeto.ultimo_job" class="text-xs text-gray-500">
+                                    Excluded: {{ projeto.ultimo_job.urls_excluded ?? 0 }}
+                                </p>
+                            </div>
+                        </td>
+
+                        <td class="w-[14%] px-4 py-4">
+                            <div class="space-y-1 text-sm">
+                                <p class="font-medium text-gray-700">
+                                    {{ projeto.ultimo_job?.updated_at ? formataData(projeto.ultimo_job.updated_at) : '-' }}
+                                </p>
+                                <p class="text-xs text-gray-500">
+                                    Criado em {{ formataData(projeto.created_at) }}
+                                </p>
+                            </div>
+                        </td>
+
+                        <td class="w-[18%] bg-gray-50/50 px-4 py-4">
+                            <div class="flex flex-col gap-2">
+                                <Link
+                                    :href="route('projects.show', projeto.id)"
+                                    class="inline-flex items-center justify-center rounded border border-gray-300 bg-white px-3 py-2 text-[11px] font-semibold uppercase tracking-widest text-gray-700 shadow-sm transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+                                >
+                                    {{ $t('project.view_action') || 'Ver' }}
                                 </Link>
+
                                 <StatusRastreador :projeto="projeto" :ultima-tarefa="projeto.ultimo_job" :action-only="true" />
+
+                                <button
+                                    type="button"
+                                    class="inline-flex items-center justify-center rounded border border-danger-200 bg-white px-3 py-2 text-[11px] font-semibold uppercase tracking-widest text-danger-600 shadow-sm transition hover:bg-danger-50 focus:outline-none focus:ring-2 focus:ring-danger-500 focus:ring-offset-2"
+                                    @click="confirmarExclusao(projeto)"
+                                >
+                                    Excluir
+                                </button>
                             </div>
                         </td>
                     </tr>
-                    
-                    <!-- Empty State -->
+
                     <tr v-if="paginatedProjects.length === 0">
-                        <td colspan="5" class="px-6 py-8 text-center text-gray-500 text-sm">
-                            {{ $t('table.no_records') || 'No matching records found' }}
+                        <td colspan="5" class="px-6 py-8 text-center text-sm text-gray-500">
+                            {{ $t('table.no_records') || 'Nenhum projeto encontrado' }}
                         </td>
                     </tr>
                 </tbody>
             </table>
         </div>
 
-        <!-- DataTable Footer (Pagination) -->
-        <div v-if="totalItems > 0" class="px-6 py-4 border-t border-gray-200 bg-gray-50 text-xs text-gray-500 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div v-if="totalItems > 0" class="flex flex-col items-center justify-between gap-4 border-t border-gray-200 bg-gray-50 px-6 py-4 text-xs text-gray-500 md:flex-row">
             <div>
-                {{ $t('table.showing') }} <span class="font-bold">{{ startItem }}</span> {{ $t('table.to') }} <span class="font-bold">{{ endItem }}</span> {{ $t('table.of') }} <span class="font-bold">{{ totalItems }}</span> {{ $t('table.entries') }}
+                {{ $t('table.showing') }}
+                <span class="font-bold">{{ startItem }}</span>
+                {{ $t('table.to') }}
+                <span class="font-bold">{{ endItem }}</span>
+                {{ $t('table.of') }}
+                <span class="font-bold">{{ totalItems }}</span>
+                {{ $t('table.entries') }}
             </div>
-            
+
             <div class="flex items-center gap-1">
-                <button 
-                    @click="currentPage > 1 && currentPage--"
+                <button
+                    type="button"
+                    class="rounded border border-gray-300 bg-white px-3 py-1 shadow-sm transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
                     :disabled="currentPage === 1"
-                    class="px-3 py-1 bg-white border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm transition"
+                    @click="currentPage > 1 && currentPage--"
                 >
                     {{ $t('pagination.previous') }}
                 </button>
-                
+
                 <span class="px-2 text-gray-400">Page {{ currentPage }} / {{ totalPages }}</span>
 
-                <button 
-                    @click="currentPage < totalPages && currentPage++"
+                <button
+                    type="button"
+                    class="rounded border border-gray-300 bg-white px-3 py-1 shadow-sm transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
                     :disabled="currentPage === totalPages"
-                    class="px-3 py-1 bg-white border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm transition"
+                    @click="currentPage < totalPages && currentPage++"
                 >
                     {{ $t('pagination.next') }}
                 </button>
@@ -243,11 +357,3 @@ const onSearch = () => {
         </div>
     </div>
 </template>
-
-<style scoped>
-.simulate_arrow::before {
-    content: "︽"; 
-    font-size: 10px;
-    margin-right: 2px;
-}
-</style>
