@@ -10,11 +10,17 @@ class RelatorioSeoProjetoService
 {
     public function montarParaProjeto(Projeto $projeto): array
     {
-        $dados = $this->carregarDoStream($projeto);
+        $caminhoStream = $this->encontrarPagesStream($projeto);
 
-        if ($dados['paginas']->isEmpty()) {
-            $dados = $this->carregarDoBanco($projeto);
+        if ($caminhoStream) {
+            $relatorio = $this->montarRelatorioDoStream($caminhoStream);
+
+            if ($relatorio['disponivel']) {
+                return $relatorio;
+            }
         }
+
+        $dados = $this->carregarDoBanco($projeto);
 
         if ($dados['paginas']->isEmpty()) {
             return $this->relatorioVazio();
@@ -62,64 +68,139 @@ class RelatorioSeoProjetoService
         ];
     }
 
-    protected function carregarDoStream(Projeto $projeto): array
+    protected function montarRelatorioDoStream(string $caminho): array
     {
-        $caminho = $this->encontrarPagesStream($projeto);
+        $paginasPorChave = [];
+        $contagemEntrada = [];
+        $contagemSaidaInterna = [];
+        $distribuicaoProfundidade = [];
+        $diretoriosPrincipais = [];
+        $profundidadeMaxima = 0;
 
-        if (!$caminho) {
-            return [
-                'fonte' => 'stream',
-                'paginas' => collect(),
-                'links' => collect(),
-            ];
-        }
+        foreach ($this->iterarPagesStream($caminho) as $dados) {
+            $url = $this->normalizarUrl($dados['url'] ?? null);
 
-        $paginas = [];
-        $links = [];
-        $handle = @gzopen($caminho, 'r');
-
-        if (!$handle) {
-            return [
-                'fonte' => 'stream',
-                'paginas' => collect(),
-                'links' => collect(),
-            ];
-        }
-
-        while (($linha = gzgets($handle)) !== false) {
-            $dados = json_decode($linha, true);
-
-            if (!is_array($dados) || empty($dados['url'])) {
+            if (!$url) {
                 continue;
             }
 
-            $url = (string) $dados['url'];
-            $titulo = $dados['title'] ?? null;
+            $chave = $this->chaveUrl($url);
+            $profundidade = $this->calcularProfundidade($url);
+            $diretorio = $this->diretorioPrincipal($url);
 
-            $paginas[] = [
+            $paginasPorChave[$chave] = [
                 'url' => $url,
-                'title' => $titulo,
+                'title' => $dados['title'] ?? null,
                 'status_code' => (int) ($dados['status_code'] ?? 0),
+                'profundidade' => $profundidade,
+                'diretorio_principal' => $diretorio,
             ];
 
-            foreach ($this->normalizarLinksSaida($url, $dados['outgoing_links'] ?? null, $dados['content'] ?? null) as $link) {
-                $links[] = [
-                    'source_url' => $url,
-                    'source_title' => $titulo,
-                    'target_url' => $link['target_url'],
-                    'anchor_text' => $link['anchor_text'],
-                    'is_external' => $link['is_external'],
-                ];
+            $contagemEntrada[$chave] = 0;
+            $contagemSaidaInterna[$chave] = 0;
+            $distribuicaoProfundidade[$profundidade] = ($distribuicaoProfundidade[$profundidade] ?? 0) + 1;
+            $diretoriosPrincipais[$diretorio] = ($diretoriosPrincipais[$diretorio] ?? 0) + 1;
+            $profundidadeMaxima = max($profundidadeMaxima, $profundidade);
+        }
+
+        if (empty($paginasPorChave)) {
+            return $this->relatorioVazio();
+        }
+
+        $linksQuebrados = [];
+        $linksExternos = [];
+        $paginasComQuebrados = [];
+        $totalLinksInternos = 0;
+        $totalLinksExternos = 0;
+        $totalLinksQuebrados = 0;
+
+        foreach ($this->iterarPagesStream($caminho) as $dados) {
+            $sourceUrl = $this->normalizarUrl($dados['url'] ?? null);
+
+            if (!$sourceUrl) {
+                continue;
+            }
+
+            $sourceKey = $this->chaveUrl($sourceUrl);
+
+            if (!isset($paginasPorChave[$sourceKey])) {
+                continue;
+            }
+
+            $sourceTitle = $paginasPorChave[$sourceKey]['title'] ?? null;
+
+            foreach ($this->normalizarLinksSaida($sourceUrl, $dados['outgoing_links'] ?? null, $dados['content'] ?? null) as $link) {
+                $targetUrl = $this->normalizarUrl($link['target_url'] ?? null);
+
+                if (!$targetUrl) {
+                    continue;
+                }
+
+                $anchorText = $this->normalizarAnchor($link['anchor_text'] ?? null);
+                $isExternal = array_key_exists('is_external', $link)
+                    ? (bool) $link['is_external']
+                    : $this->isExternalLink($sourceUrl, $targetUrl);
+
+                if ($isExternal) {
+                    $totalLinksExternos++;
+                    $grupo = $linksExternos[$targetUrl] ?? [
+                        'target_url' => $targetUrl,
+                        'dominio' => parse_url($targetUrl, PHP_URL_HOST) ?: $targetUrl,
+                        'ocorrencias' => 0,
+                        'source_url' => $sourceUrl,
+                        'source_title' => $sourceTitle,
+                        'anchor_text' => $anchorText,
+                    ];
+
+                    $grupo['ocorrencias']++;
+                    $linksExternos[$targetUrl] = $grupo;
+                    continue;
+                }
+
+                $totalLinksInternos++;
+                $contagemSaidaInterna[$sourceKey] = ($contagemSaidaInterna[$sourceKey] ?? 0) + 1;
+
+                $targetKey = $this->chaveUrl($targetUrl);
+
+                if (!isset($paginasPorChave[$targetKey])) {
+                    continue;
+                }
+
+                $contagemEntrada[$targetKey] = ($contagemEntrada[$targetKey] ?? 0) + 1;
+                $statusDestino = (int) ($paginasPorChave[$targetKey]['status_code'] ?? 0);
+
+                if ($statusDestino >= 400) {
+                    $totalLinksQuebrados++;
+                    $paginasComQuebrados[$sourceKey] = true;
+
+                    if (count($linksQuebrados) < 50) {
+                        $linksQuebrados[] = [
+                            'source_url' => $sourceUrl,
+                            'source_title' => $sourceTitle,
+                            'target_url' => $targetUrl,
+                            'anchor_text' => $anchorText,
+                            'status_code' => $statusDestino,
+                        ];
+                    }
+                }
             }
         }
 
-        gzclose($handle);
-
-        return [
-            'fonte' => 'stream',
-            'paginas' => collect($paginas),
-            'links' => collect($links),
-        ];
+        return $this->finalizarRelatorioAgregado(
+            $paginasPorChave,
+            $contagemEntrada,
+            $contagemSaidaInterna,
+            $distribuicaoProfundidade,
+            $diretoriosPrincipais,
+            $profundidadeMaxima,
+            $totalLinksInternos,
+            $totalLinksExternos,
+            $totalLinksQuebrados,
+            $linksQuebrados,
+            $paginasComQuebrados,
+            $linksExternos,
+            'stream'
+        );
     }
 
     protected function encontrarPagesStream(Projeto $projeto): ?string
@@ -154,6 +235,29 @@ class RelatorioSeoProjetoService
         $caminhoConfigurado = trim((string) config('services.sitemap_generator.artifacts_path', ''));
 
         return rtrim($caminhoConfigurado !== '' ? $caminhoConfigurado : base_path('../api-sitemap/sitemaps'), '/\\');
+    }
+
+    protected function iterarPagesStream(string $caminho): \Generator
+    {
+        $handle = @gzopen($caminho, 'r');
+
+        if (!$handle) {
+            return;
+        }
+
+        try {
+            while (($linha = gzgets($handle)) !== false) {
+                $dados = json_decode($linha, true);
+
+                if (!is_array($dados) || empty($dados['url'])) {
+                    continue;
+                }
+
+                yield $dados;
+            }
+        } finally {
+            gzclose($handle);
+        }
     }
 
     protected function montarRelatorio(Collection $paginas, Collection $links, string $fonte): array
@@ -344,6 +448,111 @@ class RelatorioSeoProjetoService
                     ->take(50)
                     ->values()
                     ->all(),
+                'links_externos' => collect($linksExternos)
+                    ->sortByDesc('ocorrencias')
+                    ->take(50)
+                    ->values()
+                    ->all(),
+            ],
+        ];
+    }
+
+    protected function finalizarRelatorioAgregado(
+        array $paginasPorChave,
+        array $contagemEntrada,
+        array $contagemSaidaInterna,
+        array $distribuicaoProfundidade,
+        array $diretoriosPrincipais,
+        int $profundidadeMaxima,
+        int $totalLinksInternos,
+        int $totalLinksExternos,
+        int $totalLinksQuebrados,
+        array $linksQuebrados,
+        array $paginasComQuebrados,
+        array $linksExternos,
+        string $fonte
+    ): array {
+        arsort($diretoriosPrincipais);
+        ksort($distribuicaoProfundidade);
+
+        $paginasSemEntradaCollection = collect($paginasPorChave)
+            ->filter(function (array $pagina, string $chave) use ($contagemEntrada) {
+                return $pagina['profundidade'] > 0 && (($contagemEntrada[$chave] ?? 0) === 0);
+            });
+
+        $paginasSemEntrada = $paginasSemEntradaCollection
+            ->sortByDesc('profundidade')
+            ->take(20)
+            ->map(fn (array $pagina) => [
+                'url' => $pagina['url'],
+                'title' => $pagina['title'],
+                'profundidade' => $pagina['profundidade'],
+            ])
+            ->values()
+            ->all();
+
+        $paginasSemSaidaCollection = collect($paginasPorChave)
+            ->filter(fn (array $pagina, string $chave) => (($contagemSaidaInterna[$chave] ?? 0) === 0));
+
+        $paginasSemSaida = $paginasSemSaidaCollection
+            ->sortByDesc('profundidade')
+            ->take(20)
+            ->map(fn (array $pagina) => [
+                'url' => $pagina['url'],
+                'title' => $pagina['title'],
+                'profundidade' => $pagina['profundidade'],
+            ])
+            ->values()
+            ->all();
+
+        $paginasMaisReferenciadas = collect($paginasPorChave)
+            ->map(function (array $pagina, string $chave) use ($contagemEntrada) {
+                return [
+                    'url' => $pagina['url'],
+                    'title' => $pagina['title'],
+                    'total' => $contagemEntrada[$chave] ?? 0,
+                ];
+            })
+            ->filter(fn (array $pagina) => $pagina['total'] > 0)
+            ->sortByDesc('total')
+            ->take(20)
+            ->values()
+            ->all();
+
+        return [
+            'disponivel' => true,
+            'fonte' => $fonte,
+            'total_paginas' => count($paginasPorChave),
+            'total_links' => $totalLinksInternos + $totalLinksExternos,
+            'total_links_internos' => $totalLinksInternos,
+            'total_links_externos' => $totalLinksExternos,
+            'total_links_quebrados' => $totalLinksQuebrados,
+            'paginas_com_links_quebrados' => count($paginasComQuebrados),
+            'paginas_sem_links_entrada' => $paginasSemEntradaCollection->count(),
+            'paginas_sem_links_saida' => $paginasSemSaidaCollection->count(),
+            'profundidade_maxima' => $profundidadeMaxima,
+            'estrutura' => [
+                'diretorios_principais' => collect($diretoriosPrincipais)
+                    ->take(12)
+                    ->map(fn (int $total, string $diretorio) => [
+                        'diretorio' => $diretorio,
+                        'total' => $total,
+                    ])
+                    ->values()
+                    ->all(),
+                'distribuicao_profundidade' => collect($distribuicaoProfundidade)
+                    ->map(fn (int $total, int|string $profundidade) => [
+                        'profundidade' => (int) $profundidade,
+                        'total' => $total,
+                    ])
+                    ->values()
+                    ->all(),
+                'paginas_mais_referenciadas' => $paginasMaisReferenciadas,
+                'paginas_sem_links_entrada' => $paginasSemEntrada,
+                'paginas_sem_links_saida' => $paginasSemSaida,
+            ],
+            'amostras' => [
+                'links_quebrados' => array_values($linksQuebrados),
                 'links_externos' => collect($linksExternos)
                     ->sortByDesc('ocorrencias')
                     ->take(50)
