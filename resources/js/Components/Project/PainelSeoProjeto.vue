@@ -35,10 +35,16 @@ const resumoCards = computed(() => [
     { chave: "paginas", titulo: t("project.seo_total_pages"), valor: props.relatorioSeo?.total_paginas ?? 0 },
     { chave: "links", titulo: t("project.seo_total_links"), valor: props.relatorioSeo?.total_links ?? 0 },
     { chave: "internos", titulo: t("project.seo_internal_links"), valor: props.relatorioSeo?.total_links_internos ?? 0 },
-    { chave: "externos", titulo: t("project.seo_external_links"), valor: props.relatorioSeo?.total_links_externos ?? 0 },
+    { chave: "externos", titulo: t("project.seo_external_references"), valor: props.relatorioSeo?.total_links_externos ?? 0 },
     { chave: "quebrados", titulo: t("project.seo_broken_links"), valor: props.relatorioSeo?.total_links_quebrados ?? 0 },
     { chave: "profundidade", titulo: t("project.seo_max_depth"), valor: props.relatorioSeo?.profundidade_maxima ?? 0 },
 ]);
+
+const textoReferencias = (total) => {
+    const quantidade = Number(total) || 0;
+
+    return `${quantidade} ${quantidade === 1 ? t("project.seo_reference_unit") : t("project.seo_references_unit")}`;
+};
 </script>
 
 <template>
@@ -114,12 +120,12 @@ const resumoCards = computed(() => [
                                     <div class="text-sm font-semibold text-gray-800 break-all">{{ link.target_url }}</div>
                                     <div class="mt-1 text-xs text-gray-500">{{ link.dominio }}</div>
                                 </div>
-                                <span class="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-gray-600">
-                                    {{ link.ocorrencias }}x
+                                <span class="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-[11px] font-bold tracking-wide text-gray-600">
+                                    {{ textoReferencias(link.ocorrencias) }}
                                 </span>
                             </div>
                             <div class="mt-3 text-sm text-gray-600 break-all">
-                                <span class="font-semibold">{{ $t("project.seo_source_page") }}:</span> {{ link.source_url }}
+                                <span class="font-semibold">{{ $t("project.seo_example_source_page") }}:</span> {{ link.source_url }}
                             </div>
                         </article>
                     </div>
@@ -189,8 +195,8 @@ const resumoCards = computed(() => [
                                         <div class="text-sm font-semibold text-gray-800 break-all">{{ pagina.url }}</div>
                                         <div v-if="pagina.title" class="mt-1 text-xs text-gray-500">{{ pagina.title }}</div>
                                     </div>
-                                    <span class="inline-flex items-center rounded-full border border-primary-200 bg-primary-50 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-primary-700">
-                                        {{ pagina.total }}x
+                                    <span class="inline-flex items-center rounded-full border border-primary-200 bg-primary-50 px-2.5 py-1 text-[11px] font-bold tracking-wide text-primary-700">
+                                        {{ textoReferencias(pagina.total) }}
                                     </span>
                                 </div>
                             </article>
