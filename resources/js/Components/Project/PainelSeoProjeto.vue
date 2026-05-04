@@ -32,19 +32,13 @@ const props = defineProps({
 });
 
 const resumoCards = computed(() => [
-    { chave: "paginas", titulo: t("project.seo_total_pages"), valor: props.relatorioSeo?.total_paginas ?? 0 },
-    { chave: "links", titulo: t("project.seo_total_links"), valor: props.relatorioSeo?.total_links ?? 0 },
-    { chave: "internos", titulo: t("project.seo_internal_links"), valor: props.relatorioSeo?.total_links_internos ?? 0 },
-    { chave: "externos", titulo: t("project.seo_external_references"), valor: props.relatorioSeo?.total_links_externos ?? 0 },
-    { chave: "quebrados", titulo: t("project.seo_broken_links"), valor: props.relatorioSeo?.total_links_quebrados ?? 0 },
-    { chave: "profundidade", titulo: t("project.seo_max_depth"), valor: props.relatorioSeo?.profundidade_maxima ?? 0 },
+    { chave: "paginas", titulo: t("project.seo_total_pages"), valor: props.relatorioSeo?.total_paginas ?? 0, usarIconeReferencia: false },
+    { chave: "links", titulo: t("project.seo_total_links"), valor: props.relatorioSeo?.total_links ?? 0, usarIconeReferencia: false },
+    { chave: "internos", titulo: t("project.seo_internal_links"), valor: props.relatorioSeo?.total_links_internos ?? 0, usarIconeReferencia: false },
+    { chave: "externos", titulo: t("project.seo_external_references"), valor: props.relatorioSeo?.total_links_externos ?? 0, usarIconeReferencia: true },
+    { chave: "quebrados", titulo: t("project.seo_broken_links"), valor: props.relatorioSeo?.total_links_quebrados ?? 0, usarIconeReferencia: false },
+    { chave: "profundidade", titulo: t("project.seo_max_depth"), valor: props.relatorioSeo?.profundidade_maxima ?? 0, usarIconeReferencia: false },
 ]);
-
-const textoReferencias = (total) => {
-    const quantidade = Number(total) || 0;
-
-    return `${quantidade} ${quantidade === 1 ? t("project.seo_reference_unit") : t("project.seo_references_unit")}`;
-};
 </script>
 
 <template>
@@ -62,7 +56,12 @@ const textoReferencias = (total) => {
             <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
                 <div v-for="card in resumoCards" :key="card.chave" class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
                     <div class="text-[11px] font-bold uppercase tracking-wide text-gray-400">{{ card.titulo }}</div>
-                    <div class="mt-2 text-3xl font-bold text-gray-800">{{ card.valor }}</div>
+                    <div class="mt-2 flex items-center gap-2 text-3xl font-bold text-gray-800">
+                        <span>{{ card.valor }}</span>
+                        <svg v-if="card.usarIconeReferencia" class="h-5 w-5 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 010 5.656l-3 3a4 4 0 11-5.656-5.656l1.5-1.5M10.172 13.828a4 4 0 010-5.656l3-3a4 4 0 115.656 5.656l-1.5 1.5" />
+                        </svg>
+                    </div>
                 </div>
             </div>
 
@@ -120,8 +119,11 @@ const textoReferencias = (total) => {
                                     <div class="text-sm font-semibold text-gray-800 break-all">{{ link.target_url }}</div>
                                     <div class="mt-1 text-xs text-gray-500">{{ link.dominio }}</div>
                                 </div>
-                                <span class="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-[11px] font-bold tracking-wide text-gray-600">
-                                    {{ textoReferencias(link.ocorrencias) }}
+                                <span class="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-[11px] font-bold tracking-wide text-gray-600" :title="$t('project.seo_total_references_tooltip', { total: link.ocorrencias })">
+                                    <span>{{ link.ocorrencias }}</span>
+                                    <svg class="h-3.5 w-3.5 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 010 5.656l-3 3a4 4 0 11-5.656-5.656l1.5-1.5M10.172 13.828a4 4 0 010-5.656l3-3a4 4 0 115.656 5.656l-1.5 1.5" />
+                                    </svg>
                                 </span>
                             </div>
                             <div class="mt-3 text-sm text-gray-600 break-all">
@@ -195,8 +197,11 @@ const textoReferencias = (total) => {
                                         <div class="text-sm font-semibold text-gray-800 break-all">{{ pagina.url }}</div>
                                         <div v-if="pagina.title" class="mt-1 text-xs text-gray-500">{{ pagina.title }}</div>
                                     </div>
-                                    <span class="inline-flex items-center rounded-full border border-primary-200 bg-primary-50 px-2.5 py-1 text-[11px] font-bold tracking-wide text-primary-700">
-                                        {{ textoReferencias(pagina.total) }}
+                                    <span class="inline-flex items-center gap-1 rounded-full border border-primary-200 bg-primary-50 px-2.5 py-1 text-[11px] font-bold tracking-wide text-primary-700" :title="$t('project.seo_total_references_tooltip', { total: pagina.total })">
+                                        <span>{{ pagina.total }}</span>
+                                        <svg class="h-3.5 w-3.5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 010 5.656l-3 3a4 4 0 11-5.656-5.656l1.5-1.5M10.172 13.828a4 4 0 010-5.656l3-3a4 4 0 115.656 5.656l-1.5 1.5" />
+                                        </svg>
                                     </span>
                                 </div>
                             </article>
