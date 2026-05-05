@@ -83,8 +83,8 @@ watch(() => page.props.flash, (flash) => {
                         </div>
                         <div class="mb-1">{{ $t('auth.check_spam') }}</div>
                         <div class="font-bold">
-                            <Link :href="route('verification.notice')" class="text-accent-600 hover:underline cursor-pointer bg-transparent border-none p-0 inline">{{ $t('auth.click_resend') }}</Link> 
-                            <span class="font-normal"> {{ $t('auth.to_resend_or') }} </span> 
+                            <Link :href="route('verification.notice')" class="text-accent-600 hover:underline cursor-pointer bg-transparent border-none p-0 inline">{{ $t('auth.click_resend') }}</Link>&nbsp;
+                            <span class="font-normal">{{ $t('auth.to_resend_or') }}</span>&nbsp;
                             <a href="/support" class="text-accent-600 hover:underline">{{ $t('auth.open_ticket') }}</a>.
                         </div>
                     </div>
