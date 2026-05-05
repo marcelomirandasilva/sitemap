@@ -79,7 +79,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/projects/{projeto}/crawl/cancel', [RastreadorController::class, 'cancel'])
         ->middleware('throttle:crawlers')
         ->name('projects.crawl.cancel');
-    Route::get('/projects/{projeto}/status', [RastreadorController::class, 'getStatus'])->name('projects.status');
+    Route::get('/projects/{projeto}/status', [RastreadorController::class, 'getStatus'])
+        ->name('projects.status')
+        ->missing(function () {
+            return response()->json(['status' => 'deleted', 'message' => 'Project not found'], 404);
+        });
     Route::get('/projects/{projeto}/preview', [RastreadorController::class, 'getPreviewUrls'])->name('projects.preview');
     Route::get('/projects/{projeto}/urls', [RastreadorController::class, 'getUrls'])->name('projects.urls');
     Route::get('/projects/{projeto}/search-engines/google/sites', [ProjectSearchEngineController::class, 'googleSites'])->name('projects.search-engines.google.sites');
