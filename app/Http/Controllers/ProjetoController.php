@@ -121,6 +121,61 @@ class ProjetoController extends Controller
         return str_repeat('*', max(strlen($apiKey) - 6, 8)) . $visible;
     }
 
+    protected function relatorioSeoVazio(): array
+    {
+        return [
+            'disponivel' => false,
+            'fonte' => null,
+            'total_paginas' => 0,
+            'total_links' => 0,
+            'total_links_internos' => 0,
+            'total_links_externos' => 0,
+            'total_links_quebrados' => 0,
+            'paginas_com_links_quebrados' => 0,
+            'paginas_sem_links_entrada' => 0,
+            'paginas_sem_links_saida' => 0,
+            'profundidade_maxima' => 0,
+            'estrutura' => [
+                'diretorios_principais' => [],
+                'distribuicao_profundidade' => [],
+                'paginas_mais_referenciadas' => [],
+                'paginas_sem_links_entrada' => [],
+                'paginas_sem_links_saida' => [],
+            ],
+            'amostras' => [
+                'links_quebrados' => [],
+                'links_externos' => [],
+            ],
+        ];
+    }
+
+    protected function seoBilingueVazio(): array
+    {
+        return [
+            'disponivel' => false,
+            'site_multilingue' => false,
+            'total_paginas' => 0,
+            'idiomas_detectados' => [],
+            'paginas_com_hreflang' => 0,
+            'paginas_sem_hreflang' => 0,
+            'paginas_sem_canonical' => 0,
+            'paginas_sem_autorreferencia' => 0,
+            'paginas_com_x_default' => 0,
+            'amostras' => [
+                'sem_canonical' => [],
+                'sem_hreflang' => [],
+                'sem_autorreferencia' => [],
+            ],
+        ];
+    }
+
+    protected function authorizeProject(Projeto $projeto): void
+    {
+        if ($projeto->user_id !== auth()->id()) {
+            abort(403);
+        }
+    }
+
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -194,9 +249,7 @@ class ProjetoController extends Controller
 
     public function show(Projeto $projeto)
     {
-        if ($projeto->user_id !== auth()->id()) {
-            abort(403);
-        }
+        $this->authorizeProject($projeto);
 
         $jobHistory = $projeto->tarefasSitemap()
             ->latest()
@@ -219,8 +272,8 @@ class ProjetoController extends Controller
             'ultimo_job' => $ultimoJob,
             'job_history' => $jobHistory,
             'preview_urls' => [],
-            'relatorio_seo' => $this->relatorioSeoProjeto->montarParaProjeto($projeto),
-            'seo_bilingue' => $this->relatorioSeoBilingue->montarParaProjeto($projeto),
+            'relatorio_seo' => $this->relatorioSeoVazio(),
+            'seo_bilingue' => $this->seoBilingueVazio(),
             'features' => $this->buildProjectFeatures($usuario),
             'politicas_crawl' => [
                 'presets' => $presetsPoliticaCrawl,
@@ -258,6 +311,24 @@ class ProjetoController extends Controller
                     ])
                     ->values(),
             ],
+        ]);
+    }
+
+    public function seoReport(Projeto $projeto)
+    {
+        $this->authorizeProject($projeto);
+
+        return response()->json([
+            'relatorio_seo' => $this->relatorioSeoProjeto->montarParaProjeto($projeto),
+        ]);
+    }
+
+    public function bilingualSeoReport(Projeto $projeto)
+    {
+        $this->authorizeProject($projeto);
+
+        return response()->json([
+            'seo_bilingue' => $this->relatorioSeoBilingue->montarParaProjeto($projeto),
         ]);
     }
 

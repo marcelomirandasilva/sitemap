@@ -195,11 +195,7 @@ class SitemapGeneratorService
 
         } catch (\Exception $e) {
             Log::error("Erro no checkStatus para job {$jobId}: " . $e->getMessage());
-            return [
-                'status' => 'failed',
-                'progress' => 0,
-                'message' => 'Falha na comunicação com o serviço de rastreamento.',
-            ];
+            return null;
         }
     }
 

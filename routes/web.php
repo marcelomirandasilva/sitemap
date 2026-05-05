@@ -63,6 +63,8 @@ Route::get('/dashboard', [App\Http\Controllers\PainelController::class, 'index']
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/projects', [ProjetoController::class, 'store'])->name('projects.store');
     Route::get('/projects/{projeto}', [ProjetoController::class, 'show'])->name('projects.show');
+    Route::get('/projects/{projeto}/seo-report', [ProjetoController::class, 'seoReport'])->name('projects.seo-report');
+    Route::get('/projects/{projeto}/bilingual-seo-report', [ProjetoController::class, 'bilingualSeoReport'])->name('projects.bilingual-seo-report');
     Route::patch('/projects/{projeto}', [ProjetoController::class, 'update'])->name('projects.update');
     Route::delete('/projects/{projeto}', [ProjetoController::class, 'destroy'])->name('projects.destroy');
 
