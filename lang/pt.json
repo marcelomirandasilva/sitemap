@@ -717,5 +717,10 @@
     "api.setup.no_key": "Você ainda não possui uma chave de API.",
     "api.setup.generate_key": "GERAR CHAVE DE API",
     "api.setup.generating": "GERANDO...",
-    "api.setup.upgrade_notice": "Seu plano atual não inclui acesso à API. Faça um upgrade para usar esta funcionalidade."
+    "api.setup.upgrade_notice": "Seu plano atual não inclui acesso à API. Faça um upgrade para usar esta funcionalidade.",
+    
+    "flash.project_created": "Site adicionado com sucesso!",
+    "flash.project_updated": "Configurações atualizadas!",
+    "flash.project_deleted": "Projeto excluído com sucesso.",
+    "flash.project_not_found": "O projeto acessado não foi encontrado ou já foi excluído."
 }

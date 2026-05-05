@@ -5,6 +5,7 @@ import AppTopbar from '@/Components/App/Topbar.vue';
 import AdminTopbar from '@/Components/Admin/Topbar.vue';
 import AppFooter from '@/Components/App/Footer.vue';
 import { computed, watch } from 'vue';
+import { trans } from 'laravel-vue-i18n';
 import Swal from 'sweetalert2';
 
 const page = usePage();
@@ -25,7 +26,7 @@ watch(() => page.props.flash, (flash) => {
             toast: true,
             position: 'top-end',
             icon: 'success',
-            title: flash.success,
+            title: trans(flash.success),
             showConfirmButton: false,
             timer: 3000,
             timerProgressBar: true,
@@ -36,7 +37,7 @@ watch(() => page.props.flash, (flash) => {
             toast: true,
             position: 'top-end',
             icon: 'error',
-            title: flash.error,
+            title: trans(flash.error),
             showConfirmButton: false,
             timer: 4000,
             timerProgressBar: true,

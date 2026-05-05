@@ -700,5 +700,10 @@
     "api.setup.no_key": "You don't have an API key yet.",
     "api.setup.generate_key": "GENERATE API KEY",
     "api.setup.generating": "GENERATING...",
-    "api.setup.upgrade_notice": "Your current plan does not include API access. Please upgrade to use this feature."
+    "api.setup.upgrade_notice": "Your current plan does not include API access. Please upgrade to use this feature.",
+
+    "flash.project_created": "Website added successfully!",
+    "flash.project_updated": "Settings updated!",
+    "flash.project_deleted": "Project successfully deleted.",
+    "flash.project_not_found": "The accessed project was not found or has already been deleted."
 }
