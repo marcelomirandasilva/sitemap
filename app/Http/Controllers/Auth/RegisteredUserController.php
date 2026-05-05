@@ -112,16 +112,6 @@ class RegisteredUserController extends Controller
 
         event(new Registered($user));
 
-        // Gerar o token seguro de Reset de Senha nativo do Laravel
-        $token = Password::broker()->createToken($user);
-
-        // Enviar notificação unificada omitindo a senha mas mandando o token
-        try {
-            $user->notify(new \App\Notifications\WelcomeAndVerifyUser($token));
-        } catch (\Exception $e) {
-            Log::error('Erro ao enviar email de boas-vindas e verificação: ' . $e->getMessage());
-        }
-
         Auth::login($user);
 
         return redirect()->route('projects.show', $projeto->id)
