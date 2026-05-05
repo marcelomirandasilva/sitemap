@@ -8,8 +8,6 @@ use App\Models\TarefaSitemap;
 use App\Services\CentralNotificacoesService;
 use App\Services\ExecucaoRastreamentoService;
 use App\Services\FrequenciaRastreamentoService;
-use App\Services\RelatorioSeoBilingueService;
-use App\Services\RelatorioSeoProjetoService;
 use App\Services\SitemapGeneratorService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -17,24 +15,18 @@ use Illuminate\Support\Facades\Log;
 class RastreadorController extends Controller
 {
     protected $sitemapService;
-    protected $relatorioSeoBilingue;
-    protected $relatorioSeoProjeto;
     protected $frequenciaRastreamento;
     protected $execucaoRastreamento;
     protected $centralNotificacoes;
 
     public function __construct(
         SitemapGeneratorService $sitemapService,
-        RelatorioSeoBilingueService $relatorioSeoBilingue,
-        RelatorioSeoProjetoService $relatorioSeoProjeto,
         FrequenciaRastreamentoService $frequenciaRastreamento,
         ExecucaoRastreamentoService $execucaoRastreamento,
         CentralNotificacoesService $centralNotificacoes
     )
     {
         $this->sitemapService = $sitemapService;
-        $this->relatorioSeoBilingue = $relatorioSeoBilingue;
-        $this->relatorioSeoProjeto = $relatorioSeoProjeto;
         $this->frequenciaRastreamento = $frequenciaRastreamento;
         $this->execucaoRastreamento = $execucaoRastreamento;
         $this->centralNotificacoes = $centralNotificacoes;
@@ -312,14 +304,6 @@ class RastreadorController extends Controller
             Log::info("RastreadorController: Gerado preview para job {$ultimoJob->external_job_id}. Total URLs: " . count($previewUrls));
         }
 
-        $seoBilingue = null;
-        $relatorioSeo = null;
-
-        if ($ultimoJob->status === 'completed') {
-            $seoBilingue = $this->relatorioSeoBilingue->montarParaProjeto($projeto);
-            $relatorioSeo = $this->relatorioSeoProjeto->montarParaProjeto($projeto);
-        }
-
         $projeto->refresh();
 
         return response()->json([
@@ -342,8 +326,6 @@ class RastreadorController extends Controller
             'started_at' => $ultimoJob->started_at?->toISOString(),
             'completed_at' => $ultimoJob->completed_at?->toISOString(),
             'next_scheduled_crawl_at' => $projeto->next_scheduled_crawl_at?->toISOString(),
-            'relatorio_seo' => $relatorioSeo,
-            'seo_bilingue' => $seoBilingue,
         ]);
     }
 

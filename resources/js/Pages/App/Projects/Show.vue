@@ -141,6 +141,12 @@ const historicoJobs = ref([]);
 const listaUrls = ref(props.preview_urls || []);
 const relatorioSeo = ref(props.relatorio_seo || {});
 const seoBilingue = ref(props.seo_bilingue || {});
+const carregandoRelatorioSeo = ref(false);
+const erroRelatorioSeo = ref(null);
+const relatorioSeoCarregado = ref(!!props.relatorio_seo?.disponivel);
+const carregandoSeoBilingue = ref(false);
+const erroSeoBilingue = ref(null);
+const seoBilingueCarregado = ref(!!props.seo_bilingue?.disponivel);
 const salvandoConfiguracoes = ref(false);
 const configForm = reactive({
     frequency: props.projeto.frequency || 'manual',
@@ -417,6 +423,13 @@ const statusColor = computed(() => {
 let pollingInterval = null;
 
 // Busca dados atualizados (Async Lazy Load)
+const invalidarRelatoriosSeo = () => {
+    relatorioSeoCarregado.value = false;
+    erroRelatorioSeo.value = null;
+    seoBilingueCarregado.value = false;
+    erroSeoBilingue.value = null;
+};
+
 const buscarDetalhesJob = async () => {
     if (!props.projeto.id) return;
 
@@ -424,6 +437,8 @@ const buscarDetalhesJob = async () => {
     try {
         const response = await axios.get(route('projects.status', { projeto: props.projeto.id }));
         const data = response.data;
+
+        const statusAnterior = tarefa.value?.status;
 
         // Atualiza estado local de forma reativa e completa
         tarefa.value = { ...tarefa.value, ...data };
@@ -442,17 +457,21 @@ const buscarDetalhesJob = async () => {
             props.projeto.next_scheduled_crawl_at = data.next_scheduled_crawl_at;
         }
 
-        if (data.seo_bilingue) {
-            seoBilingue.value = data.seo_bilingue;
-        }
-
-        if (data.relatorio_seo) {
-            relatorioSeo.value = data.relatorio_seo;
-        }
-
         // Se finalizou o crawler durante o polling, para o interval e recarrega página opcionalmente
         if (['completed', 'failed', 'cancelled'].includes(tarefa.value.status)) {
             if (pollingInterval) clearInterval(pollingInterval);
+        }
+
+        if (statusAnterior !== 'completed' && tarefa.value.status === 'completed') {
+            invalidarRelatoriosSeo();
+
+            if (abaAtiva.value === 'seo') {
+                carregarRelatorioSeo(true);
+            }
+
+            if (exibirSeoBilingue && abaAtiva.value === 'seo_bilingue') {
+                carregarSeoBilingue(true);
+            }
         }
     } catch (error) {
         console.error("Erro ao buscar detalhes atualizados:", error);
@@ -519,10 +538,12 @@ watch(() => props.job_history, (jobs) => {
 
 watch(() => props.seo_bilingue, (value) => {
     seoBilingue.value = value ?? {};
+    seoBilingueCarregado.value = !!value?.disponivel;
 }, { deep: true });
 
 watch(() => props.relatorio_seo, (value) => {
     relatorioSeo.value = value ?? {};
+    relatorioSeoCarregado.value = !!value?.disponivel;
 }, { deep: true });
 
 watch(() => configForm.frequency, (frequencia) => {
@@ -546,6 +567,17 @@ watch(() => props.search_engines, (value) => {
     submitForm.bing_site_url = value?.bing_site_url ?? '';
     sincronizarSubmissoes(value?.recent_submissions ?? []);
 }, { deep: true });
+
+watch(abaAtiva, (novaAba) => {
+    if (novaAba === 'seo') {
+        carregarRelatorioSeo();
+        return;
+    }
+
+    if (novaAba === 'seo_bilingue' && exibirSeoBilingue) {
+        carregarSeoBilingue();
+    }
+});
 
 watch(abaAtiva, (novaAba) => {
     if (novaAba !== 'submit') {
@@ -619,6 +651,44 @@ const extrairMensagemErro = (error, fallbackKey = 'project.submit_error') => {
     }
 
     return error?.response?.data?.message ?? t(fallbackKey);
+};
+
+const carregarRelatorioSeo = async (forcar = false) => {
+    if (!props.projeto.id || carregandoRelatorioSeo.value || (relatorioSeoCarregado.value && !forcar)) {
+        return;
+    }
+
+    carregandoRelatorioSeo.value = true;
+    erroRelatorioSeo.value = null;
+
+    try {
+        const response = await axios.get(route('projects.seo-report', { projeto: props.projeto.id }));
+        relatorioSeo.value = response.data?.relatorio_seo ?? {};
+        relatorioSeoCarregado.value = true;
+    } catch (error) {
+        erroRelatorioSeo.value = extrairMensagemErro(error, 'project.submit_error');
+    } finally {
+        carregandoRelatorioSeo.value = false;
+    }
+};
+
+const carregarSeoBilingue = async (forcar = false) => {
+    if (!props.projeto.id || carregandoSeoBilingue.value || (seoBilingueCarregado.value && !forcar)) {
+        return;
+    }
+
+    carregandoSeoBilingue.value = true;
+    erroSeoBilingue.value = null;
+
+    try {
+        const response = await axios.get(route('projects.bilingual-seo-report', { projeto: props.projeto.id }));
+        seoBilingue.value = response.data?.seo_bilingue ?? {};
+        seoBilingueCarregado.value = true;
+    } catch (error) {
+        erroSeoBilingue.value = extrairMensagemErro(error, 'project.submit_error');
+    } finally {
+        carregandoSeoBilingue.value = false;
+    }
 };
 
 const carregarGoogleSites = async () => {
@@ -903,6 +973,7 @@ const iniciarNovoCrawler = async () => {
         };
         sincronizarJobNoHistorico(tarefa.value);
         listaUrls.value = [];
+        invalidarRelatoriosSeo();
         iniciarPolling();
     } catch (error) {
         if (error.response?.status === 409) {
@@ -1373,11 +1444,29 @@ const toggleFeature = (feature) => {
                         
 
                         <div v-else-if="abaAtiva === 'seo'">
-                            <PainelSeoProjeto :relatorio-seo="relatorioSeo" />
+                            <div v-if="carregandoRelatorioSeo" class="rounded-lg border border-dashed border-gray-300 bg-gray-50 px-6 py-10 text-center text-sm font-semibold text-gray-500">
+                                Carregando relatório SEO...
+                            </div>
+                            <div v-else-if="erroRelatorioSeo" class="rounded-lg border border-danger-200 bg-danger-50 px-6 py-8 text-center">
+                                <p class="mb-4 text-sm font-semibold text-danger-700">{{ erroRelatorioSeo }}</p>
+                                <button type="button" class="rounded bg-danger-600 px-4 py-2 text-xs font-bold uppercase text-white hover:bg-danger-700" @click="carregarRelatorioSeo(true)">
+                                    Tentar novamente
+                                </button>
+                            </div>
+                            <PainelSeoProjeto v-else :relatorio-seo="relatorioSeo" />
                         </div>
 
                         <div v-else-if="exibirSeoBilingue && abaAtiva === 'seo_bilingue'">
-                            <PainelSeoBilingue :seo-bilingue="seoBilingue" />
+                            <div v-if="carregandoSeoBilingue" class="rounded-lg border border-dashed border-gray-300 bg-gray-50 px-6 py-10 text-center text-sm font-semibold text-gray-500">
+                                Carregando relatório SEO bilíngue...
+                            </div>
+                            <div v-else-if="erroSeoBilingue" class="rounded-lg border border-danger-200 bg-danger-50 px-6 py-8 text-center">
+                                <p class="mb-4 text-sm font-semibold text-danger-700">{{ erroSeoBilingue }}</p>
+                                <button type="button" class="rounded bg-danger-600 px-4 py-2 text-xs font-bold uppercase text-white hover:bg-danger-700" @click="carregarSeoBilingue(true)">
+                                    Tentar novamente
+                                </button>
+                            </div>
+                            <PainelSeoBilingue v-else :seo-bilingue="seoBilingue" />
                         </div>
 
                         <!-- ABA FILES -->
