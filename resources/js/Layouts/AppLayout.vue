@@ -4,7 +4,9 @@ import AppHeader from '@/Components/App/Header.vue';
 import AppTopbar from '@/Components/App/Topbar.vue';
 import AdminTopbar from '@/Components/Admin/Topbar.vue';
 import AppFooter from '@/Components/App/Footer.vue';
-import { computed } from 'vue';
+import { computed, watch } from 'vue';
+import { trans } from 'laravel-vue-i18n';
+import Swal from 'sweetalert2';
 
 const page = usePage();
 const user = computed(() => page.props.auth.user);
@@ -17,6 +19,31 @@ const isAdminRoute = computed(() => {
 });
 const requiresVerification = computed(() => user.value && user.value.email_verified_at === null);
 const theme = computed(() => user.value?.ui_preferences?.theme || 'light');
+
+watch(() => page.props.flash, (flash) => {
+    if (flash?.success) {
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'success',
+            title: trans(flash.success),
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true,
+        });
+    }
+    if (flash?.error) {
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'error',
+            title: trans(flash.error),
+            showConfirmButton: false,
+            timer: 4000,
+            timerProgressBar: true,
+        });
+    }
+}, { deep: true, immediate: true });
 </script>
 
 <template>

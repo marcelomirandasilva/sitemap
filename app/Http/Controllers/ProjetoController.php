@@ -244,7 +244,7 @@ class ProjetoController extends Controller
             Log::error('Erro ao iniciar crawler na criacao: ' . $e->getMessage());
         }
 
-        return Redirect::back()->with('success', 'Website added successfully!');
+        return Redirect::back()->with('success', __('flash.project_created'));
     }
 
     public function show(Projeto $projeto)
@@ -505,7 +505,7 @@ class ProjetoController extends Controller
             $this->frequenciaRastreamento->garantirProximoRastreamento($projeto, $planoEfetivo);
         }
 
-        return Redirect::back()->with('success', 'Configuracoes atualizadas!');
+        return Redirect::back()->with('success', __('flash.project_updated'));
     }
 
     public function destroy(Projeto $projeto)
@@ -516,6 +516,6 @@ class ProjetoController extends Controller
 
         $projeto->delete();
 
-        return Redirect::route('dashboard')->with('success', 'Projeto excluido com sucesso.');
+        return Redirect::route('dashboard')->with('success', __('flash.project_deleted'));
     }
 }
