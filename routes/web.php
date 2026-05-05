@@ -62,7 +62,11 @@ Route::get('/dashboard', [App\Http\Controllers\PainelController::class, 'index']
 // Rotas exclusivas para usuários verificados (Core do App)
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/projects', [ProjetoController::class, 'store'])->name('projects.store');
-    Route::get('/projects/{projeto}', [ProjetoController::class, 'show'])->name('projects.show');
+    Route::get('/projects/{projeto}', [ProjetoController::class, 'show'])
+        ->name('projects.show')
+        ->missing(function () {
+            return redirect()->route('dashboard')->with('error', 'O projeto acessado não foi encontrado ou já foi excluído.');
+        });
     Route::get('/projects/{projeto}/seo-report', [ProjetoController::class, 'seoReport'])->name('projects.seo-report');
     Route::get('/projects/{projeto}/bilingual-seo-report', [ProjetoController::class, 'bilingualSeoReport'])->name('projects.bilingual-seo-report');
     Route::patch('/projects/{projeto}', [ProjetoController::class, 'update'])->name('projects.update');
