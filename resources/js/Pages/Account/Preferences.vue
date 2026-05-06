@@ -223,11 +223,6 @@ const submitDeactivation = () => {
                                     </div>
 
                                     <div class="pt-2 flex items-center gap-4">
-                                        <PrimaryButton @click.prevent="updateNotifications"
-                                            :disabled="notifyForm.processing">
-                                            {{ $t('preferences.notifications.save') }}
-                                        </PrimaryButton>
-
                                         <Transition enter-active-class="transition ease-in-out"
                                             enter-from-class="opacity-0" leave-active-class="transition ease-in-out"
                                             leave-to-class="opacity-0">
