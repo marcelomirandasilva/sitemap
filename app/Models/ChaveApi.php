@@ -16,7 +16,8 @@ class ChaveApi extends Model
     protected $fillable = [
         'user_id',
         'name',
-        'key',
+        'key_hash',
+        'key_preview',
         'last_used_at',
         'expires_at',
         'is_active',
@@ -28,15 +29,13 @@ class ChaveApi extends Model
         'is_active' => 'boolean',
     ];
 
-    // Oculta a chave por padrão em serializations (segurança)
-    protected $hidden = ['key'];
+    protected $hidden = ['key_hash'];
 
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    // Scope para chaves ativas e não expiradas
     public function scopeActive($query)
     {
         return $query->where('is_active', true)
@@ -46,17 +45,29 @@ class ChaveApi extends Model
             });
     }
 
-    /**
-     * Gera uma nova API Key única com prefixo sk_live_
-     */
     public static function gerarChave(): string
     {
         return 'sk_live_' . Str::random(48);
     }
 
-    /**
-     * Verifica se a chave está válida (ativa e dentro do prazo)
-     */
+    public static function hashChave(string $chave): string
+    {
+        return hash('sha256', $chave);
+    }
+
+    public static function previewDaChave(string $chave): string
+    {
+        return 'sk_live_...' . substr($chave, -6);
+    }
+
+    public static function atributosPersistencia(string $chave): array
+    {
+        return [
+            'key_hash' => self::hashChave($chave),
+            'key_preview' => self::previewDaChave($chave),
+        ];
+    }
+
     public function estaValida(): bool
     {
         if (!$this->is_active) {
@@ -70,9 +81,15 @@ class ChaveApi extends Model
         return true;
     }
 
-    /**
-     * Registra o uso da chave (atualiza last_used_at)
-     */
+    public function correspondeA(string $chave): bool
+    {
+        if (!$this->key_hash) {
+            return false;
+        }
+
+        return hash_equals($this->key_hash, self::hashChave($chave));
+    }
+
     public function marcarUso(): void
     {
         $this->update(['last_used_at' => now()]);

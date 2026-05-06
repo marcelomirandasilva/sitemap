@@ -160,6 +160,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/', 'index')->name('index');
         Route::post('/', 'store')->name('store');
         Route::get('/{ticket}', 'show')->name('show');
+        Route::get('/{ticket}/attachments/{anexo}', 'downloadAttachment')->name('attachments.download');
         Route::post('/{ticket}/reply', 'reply')->name('reply');
         Route::patch('/{ticket}/fechar', 'fechar')->name('fechar');
     });

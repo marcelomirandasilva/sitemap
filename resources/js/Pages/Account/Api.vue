@@ -7,7 +7,8 @@ const page = usePage();
 const appName = computed(() => page.props.appName || 'PRO Sitemaps');
 
 const props = defineProps({
-    apiKey:         { type: String, default: null },
+    apiKeyPreview:  { type: String, default: null },
+    hasActiveApiKey: { type: Boolean, default: false },
     endpointUrl:    { type: String, default: '' },
     callbackUrl:    { type: String, default: '' },
     projetos:       { type: Array,  default: () => [] },
@@ -36,8 +37,9 @@ const selectedProjeto = ref('');
 const resetando = ref(false);
 const exemploJobId = '550e8400-e29b-41d4-a716-446655440000';
 
-const chaveAtual = computed(() => props.apiKey);
-const apiKeyDisplay = computed(() => chaveAtual.value || 'YOUR_API_KEY_HERE');
+const chaveRecemGerada = computed(() => page.props.flash?.generatedApiKey || null);
+const chaveAtualPreview = computed(() => props.apiKeyPreview);
+const apiKeyDisplay = computed(() => chaveRecemGerada.value || 'YOUR_API_KEY_HERE');
 const authorizationHeader = computed(() => `Bearer ${apiKeyDisplay.value}`);
 const endpointBase = computed(() => `${props.endpointUrl}/sitemaps`);
 const callbackForm = useForm({
@@ -274,9 +276,6 @@ const resetarChave = () => {
     router.post(route('account.api.reset-key'), {}, {
         preserveScroll: true,
         onFinish: () => { resetando.value = false; },
-        onSuccess: () => {
-            router.reload({ only: ['apiKey'] });
-        },
     });
 };
 
@@ -520,13 +519,19 @@ const scrollTo = (id) => {
                                 Sua chave principal de API
                             </div>
                             <div class="px-4 py-4 space-y-3">
-                                <div v-if="chaveAtual">
+                                <div v-if="chaveRecemGerada">
                                     <input
                                         type="text"
-                                        :value="chaveAtual"
+                                        :value="chaveRecemGerada"
                                         readonly
                                         class="w-full font-mono text-xs border border-gray-200 rounded px-3 py-2 bg-gray-50 text-gray-700 select-all"
                                     />
+                                    <p class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+                                        Copie esta chave agora. Ela nao sera exibida novamente depois que voce sair ou atualizar a pagina.
+                                    </p>
+                                    <p v-if="chaveAtualPreview" class="text-xs text-gray-500">
+                                        Preview persistido: <span class="font-mono">{{ chaveAtualPreview }}</span>
+                                    </p>
                                     <p class="text-xs text-gray-600 mt-2">
                                         <button
                                             @click="resetarChave"
@@ -538,6 +543,22 @@ const scrollTo = (id) => {
                                         para redefinir a chave principal.
                                     </p>
                                     <p class="text-xs text-gray-500 mt-1">Ao redefinir, a chave principal atual deixa de funcionar. Outras chaves criadas separadamente em gerenciamento de API Keys nao sao alteradas por esta acao.</p>
+                                </div>
+                                <div v-else-if="hasActiveApiKey">
+                                    <div class="w-full font-mono text-xs border border-gray-200 rounded px-3 py-2 bg-gray-50 text-gray-700">
+                                        {{ chaveAtualPreview || 'Chave ativa cadastrada' }}
+                                    </div>
+                                    <p class="text-xs text-gray-600">
+                                        A chave completa nao fica mais disponivel na interface. Gere uma nova se precisar copiar o segredo novamente.
+                                    </p>
+                                    <p class="text-xs text-gray-500 mt-1">Ao redefinir, a chave principal atual deixa de funcionar. Outras chaves criadas separadamente em gerenciamento de API Keys nao sao alteradas por esta acao.</p>
+                                    <button
+                                        @click="resetarChave"
+                                        :disabled="resetando || !podeAcessarApi"
+                                        class="text-accent-600 font-bold hover:underline disabled:opacity-50"
+                                    >
+                                        {{ resetando ? 'GERANDO...' : 'GERAR NOVA CHAVE PRINCIPAL' }}
+                                    </button>
                                 </div>
                                 <div v-else>
                                     <p class="text-sm text-gray-500 mb-3">Voce ainda nao possui uma chave principal de API.</p>

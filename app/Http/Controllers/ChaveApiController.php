@@ -8,9 +8,6 @@ use Illuminate\Support\Facades\Gate;
 
 class ChaveApiController extends Controller
 {
-    /**
-     * Lista as API Keys do usuario autenticado.
-     */
     public function index(Request $request)
     {
         $planoEfetivo = $request->user()->planoEfetivo();
@@ -27,7 +24,7 @@ class ChaveApiController extends Controller
                 return [
                     'id' => $chave->id,
                     'name' => $chave->name,
-                    'key_preview' => 'sk_live_...' . substr($chave->key, -6),
+                    'key_preview' => $chave->key_preview,
                     'last_used_at' => $chave->last_used_at?->diffForHumans(),
                     'expires_at' => $chave->expires_at?->toDateString(),
                     'is_active' => $chave->is_active,
@@ -41,9 +38,6 @@ class ChaveApiController extends Controller
         ]);
     }
 
-    /**
-     * Cria uma nova API Key. A chave completa e retornada apenas uma vez.
-     */
     public function store(Request $request)
     {
         $planoEfetivo = $request->user()->planoEfetivo();
@@ -67,7 +61,7 @@ class ChaveApiController extends Controller
 
         $chaveApi = $request->user()->chavesApi()->create([
             'name' => $request->name,
-            'key' => $chaveRaw,
+            ...ChaveApi::atributosPersistencia($chaveRaw),
             'expires_at' => $request->expires_at,
         ]);
 
@@ -76,13 +70,11 @@ class ChaveApiController extends Controller
             'id' => $chaveApi->id,
             'name' => $chaveApi->name,
             'key' => $chaveRaw,
+            'key_preview' => $chaveApi->key_preview,
             'expires_at' => $chaveApi->expires_at?->toDateString(),
         ], 201);
     }
 
-    /**
-     * Revoga (desativa) uma API Key.
-     */
     public function revoke(Request $request, ChaveApi $chaveApi)
     {
         Gate::authorize('manage', $chaveApi);
@@ -92,9 +84,6 @@ class ChaveApiController extends Controller
         return response()->json(['message' => 'Chave revogada com sucesso.']);
     }
 
-    /**
-     * Remove permanentemente uma API Key.
-     */
     public function destroy(Request $request, ChaveApi $chaveApi)
     {
         Gate::authorize('manage', $chaveApi);

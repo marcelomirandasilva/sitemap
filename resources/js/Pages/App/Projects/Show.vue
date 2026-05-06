@@ -165,6 +165,8 @@ const configForm = reactive({
         email_crawler_updates: props.projeto.notification_preferences?.email_crawler_updates ?? true,
         email_search_engine_updates: props.projeto.notification_preferences?.email_search_engine_updates ?? true,
     },
+    check_images: !!props.projeto.check_images,
+    check_videos: !!props.projeto.check_videos,
 });
 const textoPadroesExclusao = ref((props.projeto.exclude_patterns ?? []).join('\n'));
 const submitForm = reactive({
@@ -525,6 +527,8 @@ const resetConfigForm = () => {
     configForm.crawl_policy_id = props.projeto.crawl_policy_id ?? '';
     configForm.notification_preferences.email_crawler_updates = props.projeto.notification_preferences?.email_crawler_updates ?? true;
     configForm.notification_preferences.email_search_engine_updates = props.projeto.notification_preferences?.email_search_engine_updates ?? true;
+    configForm.check_images = !!props.projeto.check_images;
+    configForm.check_videos = !!props.projeto.check_videos;
     textoPadroesExclusao.value = (props.projeto.exclude_patterns ?? []).join('\n');
 };
 
@@ -1071,6 +1075,8 @@ const salvarConfiguracoes = () => {
         crawl_policy_id: configForm.crawl_policy_id || null,
         compress_output: configForm.compress_output,
         enable_cache: configForm.enable_cache,
+        check_images: configForm.check_images,
+        check_videos: configForm.check_videos,
         notification_preferences: configForm.notification_preferences,
     }, {
         preserveScroll: true,
@@ -1090,6 +1096,8 @@ const salvarConfiguracoes = () => {
             props.projeto.crawl_policy_id = projetoAtualizado.crawl_policy_id ?? (configForm.crawl_policy_id || null);
             props.projeto.compress_output = projetoAtualizado.compress_output ?? configForm.compress_output;
             props.projeto.enable_cache = projetoAtualizado.enable_cache ?? configForm.enable_cache;
+            props.projeto.check_images = projetoAtualizado.check_images ?? configForm.check_images;
+            props.projeto.check_videos = projetoAtualizado.check_videos ?? configForm.check_videos;
             props.projeto.notification_preferences = projetoAtualizado.notification_preferences ?? configForm.notification_preferences;
             props.projeto.next_scheduled_crawl_at = projetoAtualizado.next_scheduled_crawl_at ?? null;
 
@@ -1280,20 +1288,13 @@ const toggleFeature = (feature) => {
                     </div>
 
                     <!-- Images Card -->
-                    <div class="bg-white border rounded-lg shadow-sm overflow-hidden opacity-75">
-                        <div class="bg-surface-200 text-gray-600 text-center py-2 font-bold uppercase tracking-wider">{{
+                    <div :class="['bg-white border rounded-lg shadow-sm overflow-hidden transition-all', projeto.check_images ? 'opacity-100 shadow-md ring-1 ring-primary-100' : 'opacity-75']">
+                        <div :class="['text-center py-2 font-bold uppercase tracking-wider transition-colors', projeto.check_images ? 'bg-primary-400 text-white' : 'bg-surface-200 text-gray-600']">{{
                             $t('project.images') }}</div>
                         <div class="p-6 text-center">
                             <div v-if="features.permite_imagens">
                                 <span class="text-4xl font-bold text-primary-800">{{ tarefa.images_count || 0 }}</span>
                                 <div class="text-xs font-bold text-gray-400 uppercase mt-1">{{ $t('project.stat_indexed') }}</div>
-                                
-                                <div class="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
-                                    <span class="text-[10px] font-bold text-gray-500 uppercase">{{ $t('project.track_images') }}</span>
-                                    <button @click="toggleFeature('check_images')" :class="['relative inline-flex h-4 w-8 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none', projeto.check_images ? 'bg-primary-600' : 'bg-gray-200']">
-                                        <span :class="['translate-x-0 pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out', projeto.check_images ? 'translate-x-4' : 'translate-x-0']"></span>
-                                    </button>
-                                </div>
                             </div>
                             <div v-else>
                                 <span class="text-4xl font-bold text-gray-400">0</span>
@@ -1307,20 +1308,13 @@ const toggleFeature = (feature) => {
                     </div>
 
                     <!-- Videos Card -->
-                    <div class="bg-white border rounded-lg shadow-sm overflow-hidden opacity-75">
-                        <div class="bg-surface-200 text-gray-600 text-center py-2 font-bold uppercase tracking-wider">{{
+                    <div :class="['bg-white border rounded-lg shadow-sm overflow-hidden transition-all', projeto.check_videos ? 'opacity-100 shadow-md ring-1 ring-primary-100' : 'opacity-75']">
+                        <div :class="['text-center py-2 font-bold uppercase tracking-wider transition-colors', projeto.check_videos ? 'bg-primary-400 text-white' : 'bg-surface-200 text-gray-600']">{{
                             $t('project.videos') }}</div>
                         <div class="p-6 text-center">
                             <div v-if="features.permite_videos">
                                 <span class="text-4xl font-bold text-primary-800">{{ tarefa.videos_count || 0 }}</span>
                                 <div class="text-xs font-bold text-gray-400 uppercase mt-1">{{ $t('project.stat_indexed') }}</div>
-
-                                <div class="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
-                                    <span class="text-[10px] font-bold text-gray-500 uppercase">{{ $t('project.track_videos') }}</span>
-                                    <button @click="toggleFeature('check_videos')" :class="['relative inline-flex h-4 w-8 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none', projeto.check_videos ? 'bg-primary-600' : 'bg-gray-200']">
-                                        <span :class="['translate-x-0 pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out', projeto.check_videos ? 'translate-x-4' : 'translate-x-0']"></span>
-                                    </button>
-                                </div>
                             </div>
                             <div v-else>
                                 <span class="text-4xl font-bold text-gray-400">0</span>
@@ -1884,6 +1878,22 @@ const toggleFeature = (feature) => {
                                                 <span>
                                                     <span class="block text-sm font-medium text-gray-700">{{ $t('project.field_mobile') }}</span>
                                                     <span class="mt-1 block text-xs text-gray-500">{{ $t('project.field_mobile_help') }}</span>
+                                                </span>
+                                            </label>
+
+                                            <label class="flex items-start gap-3 rounded-md border border-gray-200 px-4 py-3" :class="{ 'opacity-60': !features.permite_imagens }">
+                                                <input v-model="configForm.check_images" type="checkbox" :disabled="!features.permite_imagens" class="mt-1 rounded border-gray-300 text-primary-600 focus:ring-primary-500" />
+                                                <span>
+                                                    <span class="block text-sm font-medium text-gray-700">{{ $t('project.track_images') }}</span>
+                                                    <span class="mt-1 block text-xs text-gray-500">Google Images Sitemap.</span>
+                                                </span>
+                                            </label>
+
+                                            <label class="flex items-start gap-3 rounded-md border border-gray-200 px-4 py-3" :class="{ 'opacity-60': !features.permite_videos }">
+                                                <input v-model="configForm.check_videos" type="checkbox" :disabled="!features.permite_videos" class="mt-1 rounded border-gray-300 text-primary-600 focus:ring-primary-500" />
+                                                <span>
+                                                    <span class="block text-sm font-medium text-gray-700">{{ $t('project.track_videos') }}</span>
+                                                    <span class="mt-1 block text-xs text-gray-500">Google Videos Sitemap.</span>
                                                 </span>
                                             </label>
 

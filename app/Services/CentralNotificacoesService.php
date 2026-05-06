@@ -68,42 +68,57 @@ class CentralNotificacoesService
     public function notificarCrawler(Projeto $projeto, TarefaSitemap $job): void
     {
         $usuario = $projeto->user;
+        if (!$usuario) return;
 
-        if (!$usuario || !$this->preferenciaAtiva($usuario, 'crawler_updates', true)) {
-            return;
+        // 1. Notificação de Painel (Banco de Dados)
+        if ($this->preferenciaAtiva($usuario, 'crawler_updates', true)) {
+            $titulo = match ($job->status) {
+                'completed' => 'Rastreamento concluido',
+                'failed' => 'Rastreamento com falha',
+                'cancelled' => 'Rastreamento cancelado',
+                default => 'Atualizacao de rastreamento',
+            };
+
+            $mensagem = match ($job->status) {
+                'completed' => "O projeto {$projeto->name} concluiu o rastreamento com {$job->pages_count} paginas.",
+                'failed' => "O projeto {$projeto->name} terminou com falha. {$job->message}",
+                'cancelled' => "O rastreamento do projeto {$projeto->name} foi cancelado.",
+                default => $job->message,
+            };
+
+            $this->registrarNotificacao($usuario, [
+                'titulo' => $titulo,
+                'mensagem' => trim((string) $mensagem),
+                'url' => route('projects.show', $projeto->id),
+                'tipo' => 'crawler',
+                'categoria' => 'crawler',
+                'metadata' => [
+                    'project_id' => $projeto->id,
+                    'external_job_id' => $job->external_job_id,
+                    'status' => $job->status,
+                ],
+            ]);
         }
 
-        $titulo = match ($job->status) {
+        // 2. Notificação por E-mail (Respeita preferência do projeto ou global)
+        $tituloEmail = match ($job->status) {
             'completed' => 'Rastreamento concluido',
             'failed' => 'Rastreamento com falha',
             'cancelled' => 'Rastreamento cancelado',
             default => 'Atualizacao de rastreamento',
         };
 
-        $mensagem = match ($job->status) {
+        $mensagemEmail = match ($job->status) {
             'completed' => "O projeto {$projeto->name} concluiu o rastreamento com {$job->pages_count} paginas.",
             'failed' => "O projeto {$projeto->name} terminou com falha. {$job->message}",
             'cancelled' => "O rastreamento do projeto {$projeto->name} foi cancelado.",
             default => $job->message,
         };
 
-        $this->registrarNotificacao($usuario, [
-            'titulo' => $titulo,
-            'mensagem' => trim((string) $mensagem),
-            'url' => route('projects.show', $projeto->id),
-            'tipo' => 'crawler',
-            'categoria' => 'crawler',
-            'metadata' => [
-                'project_id' => $projeto->id,
-                'external_job_id' => $job->external_job_id,
-                'status' => $job->status,
-            ],
-        ]);
-
         $this->enviarEmail($usuario, [
-            'assunto' => $titulo . ' - ' . $projeto->name,
-            'titulo' => $titulo,
-            'mensagem' => trim((string) $mensagem),
+            'assunto' => $tituloEmail . ' - ' . $projeto->name,
+            'titulo' => $tituloEmail,
+            'mensagem' => trim((string) $mensagemEmail),
             'linhas' => [
                 'Projeto: ' . $projeto->name,
                 'Status: ' . $job->status,
@@ -117,41 +132,51 @@ class CentralNotificacoesService
     public function notificarEnvioBuscador(Projeto $projeto, SearchEngineSubmission $submissao): void
     {
         $usuario = $projeto->user;
+        if (!$usuario) return;
 
-        if (!$usuario || !$this->preferenciaAtiva($usuario, 'search_engine_updates', true)) {
-            return;
+        // 1. Notificação de Painel
+        if ($this->preferenciaAtiva($usuario, 'search_engine_updates', true)) {
+            $provedor = mb_strtoupper($submissao->provider);
+            $titulo = $submissao->status === 'submitted'
+                ? "Sitemap enviado ao {$provedor}"
+                : "Falha no envio ao {$provedor}";
+
+            $mensagem = $submissao->status === 'submitted'
+                ? "O sitemap publico do projeto {$projeto->name} foi enviado ao {$provedor}."
+                : "O envio do sitemap do projeto {$projeto->name} para {$provedor} falhou. {$submissao->message}";
+
+            $this->registrarNotificacao($usuario, [
+                'titulo' => $titulo,
+                'mensagem' => trim((string) $mensagem),
+                'url' => route('projects.show', $projeto->id) . '#submit',
+                'tipo' => 'buscador',
+                'categoria' => 'buscador',
+                'metadata' => [
+                    'project_id' => $projeto->id,
+                    'submission_id' => $submissao->id,
+                    'provider' => $submissao->provider,
+                    'status' => $submissao->status,
+                ],
+            ]);
         }
 
-        $provedor = mb_strtoupper($submissao->provider);
-        $titulo = $submissao->status === 'submitted'
-            ? "Sitemap enviado ao {$provedor}"
-            : "Falha no envio ao {$provedor}";
+        // 2. Notificação por E-mail
+        $provedorEmail = mb_strtoupper($submissao->provider);
+        $tituloEmail = $submissao->status === 'submitted'
+            ? "Sitemap enviado ao {$provedorEmail}"
+            : "Falha no envio ao {$provedorEmail}";
 
-        $mensagem = $submissao->status === 'submitted'
-            ? "O sitemap publico do projeto {$projeto->name} foi enviado ao {$provedor}."
-            : "O envio do sitemap do projeto {$projeto->name} para {$provedor} falhou. {$submissao->message}";
-
-        $this->registrarNotificacao($usuario, [
-            'titulo' => $titulo,
-            'mensagem' => trim((string) $mensagem),
-            'url' => route('projects.show', $projeto->id) . '#submit',
-            'tipo' => 'buscador',
-            'categoria' => 'buscador',
-            'metadata' => [
-                'project_id' => $projeto->id,
-                'submission_id' => $submissao->id,
-                'provider' => $submissao->provider,
-                'status' => $submissao->status,
-            ],
-        ]);
+        $mensagemEmail = $submissao->status === 'submitted'
+            ? "O sitemap publico do projeto {$projeto->name} foi enviado ao {$provedorEmail}."
+            : "O envio do sitemap do projeto {$projeto->name} para {$provedorEmail} falhou. {$submissao->message}";
 
         $this->enviarEmail($usuario, [
-            'assunto' => $titulo,
-            'titulo' => $titulo,
-            'mensagem' => trim((string) $mensagem),
+            'assunto' => $tituloEmail,
+            'titulo' => $tituloEmail,
+            'mensagem' => trim((string) $mensagemEmail),
             'linhas' => [
                 'Projeto: ' . $projeto->name,
-                'Buscador: ' . $provedor,
+                'Buscador: ' . $provedorEmail,
                 'Status: ' . $submissao->status,
             ],
             'acao_texto' => 'Ver envio',

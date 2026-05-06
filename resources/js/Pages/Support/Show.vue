@@ -104,7 +104,6 @@ const ticketFechado = props.ticket.status === 'fechado';
                                 v-for="anexo in ticket.anexos"
                                 :key="anexo.id"
                                 :href="anexo.url"
-                                target="_blank"
                                 class="block border border-gray-200 rounded overflow-hidden hover:opacity-90 transition"
                             >
                                 <img :src="anexo.url" :alt="anexo.nome_original" class="h-24 w-auto object-cover" />
