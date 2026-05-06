@@ -27,10 +27,19 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->validateCsrfTokens(except: [
             'stripe/*',
+            'logout',
         ]);
 
         //
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->respond(function ($response, $e, $request) {
+            if ($response->getStatusCode() === 419) {
+                return redirect()->route('login')->with([
+                    'status' => 'Sua sessão expirou por inatividade. Por favor, faça login novamente.',
+                ]);
+            }
+
+            return $response;
+        });
     })->create();
