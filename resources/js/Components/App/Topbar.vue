@@ -292,8 +292,8 @@ onUnmounted(() => {
         </Link>
 
         <div class="flex items-center gap-2 border-l border-gray-300 pl-4 ml-2">
-            <button @click="mudarIdioma('pt')" class="hover:scale-110 transition-transform cursor-pointer hover:opacity-100" :class="idiomaAtual === 'pt' ? 'opacity-100' : 'opacity-60'" title="PortuguÃªs">
-                <img src="/flags/br.svg" alt="PortuguÃªs" class="w-5 h-auto shadow-sm rounded-sm" />
+            <button @click="mudarIdioma('pt')" class="hover:scale-110 transition-transform cursor-pointer hover:opacity-100" :class="idiomaAtual === 'pt' ? 'opacity-100' : 'opacity-60'" title="Português">
+                <img src="/flags/br.svg" alt="Português" class="w-5 h-auto shadow-sm rounded-sm" />
             </button>
             <button @click="mudarIdioma('en')" class="hover:scale-110 transition-transform cursor-pointer hover:opacity-100" :class="idiomaAtual === 'en' ? 'opacity-100' : 'opacity-60'" title="English">
                 <img src="/flags/us.svg" alt="English" class="w-5 h-auto shadow-sm rounded-sm" />
