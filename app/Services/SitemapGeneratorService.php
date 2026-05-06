@@ -77,7 +77,7 @@ class SitemapGeneratorService
             'include_videos' => (bool) $projeto->check_videos,
             'include_news' => (bool) ($projeto->check_news ?? false),
             'include_mobile' => (bool) ($projeto->check_mobile ?? false),
-            'excludes_patterns' => $padroesExclusao ?: null,
+            'exclude_patterns' => $padroesExclusao ?: null,
             'crawl_policy_id' => $projeto->crawl_policy_id ?: null,
             'compress_output' => (bool) ($projeto->compress_output ?? true),
             'enable_cache' => (bool) ($projeto->enable_cache ?? true),
