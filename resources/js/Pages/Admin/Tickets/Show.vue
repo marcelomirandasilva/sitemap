@@ -99,8 +99,8 @@ const formatData = (iso) => {
                             </h5>
                             <ul class="flex flex-wrap gap-2">
                                 <li v-for="anexo in ticket.anexos" :key="anexo.id">
-                                    <a :href="`/storage/${anexo.file_path}`" target="_blank" class="px-3 py-1.5 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 transition text-sm flex items-center text-primary-600 dark:text-primary-400 font-medium">
-                                        {{ anexo.file_name }}
+                                    <a :href="anexo.url" class="px-3 py-1.5 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 transition text-sm flex items-center text-primary-600 dark:text-primary-400 font-medium">
+                                        {{ anexo.nome_original }}
                                         <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                                     </a>
                                 </li>

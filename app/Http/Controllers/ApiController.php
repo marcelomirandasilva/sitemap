@@ -22,26 +22,19 @@ class ApiController extends Controller
 
         return (bool) ($planoEfetivo?->has_advanced_features);
     }
-    /**
-     * Exibe a página de API do usuário.
-     */
+
     public function index(Request $request)
     {
         $user = $request->user();
         $planoEfetivo = $user->planoEfetivo();
         $assinaturaAtiva = $user->possuiAcessoPagoVigente();
 
-        // Busca a chave ativa mais recente (sem expiração ou ainda válida)
-        $chaveAtiva = $user->chavesApi()
-            ->where('is_active', true)
-            ->where(function ($q) {
-                $q->whereNull('expires_at')
-                    ->orWhere('expires_at', '>', now());
-            })
+        $chavePrincipalAtiva = $user->chavesApi()
+            ->active()
+            ->whereNull('expires_at')
             ->latest()
             ->first();
 
-        // Lista de projetos para o dropdown "Site-specific"
         $projetos = $user->projetos()
             ->select(
                 'id',
@@ -63,7 +56,8 @@ class ApiController extends Controller
             ->get();
 
         return Inertia::render('Account/Api', [
-            'apiKey' => $chaveAtiva ? $chaveAtiva->key : null,
+            'apiKeyPreview' => $chavePrincipalAtiva?->key_preview,
+            'hasActiveApiKey' => (bool) $chavePrincipalAtiva,
             'endpointUrl' => rtrim(config('services.sitemap_generator.base_url'), '/') . '/api/v1',
             'callbackUrl' => $user->api_callback_url,
             'projetos' => $projetos,
@@ -77,14 +71,10 @@ class ApiController extends Controller
         ]);
     }
 
-    /**
-     * Gera uma nova API Key, revogando a anterior.
-     */
     public function resetKey(Request $request)
     {
         $user = $request->user();
 
-        // Revoga todas as chaves ativas sem expiração (chave principal)
         if (!$this->userHasExternalApiAccess($user)) {
             abort(403, 'Seu plano ou assinatura atual nao permite o uso da API externa.');
         }
@@ -94,20 +84,20 @@ class ApiController extends Controller
             ->whereNull('expires_at')
             ->update(['is_active' => false]);
 
-        // Cria nova chave
         $novaChave = ChaveApi::gerarChave();
+
         $user->chavesApi()->create([
             'name' => 'Chave Principal',
-            'key' => $novaChave,
+            ...ChaveApi::atributosPersistencia($novaChave),
             'expires_at' => null,
         ]);
 
-        return back()->with('apiKey', $novaChave);
+        return back()->with([
+            'generatedApiKey' => $novaChave,
+            'success' => 'Nova chave principal gerada. Guarde este valor agora: ele nao sera exibido novamente.',
+        ]);
     }
 
-    /**
-     * Salva a URL de callback de notificações de sitemap.
-     */
     public function saveCallbackUrl(Request $request)
     {
         if (!$this->userHasExternalApiAccess($request->user())) {

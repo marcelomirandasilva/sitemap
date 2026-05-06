@@ -4,6 +4,19 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 
+$trustedProxies = env('TRUSTED_PROXIES');
+
+if (is_string($trustedProxies)) {
+    $trustedProxies = trim($trustedProxies);
+
+    if ($trustedProxies === '' || $trustedProxies === '*') {
+        $trustedProxies = null;
+    } else {
+        $trustedProxies = array_values(array_filter(array_map('trim', explode(',', $trustedProxies))));
+        $trustedProxies = $trustedProxies === [] ? null : $trustedProxies;
+    }
+}
+
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         channels: __DIR__ . '/../routes/channels.php',
@@ -11,14 +24,14 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__ . '/../routes/console.php',
         health: '/up',
     )
-    ->withMiddleware(function (Middleware $middleware): void {
+    ->withMiddleware(function (Middleware $middleware) use ($trustedProxies): void {
         $middleware->web(append: [
             \App\Http\Middleware\DefinirIdiomaAplicacao::class,
             \App\Http\Middleware\HandleInertiaRequests::class,
             \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
         ]);
 
-        $middleware->trustProxies(at: '*');
+        $middleware->trustProxies(at: $trustedProxies);
 
         $middleware->alias([
             'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
@@ -27,7 +40,6 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->validateCsrfTokens(except: [
             'stripe/*',
-            'logout',
         ]);
 
         //

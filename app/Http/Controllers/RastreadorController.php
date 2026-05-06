@@ -334,14 +334,20 @@ class RastreadorController extends Controller
      */
     public function getUrls(Request $request, Projeto $projeto)
     {
-        try {
-            if ($projeto->user_id !== auth()->id()) {
-                abort(403);
-            }
+        if ($projeto->user_id !== auth()->id()) {
+            abort(403);
+        }
 
-            $page = $request->input('page', 1);
-            $perPage = $request->input('per_page', 50);
-            $search = $request->input('q');
+        $validated = $request->validate([
+            'page' => 'nullable|integer|min:1',
+            'per_page' => 'nullable|integer|min:1|max:200',
+            'q' => 'nullable|string|max:500',
+        ]);
+
+        try {
+            $page = (int) ($validated['page'] ?? 1);
+            $perPage = (int) ($validated['per_page'] ?? 50);
+            $search = $validated['q'] ?? null;
             $reader = new \App\Services\SitemapDataReaderService();
 
             $query = Pagina::where('project_id', $projeto->id);
@@ -439,10 +445,14 @@ class RastreadorController extends Controller
 
             return response()->json($result);
         } catch (\Throwable $e) {
-            return response()->json([
+            Log::error('RastreadorController@getUrls falhou.', [
+                'project_id' => $projeto->id,
+                'user_id' => auth()->id(),
                 'error' => $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
+            ]);
+
+            return response()->json([
+                'error' => 'Nao foi possivel carregar as URLs do projeto no momento.',
             ], 500);
         }
     }
