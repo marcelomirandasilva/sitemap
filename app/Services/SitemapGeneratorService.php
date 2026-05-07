@@ -81,7 +81,7 @@ class SitemapGeneratorService
             'crawl_policy_id' => $projeto->crawl_policy_id ?: null,
             'compress_output' => (bool) ($projeto->compress_output ?? true),
             'enable_cache' => (bool) ($projeto->enable_cache ?? true),
-            'output_directory' => 'sitemaps/projects/' . $projeto->id,
+            'output_directory' => $this->caminhoBaseArtefatos() . DIRECTORY_SEPARATOR . 'projects' . DIRECTORY_SEPARATOR . $projeto->id,
         ];
 
         if ($usaAjustesAvancados) {
@@ -139,45 +139,25 @@ class SitemapGeneratorService
                 $data = $response->json();
 
                 if (($data['status'] ?? '') === 'completed') {
-                    $finalArtifacts = [];
+                    $listedArtifacts = $this->getArtifacts($jobId, $userId);
+                    $finalArtifacts = $listedArtifacts !== null
+                        ? $this->normalizeArtifactList($jobId, $listedArtifacts)
+                        : $this->normalizeArtifactsFromResult($jobId, $data['result'] ?? []);
 
-                    if (!empty($data['artifacts'])) {
-                        foreach ($data['artifacts'] as $art) {
-                            $finalArtifacts[] = [
-                                'name' => $art['name'] ?? basename($art['path'] ?? 'artifact'),
-                                'path' => $art['path'] ?? '',
-                                'download_url' => route('downloads.sitemap', [
-                                    'jobId' => $jobId,
-                                    'filename' => $art['name'] ?? basename($art['path'] ?? 'artifact'),
-                                ]),
-                                'size_bytes' => $art['size_bytes'] ?? ($art['size'] ?? 0),
-                            ];
-                        }
-                    } elseif (isset($data['result'])) {
-                        $result = $data['result'];
-                        $map = [
-                            'main_sitemap_path' => ['type' => 'main'],
-                            'image_sitemap_path' => ['type' => 'images'],
-                            'video_sitemap_path' => ['type' => 'videos'],
-                            'news_sitemap_path' => ['type' => 'news'],
-                            'mobile_sitemap_path' => ['type' => 'mobile'],
-                            'rss_path' => ['type' => 'rss'],
-                        ];
+                    if (empty($finalArtifacts)) {
+                        Log::warning('Job concluido sem artefatos disponiveis.', [
+                            'job_id' => $jobId,
+                            'user_id' => $userId,
+                            'result' => $data['result'] ?? null,
+                        ]);
 
-                        foreach ($map as $key => $info) {
-                            if (!empty($result[$key])) {
-                                $artifactName = basename($result[$key]);
-                                $finalArtifacts[] = [
-                                    'name' => $artifactName,
-                                    'path' => $result[$key],
-                                    'download_url' => route('downloads.sitemap', ['jobId' => $jobId, 'filename' => $artifactName]),
-                                    'size_bytes' => 0,
-                                ];
-                            }
-                        }
+                        $data['status'] = 'failed';
+                        $data['message'] = 'Rastreamento concluido sem arquivos gerados disponiveis.';
+                        $data['error_message'] = 'completed_without_artifacts';
+                        $data['artifacts'] = [];
+                    } else {
+                        $data['artifacts'] = $finalArtifacts;
                     }
-
-                    $data['artifacts'] = $finalArtifacts;
                 }
 
                 return $data;
@@ -242,7 +222,7 @@ class SitemapGeneratorService
     /**
      * Recupera a lista de artefatos (arquivos) gerados pelo job.
      */
-    public function getArtifacts(string $jobId, int $userId): array
+    public function getArtifacts(string $jobId, int $userId): ?array
     {
         try {
             $response = Http::withHeaders($this->internalHeaders($userId))
@@ -253,12 +233,75 @@ class SitemapGeneratorService
                 return $response->json('artifacts') ?? [];
             }
 
-            return [];
+            Log::warning("Falha ao buscar artefatos do job {$jobId}: HTTP {$response->status()}");
+            return null;
 
         } catch (\Exception $e) {
             Log::error("Erro ao buscar artefatos do job {$jobId}: " . $e->getMessage());
-            return [];
+            return null;
         }
+    }
+
+    protected function normalizeArtifactList(string $jobId, array $artifacts): array
+    {
+        return collect($artifacts)
+            ->map(function ($artifact) use ($jobId) {
+                $name = $artifact['name'] ?? basename((string) ($artifact['path'] ?? ''));
+
+                if (!$name) {
+                    return null;
+                }
+
+                return [
+                    'name' => $name,
+                    'path' => $artifact['path'] ?? null,
+                    'download_url' => route('downloads.sitemap', [
+                        'jobId' => $jobId,
+                        'filename' => $name,
+                    ]),
+                    'size_bytes' => $artifact['size_bytes'] ?? ($artifact['size'] ?? 0),
+                ];
+            })
+            ->filter()
+            ->values()
+            ->all();
+    }
+
+    protected function normalizeArtifactsFromResult(string $jobId, array $result): array
+    {
+        $map = [
+            'main_sitemap_path',
+            'image_sitemap_path',
+            'video_sitemap_path',
+            'news_sitemap_path',
+            'mobile_sitemap_path',
+            'rss_path',
+            'sitemap_index_path',
+        ];
+
+        return collect($map)
+            ->map(function (string $key) use ($jobId, $result) {
+                $path = $result[$key] ?? null;
+
+                if (!is_string($path) || trim($path) === '') {
+                    return null;
+                }
+
+                $name = basename($path);
+
+                return [
+                    'name' => $name,
+                    'path' => $path,
+                    'download_url' => route('downloads.sitemap', [
+                        'jobId' => $jobId,
+                        'filename' => $name,
+                    ]),
+                    'size_bytes' => 0,
+                ];
+            })
+            ->filter()
+            ->values()
+            ->all();
     }
 
     /**
