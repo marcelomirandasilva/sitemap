@@ -90,19 +90,19 @@ class ProcessSitemapArtifactsJob implements ShouldQueue
 
                     $batch[] = [
                         'project_id' => $projectId,
-                        'url' => substr($pageData['url'], 0, 2048),
-                        'path_hash' => hash('sha256', $pageData['url']),
-                        'status_code' => $pageData['status_code'] ?? 200,
-                        'title' => substr($pageData['title'] ?? '', 0, 255),
-                        'priority' => $pageData['priority'] ?? '0.5',
-                        'change_frequency' => $pageData['change_frequency'] ?? 'monthly',
-                        'load_time_ms' => $pageData['load_time_ms'] ?? 0,
-                        'content_type' => substr($pageData['content_type'] ?? 'text/html', 0, 100),
-                        'size_bytes' => $pageData['size_bytes'] ?? 0,
-                        'language' => isset($pageData['language']) ? substr((string) $pageData['language'], 0, 20) : null,
-                        'meta_description' => $pageData['meta_description'] ?? null,
-                        'canonical_url' => isset($pageData['canonical_url']) ? substr((string) $pageData['canonical_url'], 0, 2048) : null,
-                        'hreflang_links' => $this->sanitizeHreflangLinks($pageData['hreflang_links'] ?? []),
+                        'url' => $this->truncateString($pageData['url'], 2048) ?? '',
+                        'path_hash' => hash('sha256', (string) $pageData['url']),
+                        'status_code' => $this->normalizeInteger($pageData['status_code'] ?? 200, 200),
+                        'title' => $this->truncateString($pageData['title'] ?? '', 255) ?? '',
+                        'priority' => $this->normalizePriority($pageData['priority'] ?? '0.5'),
+                        'change_frequency' => $this->truncateString($pageData['change_frequency'] ?? 'monthly', 50),
+                        'load_time_ms' => $this->normalizeFloat($pageData['load_time_ms'] ?? 0),
+                        'content_type' => $this->truncateString($pageData['content_type'] ?? 'text/html', 100),
+                        'size_bytes' => $this->normalizeInteger($pageData['size_bytes'] ?? 0, 0),
+                        'language' => $this->truncateString($pageData['language'] ?? null, 20),
+                        'meta_description' => $this->normalizeNullableText($pageData['meta_description'] ?? null),
+                        'canonical_url' => $this->truncateString($pageData['canonical_url'] ?? null, 2048),
+                        'hreflang_links' => $this->encodeJsonColumn($this->sanitizeHreflangLinks($pageData['hreflang_links'] ?? [])),
                         'created_at' => $now,
                         'updated_at' => $now,
                     ];
@@ -243,6 +243,69 @@ class ProcessSitemapArtifactsJob implements ShouldQueue
             ->unique(fn(array $item) => $item['lang'] . '|' . $item['url'])
             ->values()
             ->all();
+    }
+
+    protected function normalizeNullableText(mixed $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        if (is_scalar($value)) {
+            $text = trim((string) $value);
+            return $text === '' ? null : $text;
+        }
+
+        $encoded = json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+        return $encoded === false ? null : $encoded;
+    }
+
+    protected function truncateString(mixed $value, int $limit): ?string
+    {
+        $text = $this->normalizeNullableText($value);
+
+        if ($text === null) {
+            return null;
+        }
+
+        return mb_substr($text, 0, $limit);
+    }
+
+    protected function normalizeInteger(mixed $value, int $default = 0): int
+    {
+        if (is_numeric($value)) {
+            return (int) $value;
+        }
+
+        return $default;
+    }
+
+    protected function normalizeFloat(mixed $value, float $default = 0.0): float
+    {
+        if (is_numeric($value)) {
+            return (float) $value;
+        }
+
+        return $default;
+    }
+
+    protected function normalizePriority(mixed $value): string
+    {
+        if (is_numeric($value)) {
+            return (string) $value;
+        }
+
+        $text = $this->truncateString($value, 10);
+
+        return $text ?: '0.5';
+    }
+
+    protected function encodeJsonColumn(array $value): string
+    {
+        $encoded = json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+        return $encoded === false ? '[]' : $encoded;
     }
 
     protected function carregarPaginasPorChave(int $projectId): array

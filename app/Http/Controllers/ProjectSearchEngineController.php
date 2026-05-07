@@ -12,6 +12,7 @@ use App\Support\ValidadorUrlExterna;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -33,9 +34,14 @@ class ProjectSearchEngineController extends Controller
             $sites = $googleSearchConsoleService->listSites($connection);
             $recommended = $this->matchGoogleSiteProperty($projeto, $sites, $projeto->google_site_property);
         } catch (\Throwable $exception) {
-            return response()->json([
-                'message' => $exception->getMessage() ?: 'Nao foi possivel carregar as propriedades do Google Search Console.',
-            ], 422);
+            return $this->integrationFailureResponse(
+                $request,
+                $projeto,
+                'google',
+                'sites',
+                'Nao foi possivel carregar as propriedades do Google Search Console.',
+                $exception
+            );
         }
 
         return response()->json([
@@ -53,9 +59,14 @@ class ProjectSearchEngineController extends Controller
             $sites = $bingWebmasterService->listSites((string) $connection->api_key);
             $recommended = $this->matchBingSite($projeto, $sites, $projeto->bing_site_url);
         } catch (\Throwable $exception) {
-            return response()->json([
-                'message' => $exception->getMessage() ?: 'Nao foi possivel carregar os sites do Bing Webmaster Tools.',
-            ], 422);
+            return $this->integrationFailureResponse(
+                $request,
+                $projeto,
+                'bing',
+                'sites',
+                'Nao foi possivel carregar os sites do Bing Webmaster Tools.',
+                $exception
+            );
         }
 
         return response()->json([
@@ -97,8 +108,7 @@ class ProjectSearchEngineController extends Controller
                 $validated['site_property'],
                 $validated['published_sitemap_url'],
                 'submitted',
-                'Sitemap enviado ao Google Search Console.',
-                $result
+                'Sitemap enviado ao Google Search Console.'
             );
             $this->centralNotificacoes->notificarEnvioBuscador($projeto->refresh()->load('user'), $submission);
 
@@ -111,6 +121,7 @@ class ProjectSearchEngineController extends Controller
                 'google_site_property' => $projeto->google_site_property,
             ]);
         } catch (\Throwable $exception) {
+            $mensagemFalha = 'Nao foi possivel enviar o sitemap ao Google Search Console.';
             $submission = $this->storeSubmission(
                 $request,
                 $projeto,
@@ -118,13 +129,20 @@ class ProjectSearchEngineController extends Controller
                 $validated['site_property'],
                 $validated['published_sitemap_url'],
                 'failed',
-                $exception->getMessage(),
-                ['error' => $exception->getMessage()]
+                $mensagemFalha
             );
             $this->centralNotificacoes->notificarEnvioBuscador($projeto->refresh()->load('user'), $submission);
 
+            Log::warning('Falha ao enviar sitemap ao Google Search Console.', [
+                'user_id' => $request->user()->id,
+                'project_id' => $projeto->id,
+                'site_property' => $validated['site_property'],
+                'published_sitemap_url' => $validated['published_sitemap_url'],
+                'error' => $exception->getMessage(),
+            ]);
+
             return response()->json([
-                'message' => $exception->getMessage(),
+                'message' => $mensagemFalha,
                 'submission' => $this->serializeSubmission($submission),
                 'recent_submissions' => $this->serializeSubmissions($projeto),
             ], 422);
@@ -164,8 +182,7 @@ class ProjectSearchEngineController extends Controller
                 $validated['site_url'],
                 $validated['published_sitemap_url'],
                 'submitted',
-                'Sitemap enviado ao Bing Webmaster Tools.',
-                $result
+                'Sitemap enviado ao Bing Webmaster Tools.'
             );
             $this->centralNotificacoes->notificarEnvioBuscador($projeto->refresh()->load('user'), $submission);
 
@@ -178,6 +195,7 @@ class ProjectSearchEngineController extends Controller
                 'bing_site_url' => $projeto->bing_site_url,
             ]);
         } catch (\Throwable $exception) {
+            $mensagemFalha = 'Nao foi possivel enviar o sitemap ao Bing Webmaster Tools.';
             $submission = $this->storeSubmission(
                 $request,
                 $projeto,
@@ -185,13 +203,20 @@ class ProjectSearchEngineController extends Controller
                 $validated['site_url'],
                 $validated['published_sitemap_url'],
                 'failed',
-                $exception->getMessage(),
-                ['error' => $exception->getMessage()]
+                $mensagemFalha
             );
             $this->centralNotificacoes->notificarEnvioBuscador($projeto->refresh()->load('user'), $submission);
 
+            Log::warning('Falha ao enviar sitemap ao Bing Webmaster Tools.', [
+                'user_id' => $request->user()->id,
+                'project_id' => $projeto->id,
+                'site_url' => $validated['site_url'],
+                'published_sitemap_url' => $validated['published_sitemap_url'],
+                'error' => $exception->getMessage(),
+            ]);
+
             return response()->json([
-                'message' => $exception->getMessage(),
+                'message' => $mensagemFalha,
                 'submission' => $this->serializeSubmission($submission),
                 'recent_submissions' => $this->serializeSubmissions($projeto),
             ], 422);
@@ -201,6 +226,27 @@ class ProjectSearchEngineController extends Controller
     protected function authorizeProject(Request $request, Projeto $projeto): void
     {
         abort_unless($projeto->user_id === $request->user()->id, 403);
+    }
+
+    protected function integrationFailureResponse(
+        Request $request,
+        Projeto $projeto,
+        string $provider,
+        string $action,
+        string $message,
+        \Throwable $exception
+    ): JsonResponse {
+        Log::warning('Falha em integracao de buscador.', [
+            'user_id' => $request->user()->id,
+            'project_id' => $projeto->id,
+            'provider' => $provider,
+            'action' => $action,
+            'error' => $exception->getMessage(),
+        ]);
+
+        return response()->json([
+            'message' => $message,
+        ], 422);
     }
 
     protected function connectionFor(Request $request, string $provider): SearchEngineConnection
@@ -412,8 +458,7 @@ class ProjectSearchEngineController extends Controller
         string $siteIdentifier,
         string $sitemapUrl,
         string $status,
-        ?string $message,
-        array $responsePayload = []
+        ?string $message
     ): SearchEngineSubmission {
         return SearchEngineSubmission::create([
             'user_id' => $request->user()->id,
@@ -423,7 +468,7 @@ class ProjectSearchEngineController extends Controller
             'sitemap_url' => $sitemapUrl,
             'status' => $status,
             'message' => $message,
-            'response_payload' => $responsePayload ?: null,
+            'response_payload' => null,
             'submitted_at' => now(),
         ]);
     }

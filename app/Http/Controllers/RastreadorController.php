@@ -115,7 +115,7 @@ class RastreadorController extends Controller
                     if ($jobAtivo->status === 'completed') {
                         if (empty($jobAtivo->artifacts)) {
                             $jobAtivo->update([
-                                'artifacts' => $this->sitemapService->getArtifacts($jobAtivo->external_job_id, auth()->id()),
+                                'artifacts' => $this->sitemapService->getArtifacts($jobAtivo->external_job_id, auth()->id()) ?? [],
                             ]);
                             $jobAtivo->refresh();
                         }
@@ -268,7 +268,7 @@ class RastreadorController extends Controller
 
                 if ($ultimoJob->status === 'completed') {
                     if (empty($ultimoJob->artifacts)) {
-                        $artifacts = $this->sitemapService->getArtifacts($ultimoJob->external_job_id, auth()->id());
+                        $artifacts = $this->sitemapService->getArtifacts($ultimoJob->external_job_id, auth()->id()) ?? [];
 
                         $ultimoJob->update([
                             'artifacts' => $artifacts,
