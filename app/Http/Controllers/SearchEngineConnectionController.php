@@ -9,6 +9,7 @@ use App\Services\GoogleSearchConsoleService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class SearchEngineConnectionController extends Controller
 {
@@ -39,6 +40,11 @@ class SearchEngineConnectionController extends Controller
 
             return redirect()->to($redirectRoute)->with('success', 'Google Search Console conectado com sucesso.');
         } catch (\Throwable $exception) {
+            Log::warning('Falha ao conectar Google Search Console.', [
+                'user_id' => $request->user()->id,
+                'error' => $exception->getMessage(),
+            ]);
+
             return redirect()->to($redirectRoute)->with('error', 'Nao foi possivel conectar o Google Search Console.');
         }
     }
@@ -65,8 +71,13 @@ class SearchEngineConnectionController extends Controller
         try {
             $sites = $bingWebmasterService->listSites($validated['api_key']);
         } catch (\Throwable $exception) {
+            Log::warning('Falha ao validar API key do Bing Webmaster Tools.', [
+                'user_id' => $request->user()->id,
+                'error' => $exception->getMessage(),
+            ]);
+
             return response()->json([
-                'message' => $exception->getMessage() ?: 'Nao foi possivel validar a API key do Bing Webmaster Tools.',
+                'message' => 'Nao foi possivel validar a API key do Bing Webmaster Tools.',
             ], 422);
         }
 

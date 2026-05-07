@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
 
@@ -37,7 +38,11 @@ class GoogleAuthController extends Controller
             return redirect()->route('dashboard');
 
         } catch (\Exception $e) {
-            return redirect()->route('login')->with('error', 'Erro ao autenticar com Google: ' . $e->getMessage());
+            Log::warning('Falha no callback Google OAuth.', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return redirect()->route('login')->with('error', 'Nao foi possivel autenticar com Google no momento.');
         }
     }
 }
