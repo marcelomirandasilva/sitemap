@@ -12,6 +12,7 @@ use App\Notifications\EmailSistema;
 use App\Notifications\NotificacaoSistema;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Notifications\Channels\DatabaseChannel;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class CentralNotificacoesService
@@ -27,10 +28,18 @@ class CentralNotificacoesService
         );
 
         if ($notificacao) {
-            broadcast(new NotificacaoCriada(
-                usuarioId: $usuario->id,
-                notificacao: $this->serializar($notificacao)
-            ));
+            try {
+                broadcast(new NotificacaoCriada(
+                    usuarioId: $usuario->id,
+                    notificacao: $this->serializar($notificacao)
+                ));
+            } catch (\Throwable $e) {
+                Log::warning('Falha ao transmitir notificacao em tempo real.', [
+                    'user_id' => $usuario->id,
+                    'notification_id' => $notificacao->id ?? null,
+                    'error' => $e->getMessage(),
+                ]);
+            }
         }
     }
 
