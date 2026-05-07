@@ -179,7 +179,7 @@ class ProjetoController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'url' => 'required|url|active_url',
+            'url' => 'required|url|max:2048',
         ]);
 
         $parsed = parse_url($validated['url']);

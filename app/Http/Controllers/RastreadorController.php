@@ -252,7 +252,11 @@ class RastreadorController extends Controller
             || empty($ultimoJob->artifacts)
             || is_null($ultimoJob->urls_found)
             || is_null($ultimoJob->urls_crawled)
-            || is_null($ultimoJob->urls_excluded);
+            || is_null($ultimoJob->urls_excluded)
+            || (
+                $ultimoJob->status === 'completed'
+                && (int) ($ultimoJob->urls_found ?? $ultimoJob->pages_count ?? 0) <= 0
+            );
 
         $statusData = [];
 
