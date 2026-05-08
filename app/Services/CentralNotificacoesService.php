@@ -71,7 +71,17 @@ class CentralNotificacoesService
             return;
         }
 
-        $usuario->notify(new EmailSistema($dados));
+        try {
+            $usuario->notify(new EmailSistema($dados));
+        } catch (\Throwable $e) {
+            Log::warning('Falha ao enviar notificacao por e-mail.', [
+                'user_id' => $usuario->id,
+                'project_id' => $projeto?->id,
+                'preference_key' => $chavePreferencia,
+                'mailer' => config('mail.default'),
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     public function notificarCrawler(Projeto $projeto, TarefaSitemap $job): void
