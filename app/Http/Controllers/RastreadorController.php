@@ -390,7 +390,7 @@ class RastreadorController extends Controller
 
             $ultimoJob = $projeto->tarefasSitemap()->latest()->first();
 
-            if (!$ultimoJob || empty($ultimoJob->artifacts)) {
+            if (!$ultimoJob) {
                 return response()->json(['data' => [], 'total' => 0]);
             }
 
@@ -408,6 +408,10 @@ class RastreadorController extends Controller
                 if (($result['total'] ?? 0) > 0) {
                     return response()->json($result);
                 }
+            }
+
+            if (empty($ultimoJob->artifacts)) {
+                return response()->json(['data' => [], 'total' => 0]);
             }
 
             $artifacts = collect($ultimoJob->artifacts);
