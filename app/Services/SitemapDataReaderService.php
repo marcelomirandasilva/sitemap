@@ -41,6 +41,10 @@ class SitemapDataReaderService
             return $this->readXmlPaginatedFromContent($content, $page, $perPage, $search);
         }
 
+        if ($extensao === 'jsonl') {
+            return $this->readJsonlPaginatedFromContent($content, $page, $perPage, $search);
+        }
+
         return $this->readTxtPaginatedFromContent($content, $page, $perPage, $search);
     }
 
@@ -54,6 +58,10 @@ class SitemapDataReaderService
 
         if (str_ends_with($nome, '.txt.gz') || str_ends_with($nome, '.txt.zip')) {
             return 'txt';
+        }
+
+        if (str_ends_with($nome, '.jsonl.gz') || str_ends_with($nome, '.jsonl.zip')) {
+            return 'jsonl';
         }
 
         return strtolower(pathinfo($nome, PATHINFO_EXTENSION));
@@ -127,6 +135,56 @@ class SitemapDataReaderService
                     'lastMod' => null,
                     'priority' => '-',
                     'changeFreq' => '-',
+                ];
+                $collected++;
+            }
+
+            $totalMatches++;
+        }
+
+        return [
+            'data' => $results,
+            'total' => $totalMatches,
+        ];
+    }
+
+    protected function readJsonlPaginatedFromContent(string $content, int $page, int $perPage, ?string $search): array
+    {
+        $lines = preg_split("/\r\n|\n|\r/", $content) ?: [];
+        $results = [];
+        $totalMatches = 0;
+        $offset = ($page - 1) * $perPage;
+        $collected = 0;
+
+        foreach ($lines as $line) {
+            $line = trim((string) $line);
+
+            if ($line === '') {
+                continue;
+            }
+
+            $pageData = json_decode($line, true);
+
+            if (!is_array($pageData)) {
+                continue;
+            }
+
+            $url = trim((string) ($pageData['url'] ?? ''));
+
+            if ($url === '') {
+                continue;
+            }
+
+            if ($search && stripos($url, $search) === false) {
+                continue;
+            }
+
+            if ($totalMatches >= $offset && $collected < $perPage) {
+                $results[] = [
+                    'url' => $url,
+                    'lastMod' => $pageData['last_modified'] ?? null,
+                    'priority' => isset($pageData['priority']) ? (string) $pageData['priority'] : null,
+                    'changeFreq' => $pageData['change_frequency'] ?? null,
                 ];
                 $collected++;
             }
