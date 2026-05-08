@@ -394,6 +394,22 @@ class RastreadorController extends Controller
                 return response()->json(['data' => [], 'total' => 0]);
             }
 
+            $streamContent = $this->sitemapService->getFileContent($ultimoJob->external_job_id, 'streams/pages_stream.jsonl.gz');
+
+            if ($streamContent) {
+                $result = $reader->getPaginatedUrlsFromContent(
+                    $streamContent,
+                    'pages_stream.jsonl.gz',
+                    $page,
+                    $perPage,
+                    $search
+                );
+
+                if (($result['total'] ?? 0) > 0) {
+                    return response()->json($result);
+                }
+            }
+
             $artifacts = collect($ultimoJob->artifacts);
             $targetArtifact = $artifacts->first(function ($artifact) {
                 return isset($artifact['name']) && (
