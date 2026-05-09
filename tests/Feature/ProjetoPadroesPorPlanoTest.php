@@ -63,7 +63,7 @@ class ProjetoPadroesPorPlanoTest extends TestCase
         $this->assertSame(24, $projeto->intervalo_personalizado_horas);
         $this->assertSame(SitemapGeneratorService::LIMITE_MAXIMO_PAGINAS_API, $projeto->max_pages);
         $this->assertSame(10, $projeto->max_depth);
-        $this->assertSame(30, $projeto->max_concurrent_requests);
+        $this->assertSame(SitemapGeneratorService::CONCORRENCIA_MAXIMA_API, $projeto->max_concurrent_requests);
         $this->assertSame(0.1, (float) $projeto->delay_between_requests);
         $this->assertFalse((bool) $projeto->check_news);
         $this->assertFalse((bool) $projeto->check_mobile);
@@ -253,14 +253,14 @@ class ProjetoPadroesPorPlanoTest extends TestCase
             $dados = $request->data();
 
             return !array_key_exists('massive_processing', $dados)
-                && !array_key_exists('max_concurrent_requests', $dados)
-                && !array_key_exists('delay_between_requests', $dados)
+                && ($dados['max_concurrent_requests'] ?? null) === SitemapGeneratorService::CONCORRENCIA_PADRAO_API
+                && (float) ($dados['delay_between_requests'] ?? 0.0) === SitemapGeneratorService::ATRASO_PADRAO_API
                 && ($dados['include_images'] ?? false) === true
                 && ($dados['include_videos'] ?? false) === true;
         });
     }
 
-    public function test_execucao_de_projeto_grande_mantem_tuning_avancado_e_aciona_fluxo_massivo(): void
+    public function test_execucao_de_projeto_grande_limita_tuning_avancado_sem_acionar_massivo_precocemente(): void
     {
         Http::fake([
             'http://localhost:30000/api/v1/sitemaps' => Http::response([
@@ -324,8 +324,8 @@ class ProjetoPadroesPorPlanoTest extends TestCase
         Http::assertSent(function ($request) {
             $dados = $request->data();
 
-            return ($dados['massive_processing'] ?? false) === true
-                && ($dados['max_concurrent_requests'] ?? null) === 8
+            return !array_key_exists('massive_processing', $dados)
+                && ($dados['max_concurrent_requests'] ?? null) === SitemapGeneratorService::CONCORRENCIA_MAXIMA_API
                 && (float) ($dados['delay_between_requests'] ?? 0.0) === 0.5
                 && ($dados['include_images'] ?? false) === true
                 && ($dados['include_videos'] ?? false) === true;

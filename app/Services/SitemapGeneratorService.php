@@ -10,8 +10,9 @@ use Illuminate\Support\Facades\Log;
 class SitemapGeneratorService
 {
     public const LIMITE_MAXIMO_PAGINAS_API = 100000;
-    public const LIMITE_MINIMO_PROCESSAMENTO_MASSIVO = 10001;
-    public const CONCORRENCIA_PADRAO_API = 10;
+    public const LIMITE_MINIMO_PROCESSAMENTO_MASSIVO = 50001;
+    public const CONCORRENCIA_PADRAO_API = 2;
+    public const CONCORRENCIA_MAXIMA_API = 3;
     public const ATRASO_PADRAO_API = 1.0;
 
     protected string $baseUrl;
@@ -77,16 +78,20 @@ class SitemapGeneratorService
             'include_videos' => (bool) $projeto->check_videos,
             'include_news' => (bool) ($projeto->check_news ?? false),
             'include_mobile' => (bool) ($projeto->check_mobile ?? false),
-            'exclude_patterns' => $padroesExclusao ?: null,
+            'excludes_patterns' => $padroesExclusao ?: null,
             'crawl_policy_id' => $projeto->crawl_policy_id ?: null,
             'compress_output' => (bool) ($projeto->compress_output ?? true),
             'enable_cache' => (bool) ($projeto->enable_cache ?? true),
             'output_directory' => $this->caminhoBaseArtefatos() . DIRECTORY_SEPARATOR . 'projects' . DIRECTORY_SEPARATOR . $projeto->id,
+            'delay_between_requests' => self::ATRASO_PADRAO_API,
+            'max_concurrent_requests' => self::CONCORRENCIA_PADRAO_API,
         ];
 
         if ($usaAjustesAvancados) {
             $payload['delay_between_requests'] = (float) ($projeto->delay_between_requests ?? self::ATRASO_PADRAO_API);
-            $payload['max_concurrent_requests'] = (int) ($projeto->max_concurrent_requests ?? self::CONCORRENCIA_PADRAO_API);
+            $payload['max_concurrent_requests'] = $this->normalizarConcorrencia(
+                (int) ($projeto->max_concurrent_requests ?? self::CONCORRENCIA_PADRAO_API)
+            );
         }
 
         if ($this->deveUsarProcessamentoMassivo($limitePaginas, (int) ($projeto->max_depth ?? 3))) {
@@ -121,8 +126,12 @@ class SitemapGeneratorService
 
     public function deveUsarProcessamentoMassivo(int $limitePaginas, int $profundidadeMaxima): bool
     {
-        return $limitePaginas >= self::LIMITE_MINIMO_PROCESSAMENTO_MASSIVO
-            || $profundidadeMaxima >= 5;
+        return $limitePaginas >= self::LIMITE_MINIMO_PROCESSAMENTO_MASSIVO;
+    }
+
+    protected function normalizarConcorrencia(int $concorrencia): int
+    {
+        return max(1, min($concorrencia, self::CONCORRENCIA_MAXIMA_API));
     }
 
     /**

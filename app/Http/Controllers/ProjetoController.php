@@ -50,6 +50,8 @@ class ProjetoController extends Controller
         $concorrenciaLimite = $usaAjustesAvancados
             ? ($plano?->concorrenciaLimiteEfetiva() ?? SitemapGeneratorService::CONCORRENCIA_PADRAO_API)
             : SitemapGeneratorService::CONCORRENCIA_PADRAO_API;
+        $concorrenciaPadrao = max(1, min((int) $concorrenciaPadrao, SitemapGeneratorService::CONCORRENCIA_MAXIMA_API));
+        $concorrenciaLimite = max(1, min((int) $concorrenciaLimite, SitemapGeneratorService::CONCORRENCIA_MAXIMA_API));
         $atrasoPadrao = $usaAjustesAvancados
             ? ($plano?->atrasoPadraoEfetivo() ?? SitemapGeneratorService::ATRASO_PADRAO_API)
             : SitemapGeneratorService::ATRASO_PADRAO_API;
@@ -196,6 +198,7 @@ class ProjetoController extends Controller
         $concorrenciaPadrao = $usaAjustesAvancados
             ? ($planoEfetivo?->concorrenciaPadraoEfetiva() ?? SitemapGeneratorService::CONCORRENCIA_PADRAO_API)
             : SitemapGeneratorService::CONCORRENCIA_PADRAO_API;
+        $concorrenciaPadrao = max(1, min((int) $concorrenciaPadrao, SitemapGeneratorService::CONCORRENCIA_MAXIMA_API));
         $atrasoPadrao = $usaAjustesAvancados
             ? ($planoEfetivo?->atrasoPadraoEfetivo() ?? SitemapGeneratorService::ATRASO_PADRAO_API)
             : SitemapGeneratorService::ATRASO_PADRAO_API;
